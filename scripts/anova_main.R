@@ -24,7 +24,7 @@ out_dir_classic <- file.path(config$paths$results, "classic_analyses")
 dir.create(out_dir_classic, showWarnings = FALSE, recursive = TRUE)
 
 df <- readRDS(
-  "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/output/anova_features_precond.rds"
+  "D:/phd_projects/vr_tsst_2025/output/anova_features_precond.rds"
 )
 
 df <- df %>%
