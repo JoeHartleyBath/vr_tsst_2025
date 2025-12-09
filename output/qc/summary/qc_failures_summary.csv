@@ -1,0 +1,9 @@
+Participant_ID,Issues
+18,EEG: Bad channels (58) > 25
+20,Physio: 'Exposure' - Foveal_Corrected_Dilation_Left 61.3% < 70%; Physio: 'Exposure' - Foveal_Corrected_Dilation_Right 66.0% < 70%; Physio: Overall retention below 70%
+21,Physio: 'Relaxation' - Foveal_Corrected_Dilation_Left 66.0% < 70%; Physio: 'Relaxation' - Foveal_Corrected_Dilation_Right 66.1% < 70%; Physio: Overall retention below 70%
+22,Physio: 'Relaxation' - Foveal_Corrected_Dilation_Left 46.3% < 70%; Physio: 'Relaxation' - Foveal_Corrected_Dilation_Right 53.0% < 70%; Physio: Overall retention below 70%
+34,EEG: Bad channels (51) > 25
+35,Physio: 'Relaxation' - Polar_HeartRate_RR_Interval 54.8% < 70%; Physio: Overall retention below 70%
+44,Physio: 'Exposure' - Foveal_Corrected_Dilation_Left 56.3% < 70%; Physio: 'Exposure' - Foveal_Corrected_Dilation_Right 47.4% < 70%; Physio: 'Relaxation' - Foveal_Corrected_Dilation_Left 54.3% < 70%; Physio: 'Relaxation' - Foveal_Corrected_Dilation_Right 53.9% < 70%; Physio: Overall retention below 70%
+48,EEG: Bad channels (37) > 25

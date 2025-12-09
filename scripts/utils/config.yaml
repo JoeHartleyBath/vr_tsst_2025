@@ -1,0 +1,53 @@
+participant_id: 8
+
+paths:
+  eeg_data:      "E:/PhD_Projects/TSST_Stress_Workload_Pipeline/data/eeg"
+  events:        "E:/PhD_Projects/TSST_Stress_Workload_Pipeline/data/events"
+  metadata:      "E:/PhD_Projects/TSST_Stress_Workload_Pipeline/data/metadata"
+  physio:        "E:/PhD_Projects/TSST_Stress_Workload_Pipeline/data/physio"
+  subjective:    "E:/PhD_Projects/TSST_Stress_Workload_Pipeline/data/subjective"
+  raw_data:      "E:/PhD_Projects/TSST_Stress_Workload_Pipeline/data/raw"
+  filtered_eeg: "E:/PhD_Projects/TSST_Stress_Workload_Pipeline/data/eeg/filtered"
+  cleaned_eeg: "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/intermediate/cleaned_eeg"
+  output:        "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/output"
+  logs: "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/output/logs"
+  results:       "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/results"
+  scripts:       "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/scripts"
+  vis: "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/output/eeg_visualisations" 
+  eeg_qc: "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/output/qc/eeg"
+  physio_qc: "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/output/qc/physio"
+  failed_qc: "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/output/qc/summary"
+  counterbalance: "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/data"
+  xgb_results:      "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/results/xgb/results"
+  xgb_bayes:        "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/results/xgb/bayes_opt"
+  init_pruned:        "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/results/xgb/init_pruned"
+
+canonical_features:
+  - hrv_rmssd
+  - hr_heartrate_bpm_med_abs
+  - gsr_skin_conductance_eda_tonic_mean_nk
+  - gsr_skin_conductance_eda_pkht_mean_nk
+  - eeg_fm_theta_mean
+  - eeg_f_beta_mean
+  - eeg_p_alpha_mean
+  - pupil_dilation_med
+
+pretty_features:
+  hrv_rmssd: "HRV RMSSD"
+  hr_heartrate_bpm_med_abs: "Heart Rate (Median BPM)"
+  gsr_skin_conductance_eda_tonic_mean_nk: "EDA Tonic"
+  gsr_skin_conductance_eda_pkht_mean_nk: "EDA Peak Height"
+  eeg_fm_theta_mean: "EEG FM Theta"
+  eeg_f_beta_mean: "EEG Beta"
+  eeg_p_alpha_mean: "EEG Parietal Alpha"
+  pupil_dilation_med: "Pupil Dilation"
+
+feature_order:
+  - HRV RMSSD
+  - Heart Rate (Median BPM)
+  - EDA Tonic
+  - EDA Peak Height
+  - Pupil Dilation
+  - EEG FM Theta
+  - EEG Beta
+  - EEG Parietal Alpha
