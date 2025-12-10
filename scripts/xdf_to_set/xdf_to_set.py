@@ -35,6 +35,14 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 import numpy as np
 import yaml
+import pandas as pd
+
+def load_condition_config(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+    return config
+
+
 
 def load_and_merge(xdf_path):
     """
@@ -323,9 +331,174 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
 
     return EEG
 
-def extract_eeg_stream(xdf_streams: Dict) -> Tuple:
-    """Extract EEG samples, timestamps, sampling rate, and channel names."""
-    pass
+
+def add_exposure_type(df_physio: pd.DataFrame, exposure_labels: list[str]) -> pd.DataFrame:
+    """
+    Assigns experimental condition labels to each physio-row based on predefined boolean
+    expressions. The function reproduces the study’s legacy condition-mapping logic while
+    sourcing label names from an external configuration file.
+
+    Parameters
+    ----------
+    df_physio : pandas.DataFrame
+        Input dataframe containing study-phase annotations and sensor timestamps.
+    exposure_labels : list of str
+        Ordered list of condition labels corresponding to the boolean expressions.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The input dataframe with an additional column `exposure_type` representing the
+        assigned condition label for each row.
+    """
+
+
+    # Define conditions and corresponding labels
+    conditions = [
+        #Calibrations
+        (df_physio['Unity Scene'] == 'PrimaryCalibration'),
+        (df_physio['Unity Scene'] == 'BlinkCalibration'),
+        (df_physio['Unity Scene'] == 'BaseLine'),
+        #Fixation cross scenes
+        ((df_physio['Unity Scene'] == 'Fixation') &
+         (df_physio['Study_Phase'] == 'Start Blank Fixation')),
+         ((df_physio['Unity Scene'] == 'Fixation') &
+         (df_physio['Study_Phase'] == 'Start Room Fixation')),
+         ((df_physio['Unity Scene'] == 'Fixation') &
+         (df_physio['Study_Phase'] == 'End Room Fixation')),
+         ((df_physio['Unity Scene'] == 'Fixation') &
+         (df_physio['Study_Phase'] == 'End Blank Fixation')),
+        #Preambles
+    #Stress 1022 preamble
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction1022') & 
+        (df_physio['Participant_State'].isin(['Instructions', 'Begin', 'TaskAction']))
+    ),
+    #Stress 2043 preamble
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction2043') & 
+        (df_physio['Participant_State'].isin(['Instructions', 'Begin', 'TaskAction']))
+    ),
+    # Preamble for Stress Addition
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Addition') & 
+        (df_physio['Participant_State'].isin(['Instructions', 'Begin', 'TaskAction']))
+    ),
+    #Calm 1022 preamble
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction1022') & 
+        (df_physio['Participant_State'].isin(['Instructions', 'Begin', 'TaskAction']))
+    ),
+    #Calm 2043 preamble
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction2043') & 
+        (df_physio['Participant_State'].isin(['Instructions', 'Begin', 'TaskAction']))
+    ),
+    # Preamble for Calm Addition
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Addition') & 
+        (df_physio['Participant_State'].isin(['Instructions', 'Begin', 'TaskAction']))
+    ),
+    # TaskTime for high cognitive effort
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction1022') & 
+        (df_physio['Participant_State'] == 'TaskTime')
+    ),
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction2043') & 
+        (df_physio['Participant_State'] == 'TaskTime')
+    ),
+    # TaskTime for low cognitive effort
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Addition') & 
+        (df_physio['Participant_State'] == 'TaskTime')
+    ),
+    # Same for CalmRoom
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction1022') & 
+        (df_physio['Participant_State'] == 'TaskTime')
+    ),
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction2043') & 
+        (df_physio['Participant_State'] == 'TaskTime')
+    ),
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Addition') & 
+        (df_physio['Participant_State'] == 'TaskTime')
+    ),
+# Thanks Action for high cognitive effort
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction1022') & 
+        (df_physio['Participant_State'] == 'ThanksAction')
+    ),
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction2043') & 
+        (df_physio['Participant_State'] == 'ThanksAction')
+    ),
+    # Thanks Action for low cognitive effort
+    (
+        (df_physio['Shown_Scene'] == 'StressRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Addition') & 
+        (df_physio['Participant_State'] == 'ThanksAction')
+    ),
+    # Same for CalmRoom
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction1022') & 
+        (df_physio['Participant_State'] == 'ThanksAction')
+    ),
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Subtraction2043') & 
+        (df_physio['Participant_State'] == 'ThanksAction')
+    ),
+    (
+        (df_physio['Shown_Scene'] == 'CalmRoom') & 
+        (df_physio['Arithmetic_Task'] == 'Addition') & 
+        (df_physio['Participant_State'] == 'ThanksAction')
+    ),
+
+        (df_physio['Shown_Scene'] == 'Forest1'),
+        (df_physio['Shown_Scene'] == 'Forest2'),
+        (df_physio['Shown_Scene'] == 'Forest3'),
+        (df_physio['Shown_Scene'] == 'Forest4'),
+    ]
+
+    #2.) load labels from config
+
+    exposure_labels = exposure_labels
+
+    # Safety check — same number?
+    if len(conditions) != len(exposure_labels):
+        raise ValueError(
+            f"Number of conditions ({len(conditions)}) does not match "
+            f"number of labels ({len(exposure_labels)})."
+        )
+    
+    #3.) assign exposure labels as exposure type
+    df_physio["exposure_type"] = np.select(
+        conditions,
+        exposure_labels,
+        default="no exposure"
+    )
+
+    return df_physio
+
+
 
 
 def extract_event_timestamps(xdf_streams: Dict) -> Dict[str, List[float]]:
