@@ -8,6 +8,29 @@ embedding canonical condition events, and saving EEGLAB .set files.
 This file contains function signatures only. Implementation comes later.
 """
 
+# -------------------------------------------------------------------------
+# Channel Handling (Design Note)
+# -------------------------------------------------------------------------
+# The raw eego streams contain 66 channels:
+# - 64 EEG channels
+# - 1 trigger channel
+# - 1 counter channel
+#
+# For now, all channels are preserved in `extract_single_stream()` and
+# during stream alignment. This ensures:
+# - alignment uses the true raw structure
+# - future studies can leverage trigger channels if needed
+# - no assumptions are baked into the early pipeline stages
+#
+# The auxiliary channels (trigger + counter) will be removed in a separate
+# `strip_aux_channels()` step *after* alignment and *before* merging A/B
+# streams. Channel naming logic will also be added at that stage.
+#
+# This is intentional. Do not remove or rename channels earlier in the
+# pipeline unless the design changes.
+# -------------------------------------------------------------------------
+
+
 from pathlib import Path
 from typing import Dict, List, Tuple
 import numpy as np
@@ -156,6 +179,27 @@ def align_streams(streamA: Dict, streamB: Dict) -> Tuple[Dict, Dict]:
     newB["data"]       = newB["data"][:n, :]
 
     return newA, newB
+
+def strip_aux_channels(stream: Dict) -> Dict:
+    """
+    Remove auxiliary channels (trigger + counter) from a 66-channel eego stream.
+    Returns a new stream dict with shape (samples, 64).
+    """
+    data = stream["data"]
+
+    if data.shape[1] != 66:
+        raise ValueError(f"Expected 66 channels before stripping, got {data.shape[1]}")
+
+    # EEG channels are always the first 64
+    eeg_only = data[:, :64]
+
+    return {
+        "name": stream["name"],
+        "srate": stream["srate"],
+        "timestamps": stream["timestamps"],
+        "data": eeg_only,
+    }
+
 
 def extract_eeg_stream(xdf_streams: Dict) -> Tuple:
     """Extract EEG samples, timestamps, sampling rate, and channel names."""
