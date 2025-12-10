@@ -8,6 +8,7 @@
 
 1. Align EEG samples with metadata timestamps using the shared LSL clock.
 2. Embed canonical event labels directly into the .set file (EEG.event) for downstream segmentation.
+3. The .set file becomes the single source-of-truth for condition timing.
 
 ## 4. Stage 2 — EEG Cleaning
 
