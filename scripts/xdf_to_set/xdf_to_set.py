@@ -102,7 +102,60 @@ def extract_single_stream(stream: dict) -> dict:
         "name": name,
     }
 
+def align_streams(streamA: Dict, streamB: Dict) -> Tuple[Dict, Dict]:
+    """
+    Align two EEG streams by timestamps.
+    Returns trimmed copies of streamA and streamB where:
+    - timestamps are the same length
+    - data arrays have matching sample counts
+    - both streams cover the same overlapping window
+    """
 
+    tsA = streamA["timestamps"]
+    tsB = streamB["timestamps"]
+
+    # --- 1) Determine the overlap window ---
+    start = max(tsA[0], tsB[0])
+    end   = min(tsA[-1], tsB[-1])
+
+    if start >= end:
+        raise ValueError("Streams do not overlap in time.")
+
+    # --- 2) Get index ranges for the overlap ---
+    idxA_start = np.searchsorted(tsA, start)
+    idxA_end   = np.searchsorted(tsA, end)
+
+    idxB_start = np.searchsorted(tsB, start)
+    idxB_end   = np.searchsorted(tsB, end)
+
+    # --- 3) Slice each stream to its overlapping segment ---
+    newA = {
+        "name": streamA["name"],
+        "srate": streamA["srate"],
+        "timestamps": tsA[idxA_start:idxA_end],
+        "data": streamA["data"][idxA_start:idxA_end, :],
+    }
+
+    newB = {
+        "name": streamB["name"],
+        "srate": streamB["srate"],
+        "timestamps": tsB[idxB_start:idxB_end],
+        "data": streamB["data"][idxB_start:idxB_end, :],
+    }
+
+    # --- 4) Enforce that the lengths match exactly ---
+    nA = newA["data"].shape[0]
+    nB = newB["data"].shape[0]
+
+    n = min(nA, nB)
+
+    newA["timestamps"] = newA["timestamps"][:n]
+    newA["data"]       = newA["data"][:n, :]
+
+    newB["timestamps"] = newB["timestamps"][:n]
+    newB["data"]       = newB["data"][:n, :]
+
+    return newA, newB
 
 def extract_eeg_stream(xdf_streams: Dict) -> Tuple:
     """Extract EEG samples, timestamps, sampling rate, and channel names."""
