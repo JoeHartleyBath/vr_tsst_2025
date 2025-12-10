@@ -34,6 +34,48 @@ This file contains function signatures only. Implementation comes later.
 from pathlib import Path
 from typing import Dict, List, Tuple
 import numpy as np
+import yaml
+
+def load_and_merge(xdf_path):
+    """
+    Convenience function that runs:
+    1. load_xdf
+    2. find_eeg_streams
+    3. extract_single_stream
+    4. align_streams
+    5. strip_aux_channels
+    6. merge_streams
+
+    Returns:
+        merged_stream (dict): {
+            "data": (samples, 128),
+            "timestamps": np.ndarray,
+            "srate": 500,
+            "name": "A__B",
+        }
+    """
+    # 1. Load XDF
+    xdf = load_xdf(xdf_path)
+
+    # 2. Find streams
+    eegA, eegB = find_eeg_streams(xdf["streams"])
+
+    # 3. Extract
+    A = extract_single_stream(eegA)
+    B = extract_single_stream(eegB)
+
+    # 4. Align
+    A_aligned, B_aligned = align_streams(A, B)
+
+    # 5. Strip aux channels
+    A_clean = strip_aux_channels(A_aligned)
+    B_clean = strip_aux_channels(B_aligned)
+
+    # 6. Merge
+    merged = merge_streams(A_clean, B_clean)
+
+    return merged
+
 
 def load_xdf(xdf_path: Path) -> Dict:
     """Load a raw .xdf file and return parsed LSL streams.
@@ -233,7 +275,14 @@ def merge_streams(streamA: Dict, streamB: Dict) -> Dict:
 def build_eeglab_struct(merged_stream: dict) -> dict:
     """
     Minimal EEGLAB-style container.
-    Step 4: add times (in milliseconds).
+    Adds:
+      - data (channels x samples)
+      - sampling rate
+      - nbchan
+      - pnts
+      - trials=1
+      - times (ms)
+      - chanlocs with real channel names
     """
     data = merged_stream["data"]          # (samples, 128)
     srate = merged_stream["srate"]
@@ -246,6 +295,21 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
 
     # time axis in milliseconds
     times = np.arange(pnts) / srate * 1000
+    
+    # --- Load channel names from config ---
+    meta_path = Path("config/eeg_metadata.yaml")
+    with open(meta_path, "r") as f:
+        eeg_meta = yaml.safe_load(f)
+
+    channel_names = eeg_meta["channel_names"]
+
+    # Safety check (optional but good practice)
+    if len(channel_names) != nbchan:
+        raise ValueError(f"Expected {nbchan} channel names, found {len(channel_names)}")
+
+    # --- Chanlocs ---
+    chanlocs = [{"labels": name} for name in channel_names]
+
 
     EEG = {
         "data": data_ch_by_time,
@@ -254,6 +318,7 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
         "pnts": pnts,
         "trials": 1,          # continuous data
         "times": times,       # (pnts,) in ms
+        "chanlocs": chanlocs,
     }
 
     return EEG
