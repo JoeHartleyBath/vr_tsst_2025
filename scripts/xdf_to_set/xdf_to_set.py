@@ -69,6 +69,38 @@ def find_eeg_streams(xdf_streams: list) -> list:
 
     return eeg_streams
 
+import numpy as np
+
+def extract_single_stream(stream: dict) -> dict:
+    """
+    Extract raw EEG data, timestamps, sampling rate, and stream name
+    from a single pyxdf EEG stream.
+
+    Returns a dict with:
+        - data: np.ndarray, shape (samples, channels)
+        - timestamps: np.ndarray, shape (samples,)
+        - srate: float
+        - name: str
+    """
+
+    # Raw EEG samples: shape (samples, channels)
+    data = np.asarray(stream["time_series"], dtype=float)
+
+    # Timestamps: shape (samples,)
+    timestamps = np.asarray(stream["time_stamps"], dtype=float)
+
+    # Sampling rate: comes as a string, so convert to float
+    srate = float(stream["info"]["nominal_srate"][0])
+
+    # Name of the stream (e.g., "EE225-...-eego_laptop")
+    name = stream["info"]["name"][0]
+
+    return {
+        "data": data,
+        "timestamps": timestamps,
+        "srate": srate,
+        "name": name,
+    }
 
 
 
