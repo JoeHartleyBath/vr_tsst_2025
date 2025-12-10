@@ -1,0 +1,89 @@
+# ============================================================
+# EXPOSURE LABELS
+# ------------------------------------------------------------
+# These correspond 1:1 to the output labels of your legacy
+# condition assignment logic (df_physio['exposure_type']).
+#
+# DO NOT change names until the refactor is complete.
+# ============================================================
+
+exposure_labels:
+  - Primary_Calibrations
+  - Blink_Calibration
+  - Movement_Baseline
+  - Pre_Exposure_Blank_Fixation_Cross
+  - Pre_Exposure_Room_Fixation_Cross
+  - Post_Exposure_Blank_Fixation_Cross
+  - Post_Exposure_Room_Fixation_Cross
+
+  # Stress room preambles
+  - HighStress_HighCog1022_Preamble
+  - HighStress_HighCog2043_Preamble
+  - HighStress_LowCog_Preamble
+
+  # Calm room preambles
+  - LowStress_HighCog1022_Preamble
+  - LowStress_HighCog2043_Preamble
+  - LowStress_LowCog_Preamble
+
+  # Task periods (core conditions)
+  - HighStress_HighCog1022_Task
+  - HighStress_HighCog2043_Task
+  - HighStress_LowCog_Task
+  - LowStress_HighCog1022_Task
+  - LowStress_HighCog2043_Task
+  - LowStress_LowCog_Task
+
+  # Finish periods
+  - HighStress_HighCog1022_Finish
+  - HighStress_HighCog2043_Finish
+  - HighStress_LowCog_Finish
+  - LowStress_HighCog1022_Finish
+  - LowStress_HighCog2043_Finish
+  - LowStress_LowCog_Finish
+
+  # Forest scenes
+  - Forest1
+  - Forest2
+  - Forest3
+  - Forest4
+
+# ============================================================
+# CONDITIONS TO EXPORT AS EVENTS
+# ============================================================
+
+export_event_labels:
+  # Baselines / calibrations
+  - Movement_Baseline
+  - Pre_Exposure_Blank_Fixation_Cross
+  - Pre_Exposure_Room_Fixation_Cross
+
+    # Forest scenes (used as pre-condition baseline)
+  - Forest1
+  - Forest2
+  - Forest3
+  - Forest4
+
+
+  # Core task onsets (actual experimental conditions)
+  - HighStress_HighCog1022_Task
+  - HighStress_LowCog_Task
+  - LowStress_HighCog1022_Task
+  - LowStress_LowCog_Task
+
+  # Post-condition fixation (optional)
+  - Post_Exposure_Blank_Fixation_Cross
+  - Post_Exposure_Room_Fixation_Cross
+
+# ============================================================
+# NOTES & FUTURE CLEANUP
+# ------------------------------------------------------------
+# - Once the refactor is complete and verified, you can
+#   rename exposure labels safely (e.g., HS_HL, LS_LL).
+#
+# - If you simplify conditions (e.g. merging preambles),
+#   you only edit this YAML and the corresponding logic ONCE.
+#
+# - This file ensures the pipeline’s “ontology” is separate
+#   from the code logic itself.
+# ============================================================
