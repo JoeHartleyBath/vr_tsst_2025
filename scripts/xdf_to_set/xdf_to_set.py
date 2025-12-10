@@ -230,6 +230,33 @@ def merge_streams(streamA: Dict, streamB: Dict) -> Dict:
 
     return merged_stream
 
+def build_eeglab_struct(merged_stream: dict) -> dict:
+    """
+    Minimal EEGLAB-style container.
+    Step 4: add times (in milliseconds).
+    """
+    data = merged_stream["data"]          # (samples, 128)
+    srate = merged_stream["srate"]
+
+    # EEGLAB format: (channels, samples)
+    data_ch_by_time = data.T
+
+    nbchan = data_ch_by_time.shape[0]
+    pnts   = data_ch_by_time.shape[1]
+
+    # time axis in milliseconds
+    times = np.arange(pnts) / srate * 1000
+
+    EEG = {
+        "data": data_ch_by_time,
+        "srate": srate,
+        "nbchan": nbchan,
+        "pnts": pnts,
+        "trials": 1,          # continuous data
+        "times": times,       # (pnts,) in ms
+    }
+
+    return EEG
 
 def extract_eeg_stream(xdf_streams: Dict) -> Tuple:
     """Extract EEG samples, timestamps, sampling rate, and channel names."""
@@ -251,10 +278,6 @@ def convert_events_to_latencies(eeg_timestamps, event_ts_dict) -> Dict[str, List
     """Convert LSL timestamps to EEG sample latencies."""
     pass
 
-
-def build_eeglab_struct(eeg_data, srate, ch_names, event_latencies) -> object:
-    """Build an EEGLAB-like struct (via MNE or MATLAB via MATLAB Engine)."""
-    pass
 
 
 def save_set(eeg_struct, output_path: Path):
