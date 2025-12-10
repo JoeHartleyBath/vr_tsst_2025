@@ -3,3 +3,8 @@
 .Rhistory
 
 /output/aggregated/tmp_eeg
+
+__pycache__/
+*.pyc
+
+/data/raw
