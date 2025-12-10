@@ -200,6 +200,36 @@ def strip_aux_channels(stream: Dict) -> Dict:
         "data": eeg_only,
     }
 
+def merge_streams(streamA: Dict, streamB: Dict) -> Dict:
+    """
+    Merge two aligned, aux-stripped EEG streams (each 64 channels)
+    into a single 128-channel EEG stream.
+    Assumes both streams have identical timestamps and sample counts.
+    """
+
+    # --- Sanity checks ---
+    dataA = streamA["data"]
+    dataB = streamB["data"]
+
+    if dataA.shape[0] != dataB.shape[0]:
+        raise ValueError(f"Stream lengths differ: {dataA.shape[0]} vs {dataB.shape[0]}")
+
+    if dataA.shape[1] != 64 or dataB.shape[1] != 64:
+        raise ValueError("Both streams must have 64 channels before merging.")
+
+    # --- Merge (concat channels) ---
+    merged_data = np.concatenate([dataA, dataB], axis=1)   # shape: (N, 128)
+
+    # --- Build output ---
+    merged_stream = {
+        "srate": streamA["srate"],                  # same for both streams
+        "timestamps": streamA["timestamps"],        # identical after alignment
+        "data": merged_data,                        # (N, 128)
+        "name": f"{streamA['name']}__{streamB['name']}",
+    }
+
+    return merged_stream
+
 
 def extract_eeg_stream(xdf_streams: Dict) -> Tuple:
     """Extract EEG samples, timestamps, sampling rate, and channel names."""
