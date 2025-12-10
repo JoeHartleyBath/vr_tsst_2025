@@ -10,6 +10,7 @@ This file contains function signatures only. Implementation comes later.
 
 from pathlib import Path
 from typing import Dict, List, Tuple
+import numpy as np
 
 def load_xdf(xdf_path: Path) -> Dict:
     """Load a raw .xdf file and return parsed LSL streams.
@@ -47,6 +48,27 @@ def load_xdf(xdf_path: Path) -> Dict:
         "streams": streams,
         "info": info
     }
+
+def find_eeg_streams(xdf_streams: list) -> list:
+    """Return the list of EEG streams found in the XDF file."""
+        
+    # 1) Filter for streams where info.type == "EEG"
+    eeg_streams = [
+        s for s in xdf_streams
+        if s["info"]["type"][0] == "EEG"
+    ]
+
+    # 2) Validate count
+    if len(eeg_streams) == 0:
+        raise ValueError("No EEG streams found in the XDF file.")
+
+    if len(eeg_streams) > 2:
+        raise ValueError(
+            f"Expected at most 2 EEG streams, found {len(eeg_streams)}."
+        )
+
+    return eeg_streams
+
 
 
 
