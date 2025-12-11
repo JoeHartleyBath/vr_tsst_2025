@@ -571,7 +571,11 @@ def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64
     valid = df_physio[df_physio["exposure_type"] != "no exposure"]
 
     # Group by exposure_type and take the FIRST timestamp for each
-    first_ts = valid.groupby("exposure_type").apply(lambda x: x.index[0])
+    first_ts = (
+    valid.groupby("exposure_type", group_keys=False)
+         .apply(lambda x: x.index[0])
+         )
+
 
     # Convert to Python dict of numpy.datetime64
     event_ts_dict = {label: np.datetime64(ts) for label, ts in first_ts.items()}
@@ -579,19 +583,6 @@ def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64
     return event_ts_dict
   
 
-def extract_event_timestamps(df_phsyio: pd.DataFrame) -> Dict[str, List[float]]:
-    """Extract condition onset timestamps from df_phsyio.
-    
-    Returns:
-        A dict mapping event_type → list of timestamps.
-        Example:
-            {"HS_LL": [12.4], "HS_HL": [215.2], ...}
-    """
-
-
-
-
-    pass
 
 
 def convert_events_to_latencies(eeg_timestamps, event_ts_dict) -> Dict[str, List[int]]:
