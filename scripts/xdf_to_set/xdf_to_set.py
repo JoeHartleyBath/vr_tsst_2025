@@ -318,14 +318,23 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     # --- Chanlocs ---
     chanlocs = [{"labels": name} for name in channel_names]
 
+    # --- Load EEGLAB template from config ---
+    template_path = Path("config/eeglab_template.yaml")
+    with open(template_path, "r") as f:
+        template = yaml.safe_load(f)
 
+    # --- Build complete EEGLAB structure ---
     EEG = {
-        "data": data_ch_by_time,
-        "srate": srate,
+        **template,  # Start with template defaults
+        # Override with actual data
         "nbchan": nbchan,
+        "trials": 1,
         "pnts": pnts,
-        "trials": 1,          # continuous data
-        "times": times,       # (pnts,) in ms
+        "srate": srate,
+        "xmin": 0,
+        "xmax": (pnts - 1) / srate,
+        "times": times,
+        "data": data_ch_by_time,
         "chanlocs": chanlocs,
     }
 
@@ -735,10 +744,9 @@ def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64
 
     # Group by exposure_type and take the FIRST timestamp for each
     first_ts = (
-    valid.groupby("exposure_type", group_keys=False)
-         .apply(lambda x: x.index[0])
-         )
-
+        valid.groupby("exposure_type", group_keys=False, include_groups=False)
+        .apply(lambda x: x.index[0])
+    )
 
     # Convert to Python dict of numpy.datetime64
     event_ts_dict = {label: np.datetime64(ts) for label, ts in first_ts.items()}
@@ -999,7 +1007,12 @@ def xdf_to_set(
     EEG = build_eeglab_struct(merged)
     EEG = add_events_to_eeg_struct(EEG, event_list)
 
-    # 9) Save to disk
+    # 9) Set metadata before saving
+    EEG["setname"] = output_path.stem
+    EEG["filename"] = output_path.name
+    EEG["filepath"] = str(output_path.parent)
+
+    # 10) Save to disk
     saved = save_set(EEG, output_path)
 
     summary = {
