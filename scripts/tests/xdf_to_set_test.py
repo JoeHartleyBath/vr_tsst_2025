@@ -6,7 +6,7 @@ from scripts.xdf_to_set.xdf_to_set import (
     load_and_merge,
     align_timestamps,
     extract_event_timestamps,
-    add_exposure_type,
+    add_exposure_type_from_config,
     load_condition_config,
     build_eeg_event_list,
 )
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     export_labels = cfg["export_event_labels"]
 
     # --- Add exposure_type labels ---
-    df_physio = add_exposure_type(df_physio, labels)
+    df_physio = add_exposure_type_from_config(df_physio, config_path)
 
     # --- Ensure timestamp index is correct ---
     df_physio["LSL_Timestamp"] = pd.to_datetime(df_physio["LSL_Timestamp"], unit="s", origin="unix")
