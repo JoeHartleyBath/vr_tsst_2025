@@ -498,17 +498,68 @@ def add_exposure_type(df_physio: pd.DataFrame, exposure_labels: list[str]) -> pd
 
     return df_physio
 
+def align_timestamps(df_physio: pd.DataFrame,
+                     eeg_data: np.ndarray,
+                     eeg_ts: np.ndarray,
+                     srate: float) -> np.ndarray:
+    """
+    Reproduce the legacy timestamp alignment logic exactly.
+
+    Parameters
+    ----------
+    df_physio : pd.DataFrame
+        Contains 'LSL_Timestamp' column in LSL seconds.
+    eeg_data : np.ndarray
+        EEG data array (samples x channels). Only the sample count is used.
+    eeg_ts : np.ndarray
+        Raw EEG timestamps from XDF (only the first element is used).
+    srate : float
+        EEG sampling rate.
+
+    Returns
+    -------
+    aligned_eeg_dt : np.ndarray of datetime64[ns]
+        EEG timestamps aligned to physio's datetime reference frame.
+    """
+
+    # --- 1) Convert physio timestamps to datetime and set index (legacy behaviour) ---
+    df_physio["LSL_Timestamp"] = pd.to_datetime(df_physio["LSL_Timestamp"], unit="s", origin="unix")
+    df_physio = df_physio.set_index("LSL_Timestamp")
+    physio_first = df_physio.index[0]
+
+    # --- 2) Convert EEG first timestamp to datetime ---
+    eeg_first_dt = pd.to_datetime(eeg_ts[0], unit="s", origin="unix")
+
+    # --- 3) Construct a proper datetime index for EEG using sample count ---
+    n_samples = eeg_data.shape[0]
+    eeg_time_deltas = pd.to_timedelta(np.arange(n_samples) / srate, unit="s")
+    eeg_dt = eeg_first_dt + eeg_time_deltas
+
+    # --- 4) Compute offset between physio start and EEG start ---
+    gap = eeg_first_dt - physio_first
+
+    # --- 5) Shift EEG timestamps into physio's reference frame ---
+    aligned_eeg_dt = eeg_dt - gap
+
+    # --- 6) Return clean datetime64 array ---
+    return aligned_eeg_dt.to_numpy(dtype='datetime64[ns]')
 
 
 
-def extract_event_timestamps(xdf_streams: Dict) -> Dict[str, List[float]]:
-    """Extract condition onset timestamps from metadata/marker streams.
+
+
+def extract_event_timestamps(df_phsyio: pd.DataFrame) -> Dict[str, List[float]]:
+    """Extract condition onset timestamps from df_phsyio.
     
     Returns:
         A dict mapping event_type → list of timestamps.
         Example:
             {"HS_LL": [12.4], "HS_HL": [215.2], ...}
     """
+
+
+
+
     pass
 
 
