@@ -1,9 +1,148 @@
 # ============================================================
-# EXPOSURE LABELS
-# ------------------------------------------------------------
-# These correspond 1:1 to the output labels of your legacy
-# condition assignment logic (df_physio['exposure_type']).
+# CONDITION DEFINITIONS (FILTERS)
+# ============================================================
+# Each condition is defined by a set of column filters.
+# Filters support:
+#   - Single value: column: value
+#   - Multiple values: column: [value1, value2, ...]
+# All filters in a condition are ANDed together.
 #
+# These filters are used by add_exposure_type() to assign
+# exposure_type labels dynamically from the physio data.
+# ============================================================
+
+conditions:
+  Primary_Calibrations:
+    Unity Scene: PrimaryCalibration
+  
+  Blink_Calibration:
+    Unity Scene: BlinkCalibration
+  
+  Movement_Baseline:
+    Unity Scene: BaseLine
+  
+  Pre_Exposure_Blank_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: Start Blank Fixation
+  
+  Pre_Exposure_Room_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: Start Room Fixation
+  
+  Post_Exposure_Blank_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: End Blank Fixation
+  
+  Post_Exposure_Room_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: End Room Fixation
+  
+  HighStress_HighCog1022_Preamble:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Subtraction1022
+    Participant_State: [Instructions, Begin, TaskAction]
+  
+  HighStress_HighCog2043_Preamble:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Subtraction2043
+    Participant_State: [Instructions, Begin, TaskAction]
+  
+  HighStress_LowCog_Preamble:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Addition
+    Participant_State: [Instructions, Begin, TaskAction]
+  
+  LowStress_HighCog1022_Preamble:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Subtraction1022
+    Participant_State: [Instructions, Begin, TaskAction]
+  
+  LowStress_HighCog2043_Preamble:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Subtraction2043
+    Participant_State: [Instructions, Begin, TaskAction]
+  
+  LowStress_LowCog_Preamble:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Addition
+    Participant_State: [Instructions, Begin, TaskAction]
+  
+  HighStress_HighCog1022_Task:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Subtraction1022
+    Participant_State: TaskTime
+  
+  HighStress_HighCog2043_Task:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Subtraction2043
+    Participant_State: TaskTime
+  
+  HighStress_LowCog_Task:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Addition
+    Participant_State: TaskTime
+  
+  LowStress_HighCog1022_Task:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Subtraction1022
+    Participant_State: TaskTime
+  
+  LowStress_HighCog2043_Task:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Subtraction2043
+    Participant_State: TaskTime
+  
+  LowStress_LowCog_Task:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Addition
+    Participant_State: TaskTime
+  
+  HighStress_HighCog1022_Finish:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Subtraction1022
+    Participant_State: ThanksAction
+  
+  HighStress_HighCog2043_Finish:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Subtraction2043
+    Participant_State: ThanksAction
+  
+  HighStress_LowCog_Finish:
+    Shown_Scene: StressRoom
+    Arithmetic_Task: Addition
+    Participant_State: ThanksAction
+  
+  LowStress_HighCog1022_Finish:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Subtraction1022
+    Participant_State: ThanksAction
+  
+  LowStress_HighCog2043_Finish:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Subtraction2043
+    Participant_State: ThanksAction
+  
+  LowStress_LowCog_Finish:
+    Shown_Scene: CalmRoom
+    Arithmetic_Task: Addition
+    Participant_State: ThanksAction
+  
+  Forest1:
+    Shown_Scene: Forest1
+  
+  Forest2:
+    Shown_Scene: Forest2
+  
+  Forest3:
+    Shown_Scene: Forest3
+  
+  Forest4:
+    Shown_Scene: Forest4
+
+# ============================================================
+# EXPOSURE LABELS
+# ============================================================
+# These correspond 1:1 to the condition keys above.
 # DO NOT change names until the refactor is complete.
 # ============================================================
 
@@ -53,7 +192,7 @@ exposure_labels:
 # ============================================================
 
 export_event_labels:
-  #  Post-condition fixation
+  #  Pre-condition fixation
   Pre_Exposure_Blank_Fixation_Cross: 10
   Pre_Exposure_Room_Fixation_Cross: 11
 
@@ -77,14 +216,13 @@ export_event_labels:
 
 # ============================================================
 # NOTES & FUTURE CLEANUP
-# ------------------------------------------------------------
+# ============================================================
 # - Once the refactor is complete and verified, you can
 #   rename exposure labels safely (e.g., HS_HL, LS_LL).
 #
 # - If you simplify conditions (e.g. merging preambles),
 #   you only edit this YAML and the corresponding logic ONCE.
 #
-# - This file ensures the pipeline’s “ontology” is separate
+# - This file ensures the pipeline's "ontology" is separate
 #   from the code logic itself.
 # ============================================================
-
