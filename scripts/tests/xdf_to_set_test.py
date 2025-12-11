@@ -8,6 +8,7 @@ from scripts.xdf_to_set.xdf_to_set import (
     extract_event_timestamps,
     add_exposure_type,
     load_condition_config,
+    build_eeg_event_list,
 )
 
 # ---- File paths ----
@@ -35,18 +36,36 @@ if __name__ == "__main__":
 
     cfg = load_condition_config(config_path)
     labels = cfg["exposure_labels"]
+    export_labels = cfg["export_event_labels"]
 
+    # --- Add exposure_type labels ---
     df_physio = add_exposure_type(df_physio, labels)
 
-    # --- Ensure LSL_Timestamp exists and is datetime ---
+    # --- Ensure timestamp index is correct ---
     df_physio["LSL_Timestamp"] = pd.to_datetime(df_physio["LSL_Timestamp"], unit="s", origin="unix")
     df_physio = df_physio.set_index("LSL_Timestamp")
 
-    events = extract_event_timestamps(df_physio)
+    # --- 1) Test extraction of first timestamps ---
+    event_ts = extract_event_timestamps(df_physio)
 
-    print("Event keys:", list(events.keys())[:10])
-    for k, v in events.items():
-        print(f"{k}: {pd.to_datetime(v)}")
+    print("\n=== Extracted exposure onset timestamps ===")
+    for k, v in event_ts.items():
+        print(f"{k:35s} {pd.to_datetime(v)}")
+
+    # --- 2) Test conversion to EEG event markers ---
+    event_list = build_eeg_event_list(
+        eeg_dt_aligned=aligned,
+        event_ts_dict=event_ts,
+        srate=srate,
+        export_event_labels=export_labels
+    )
+
+    print("\n=== EEG event list (latency + type) ===")
+    for ev in event_list[:10]:   # print first 10 only
+        print(ev)
+
+    print(f"\nTotal events created: {len(event_list)}")
+
 
 
     # ----------------------------------------------------------------------

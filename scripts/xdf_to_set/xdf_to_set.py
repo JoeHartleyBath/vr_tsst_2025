@@ -583,12 +583,65 @@ def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64
     return event_ts_dict
   
 
+def build_eeg_event_list(
+        eeg_dt_aligned: np.ndarray,
+        event_ts_dict: dict,
+        srate: float,
+        export_event_labels: dict,
+        ignore_missing: bool = True,
+    ) -> list:
+    """
+    Convert per-condition onset timestamps into EEGLAB-style event markers.
 
+    Parameters
+    ----------
+    eeg_dt_aligned : np.ndarray of datetime64[ns]
+        Aligned EEG timestamps (one per sample).
+    event_ts_dict : dict
+        Mapping {exposure_type: timestamp} from extract_event_timestamps().
+    srate : float
+        EEG sampling rate.
+    export_event_labels : dict
+        Maps exposure_type → short event code to use in EEG.
+    ignore_missing : bool
+        If True, skip events whose timestamps fall outside EEG recording.
 
-def convert_events_to_latencies(eeg_timestamps, event_ts_dict) -> Dict[str, List[int]]:
-    """Convert LSL timestamps to EEG sample latencies."""
-    pass
+    Returns
+    -------
+    List[dict]
+        Each element is {"latency": int, "type": str}
+    """
 
+    events = []
+    eeg_start = eeg_dt_aligned[0]
+    eeg_end   = eeg_dt_aligned[-1]
+
+    for exposure, onset_ts in event_ts_dict.items():
+
+        # Skip if label has no mapped short code
+        if exposure not in export_event_labels:
+            continue
+
+        # EEG spans
+        if onset_ts < eeg_start or onset_ts > eeg_end:
+            if ignore_missing:
+                continue
+            else:
+                raise ValueError(f"Timestamp {onset_ts} for {exposure} is outside EEG span.")
+
+        # Convert timestamp → sample index
+        delta_sec = (onset_ts - eeg_start) / np.timedelta64(1, "s")
+        sample_idx = int(round(delta_sec * srate))
+
+        events.append({
+            "latency": sample_idx,
+            "type": export_event_labels[exposure]
+        })
+
+    # Sort by sample index
+    events.sort(key=lambda e: e["latency"])
+
+    return events
 
 
 def save_set(eeg_struct, output_path: Path):
