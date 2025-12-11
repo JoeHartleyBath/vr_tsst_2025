@@ -770,27 +770,48 @@ def extract_response_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetim
     if not np.issubdtype(df_physio.index.dtype, np.datetime64):
         raise ValueError("df_physio index must be datetime64[ns].")
 
-    # Filter out rows with missing Response values
-    valid_responses = df_physio[df_physio["Response"].notna()]
+    # If there's no Response column, return empty
+    if "Response" not in df_physio.columns:
+        return {}
 
+    # Normalize common response variants (strip, lowercase, map synonyms/prefixes)
+    def _normalize_resp(val):
+        if pd.isna(val):
+            return None
+        s = str(val).strip().lower()
+        if s == "":
+            return None
+        # explicit matches
+        if s in ("correct", "corr", "c", "true", "1", "yes", "y"):
+            return "Correct"
+        if s in ("incorrect", "incorr", "inc", "i", "false", "0", "no", "n"):
+            return "Incorrect"
+        # prefix heuristics
+        if s.startswith("corr"):
+            return "Correct"
+        if s.startswith("inc") or s.startswith("wrong"):
+            return "Incorrect"
+        # fallback: keep as-is but title-cased
+        return s.title()
+
+    # Work on a copy to avoid mutating caller df
+    df = df_physio.copy()
+    df["_Response_norm"] = df["Response"].apply(_normalize_resp)
+
+    # Filter to rows with a normalized response (non-None)
+    valid_responses = df[df["_Response_norm"].notna()]
     if valid_responses.empty:
         return {}
 
-    # Detect response changes: mark where Response value changes from previous row
-    response_changes = valid_responses["Response"].ne(valid_responses["Response"].shift()).cumsum()
+    # Detect response changes: where normalized response value changes from previous row
+    response_changes = valid_responses["_Response_norm"].ne(valid_responses["_Response_norm"].shift()).cumsum()
 
-    # Group by response value and change index; take first timestamp of each group
+    # Group by normalized response value and change index; take first timestamp of each group
     response_ts_dict = {}
-    
-    for (resp_val, change_idx), group in valid_responses.groupby([valid_responses["Response"], response_changes]):
-        # Construct the label
+    for (resp_val, change_idx), group in valid_responses.groupby([valid_responses["_Response_norm"], response_changes]):
         label = f"Response_{resp_val}"
-        # Get the first timestamp of this response event
         ts = group.index[0]
-        
-        if label not in response_ts_dict:
-            response_ts_dict[label] = []
-        response_ts_dict[label].append(np.datetime64(ts))
+        response_ts_dict.setdefault(label, []).append(np.datetime64(ts))
 
     return response_ts_dict
 
