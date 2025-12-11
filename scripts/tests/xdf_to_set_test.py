@@ -1,11 +1,16 @@
-import pandas as pd
+import sys
 from pathlib import Path
+import pandas as pd
+
+# Add parent dir to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import ONLY the functions you want to test today
-from scripts.xdf_to_set.xdf_to_set import (
+from xdf_to_set.xdf_to_set import (
     load_and_merge,
     align_timestamps,
     extract_event_timestamps,
+    extract_response_timestamps,
     add_exposure_type_from_config,
     load_condition_config,
     build_eeg_event_list,
@@ -52,10 +57,24 @@ if __name__ == "__main__":
     for k, v in event_ts.items():
         print(f"{k:35s} {pd.to_datetime(v)}")
 
+    # --- 1b) Test extraction of response state transitions ---
+    response_ts = extract_response_timestamps(df_physio)
+
+    print("\n=== Extracted response state transition timestamps ===")
+    for k, v_list in response_ts.items():
+        print(f"{k:35s} {len(v_list)} transitions")
+        for i, ts in enumerate(v_list[:3]):  # show first 3
+            print(f"  [{i}] {pd.to_datetime(ts)}")
+        if len(v_list) > 3:
+            print(f"  ... ({len(v_list) - 3} more)")
+
     # --- 2) Test conversion to EEG event markers ---
+    # Merge both exposure and response events
+    merged_events = {**event_ts, **response_ts}
+
     event_list = build_eeg_event_list(
         eeg_dt_aligned=aligned,
-        event_ts_dict=event_ts,
+        event_ts_dict=merged_events,
         srate=srate,
         export_event_labels=export_labels
     )

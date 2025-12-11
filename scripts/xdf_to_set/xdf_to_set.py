@@ -743,8 +743,58 @@ def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64
     event_ts_dict = {label: np.datetime64(ts) for label, ts in first_ts.items()}
 
     return event_ts_dict
-  
 
+
+def extract_response_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64]:
+    """
+    Extract response timestamps (one per unique response event).
+    
+    For each row group with the same Response value (Correct/Incorrect),
+    extract only the FIRST timestamp of that response to avoid duplicate markers.
+
+    Parameters
+    ----------
+    df_physio : pd.DataFrame
+        Must contain:
+            - 'Response' column with values like 'Correct', 'Incorrect', or NaN
+            - datetime64 index (LSL_Timestamp)
+
+    Returns
+    -------
+    Dict[str, np.datetime64]
+        Mapping of response label ('Response_Correct' or 'Response_Incorrect')
+        → list of timestamps (one per unique response event).
+    """
+
+    # Safety check: ensure the index is datetime
+    if not np.issubdtype(df_physio.index.dtype, np.datetime64):
+        raise ValueError("df_physio index must be datetime64[ns].")
+
+    # Filter out rows with missing Response values
+    valid_responses = df_physio[df_physio["Response"].notna()]
+
+    if valid_responses.empty:
+        return {}
+
+    # Detect response changes: mark where Response value changes from previous row
+    response_changes = valid_responses["Response"].ne(valid_responses["Response"].shift()).cumsum()
+
+    # Group by response value and change index; take first timestamp of each group
+    response_ts_dict = {}
+    
+    for (resp_val, change_idx), group in valid_responses.groupby([valid_responses["Response"], response_changes]):
+        # Construct the label
+        label = f"Response_{resp_val}"
+        # Get the first timestamp of this response event
+        ts = group.index[0]
+        
+        if label not in response_ts_dict:
+            response_ts_dict[label] = []
+        response_ts_dict[label].append(np.datetime64(ts))
+
+    return response_ts_dict
+
+  
 def build_eeg_event_list(
         eeg_dt_aligned: np.ndarray,
         event_ts_dict: dict,
@@ -778,27 +828,31 @@ def build_eeg_event_list(
     eeg_start = eeg_dt_aligned[0]
     eeg_end   = eeg_dt_aligned[-1]
 
-    for exposure, onset_ts in event_ts_dict.items():
+    for exposure, onset_ts_or_list in event_ts_dict.items():
 
         # Skip if label has no mapped short code
         if exposure not in export_event_labels:
             continue
 
-        # EEG spans
-        if onset_ts < eeg_start or onset_ts > eeg_end:
-            if ignore_missing:
-                continue
-            else:
-                raise ValueError(f"Timestamp {onset_ts} for {exposure} is outside EEG span.")
+        # Handle both single timestamp and list of timestamps
+        timestamps = onset_ts_or_list if isinstance(onset_ts_or_list, list) else [onset_ts_or_list]
 
-        # Convert timestamp → sample index
-        delta_sec = (onset_ts - eeg_start) / np.timedelta64(1, "s")
-        sample_idx = int(round(delta_sec * srate))
+        for onset_ts in timestamps:
+            # Check EEG spans
+            if onset_ts < eeg_start or onset_ts > eeg_end:
+                if ignore_missing:
+                    continue
+                else:
+                    raise ValueError(f"Timestamp {onset_ts} for {exposure} is outside EEG span.")
 
-        events.append({
-            "latency": sample_idx,
-            "type": export_event_labels[exposure]
-        })
+            # Convert timestamp → sample index
+            delta_sec = (onset_ts - eeg_start) / np.timedelta64(1, "s")
+            sample_idx = int(round(delta_sec * srate))
+
+            events.append({
+                "latency": sample_idx,
+                "type": export_event_labels[exposure]
+            })
 
     # Sort by sample index
     events.sort(key=lambda e: e["latency"])
@@ -943,13 +997,17 @@ def xdf_to_set(
     # 5) Align timestamps (produce datetime64 array aligned to physio)
     aligned = align_timestamps(df_physio, eeg_data, eeg_ts, srate)
 
-    # 6) Extract per-condition first timestamps
+    # 6) Extract per-condition first timestamps and response state transitions
     event_ts = extract_event_timestamps(df_physio)
+    response_ts = extract_response_timestamps(df_physio)
+
+    # Merge exposure and response events
+    merged_events = {**event_ts, **response_ts}
 
     # 7) Convert to EEG event markers (latencies)
     event_list = build_eeg_event_list(
         eeg_dt_aligned=aligned,
-        event_ts_dict=event_ts,
+        event_ts_dict=merged_events,
         srate=srate,
         export_event_labels=export_labels,
     )

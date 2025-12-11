@@ -214,6 +214,10 @@ export_event_labels:
   LowStress_HighCog2043_Task: 103
   LowStress_LowCog_Task: 104
 
+  # Task responses (one per true response event)
+  Response_Correct: 200
+  Response_Incorrect: 201
+
 # ============================================================
 # NOTES & FUTURE CLEANUP
 # ============================================================
