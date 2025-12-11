@@ -684,10 +684,11 @@ def align_timestamps(df_physio: pd.DataFrame,
         EEG timestamps aligned to physio's datetime reference frame.
     """
 
-    # --- 1) Convert physio timestamps to datetime and set index ---
-    df_physio["LSL_Timestamp"] = pd.to_datetime(df_physio["LSL_Timestamp"], unit="s", origin="unix")
-    df_physio = df_physio.set_index("LSL_Timestamp")
+    if not np.issubdtype(df_physio.index.dtype, np.datetime64):
+        raise ValueError("df_physio index must be datetime64[ns].")
+
     physio_first = df_physio.index[0]
+
 
     # --- 2) Convert EEG first timestamp to datetime ---
     eeg_first_dt = pd.to_datetime(eeg_ts[0], unit="s", origin="unix")
