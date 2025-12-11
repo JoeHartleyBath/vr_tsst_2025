@@ -595,6 +595,71 @@ def add_exposure_type(df_physio: pd.DataFrame, exposure_labels: list[str]) -> pd
 
     return df_physio
 
+
+def add_exposure_type_from_config(
+    df_physio: pd.DataFrame,
+    config_path: Path = Path("config/conditions.yaml")
+) -> pd.DataFrame:
+    """
+    Assigns experimental condition labels to each physio-row based on
+    filter definitions loaded from a YAML config file.
+
+    Parameters
+    ----------
+    df_physio : pandas.DataFrame
+        Input dataframe containing study-phase annotations.
+    config_path : Path, optional
+        Path to conditions.yaml containing the `conditions` section.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The input dataframe with an additional column `exposure_type`
+        representing the assigned condition label for each row.
+    """
+
+    # Load conditions from config
+    config_path = Path(config_path)
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    conditions_dict = config.get("conditions", {})
+
+    if not conditions_dict:
+        raise ValueError(f"No 'conditions' section found in {config_path}")
+
+    # Build boolean masks from filter definitions
+    condition_masks = []
+    label_order = []
+
+    for label, filters in conditions_dict.items():
+        # Start with all True
+        mask = pd.Series([True] * len(df_physio), index=df_physio.index)
+
+        # AND together all filters for this condition
+        for col, value in filters.items():
+            if col not in df_physio.columns:
+                raise ValueError(f"Column '{col}' not found in physio dataframe.")
+
+            if isinstance(value, list):
+                # Multiple allowed values: check membership
+                mask &= df_physio[col].isin(value)
+            else:
+                # Single value: check equality
+                mask &= (df_physio[col] == value)
+
+        condition_masks.append(mask)
+        label_order.append(label)
+
+    # Assign exposure_type using np.select
+    df_physio["exposure_type"] = np.select(
+        condition_masks,
+        label_order,
+        default="no exposure"
+    )
+
+    return df_physio
+
 def align_timestamps(df_physio: pd.DataFrame,
                      eeg_data: np.ndarray,
                      eeg_ts: np.ndarray,
@@ -871,7 +936,7 @@ def xdf_to_set(
     export_labels = cfg.get("export_event_labels")
 
     # 4) Assign exposure types and prepare datetime index
-    df_physio = add_exposure_type(df_physio, exposure_labels)
+    df_physio = add_exposure_type_from_config(df_physio, Path(config_path))
     df_physio["LSL_Timestamp"] = pd.to_datetime(df_physio["LSL_Timestamp"], unit="s", origin="unix")
     df_physio = df_physio.set_index("LSL_Timestamp")
 
