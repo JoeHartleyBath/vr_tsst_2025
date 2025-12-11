@@ -522,7 +522,7 @@ def align_timestamps(df_physio: pd.DataFrame,
         EEG timestamps aligned to physio's datetime reference frame.
     """
 
-    # --- 1) Convert physio timestamps to datetime and set index (legacy behaviour) ---
+    # --- 1) Convert physio timestamps to datetime and set index ---
     df_physio["LSL_Timestamp"] = pd.to_datetime(df_physio["LSL_Timestamp"], unit="s", origin="unix")
     df_physio = df_physio.set_index("LSL_Timestamp")
     physio_first = df_physio.index[0]
@@ -546,7 +546,38 @@ def align_timestamps(df_physio: pd.DataFrame,
 
 
 
+def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64]:
+    """
+    Extract the FIRST onset timestamp for each exposure_type.
 
+    Parameters
+    ----------
+    df_physio : pd.DataFrame
+        Must contain:
+            - 'exposure_type' column with condition labels
+            - datetime64 index (LSL_Timestamp)
+
+    Returns
+    -------
+    Dict[str, np.datetime64]
+        Mapping of exposure label → first timestamp where it appears.
+    """
+
+    # Safety check: ensure the index is datetime
+    if not np.issubdtype(df_physio.index.dtype, np.datetime64):
+        raise ValueError("df_physio index must be datetime64[ns].")
+
+    # Remove rows with missing exposure labels
+    valid = df_physio[df_physio["exposure_type"] != "no exposure"]
+
+    # Group by exposure_type and take the FIRST timestamp for each
+    first_ts = valid.groupby("exposure_type").apply(lambda x: x.index[0])
+
+    # Convert to Python dict of numpy.datetime64
+    event_ts_dict = {label: np.datetime64(ts) for label, ts in first_ts.items()}
+
+    return event_ts_dict
+  
 
 def extract_event_timestamps(df_phsyio: pd.DataFrame) -> Dict[str, List[float]]:
     """Extract condition onset timestamps from df_phsyio.
