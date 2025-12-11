@@ -54,27 +54,26 @@ exposure_labels:
 
 export_event_labels:
   #  Post-condition fixation
-  - Pre_Exposure_Blank_Fixation_Cross: 10
-  - Pre_Exposure_Room_Fixation_Cross: 11
+  Pre_Exposure_Blank_Fixation_Cross: 10
+  Pre_Exposure_Room_Fixation_Cross: 11
 
-    # Post-condition fixation
-  - Post_Exposure_Blank_Fixation_Cross: 12
-  - Post_Exposure_Room_Fixation_Cross: 13
+  # Post-condition fixation
+  Post_Exposure_Blank_Fixation_Cross: 12
+  Post_Exposure_Room_Fixation_Cross: 13
 
   # Forest scenes (used as pre-condition baseline)
-  - Forest1: 20
-  - Forest2: 21
-  - Forest3: 23
-  - Forest4: 24
-
+  Forest1: 20
+  Forest2: 21
+  Forest3: 23
+  Forest4: 24
 
   # Core task onsets (actual experimental conditions)
-  - HighStress_HighCog1022_Task: 101
-  - HighStress_HighCog2043_Task: 101
-  - HighStress_LowCog_Task: 102
-  - LowStress_HighCog1022_Task: 103
-  - HighStress_HighCog2043_Task: 103
-  - LowStress_LowCog_Task: 104
+  HighStress_HighCog1022_Task: 101
+  HighStress_HighCog2043_Task: 101
+  HighStress_LowCog_Task: 102
+  LowStress_HighCog1022_Task: 103
+  LowStress_HighCog2043_Task: 103
+  LowStress_LowCog_Task: 104
 
 # ============================================================
 # NOTES & FUTURE CLEANUP
