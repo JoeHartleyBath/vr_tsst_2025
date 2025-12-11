@@ -745,75 +745,36 @@ def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64
     return event_ts_dict
 
 
-def extract_response_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64]:
+def extract_response_timestamps(df_physio: pd.DataFrame) -> Dict[str, List[np.datetime64]]:
     """
-    Extract response timestamps (one per unique response event).
-    
-    For each row group with the same Response value (Correct/Incorrect),
-    extract only the FIRST timestamp of that response to avoid duplicate markers.
+    Extract first timestamps for each contiguous block of Correct/Incorrect responses.
 
-    Parameters
-    ----------
-    df_physio : pd.DataFrame
-        Must contain:
-            - 'Response' column with values like 'Correct', 'Incorrect', or NaN
-            - datetime64 index (LSL_Timestamp)
-
-    Returns
-    -------
-    Dict[str, np.datetime64]
-        Mapping of response label ('Response_Correct' or 'Response_Incorrect')
-        → list of timestamps (one per unique response event).
+    Assumptions:
+    - df_physio index is datetime64[ns]
+    - 'Response' contains exactly: 'Correct', 'Incorrect', or NaN
     """
 
-    # Safety check: ensure the index is datetime
-    if not np.issubdtype(df_physio.index.dtype, np.datetime64):
-        raise ValueError("df_physio index must be datetime64[ns].")
-
-    # If there's no Response column, return empty
     if "Response" not in df_physio.columns:
         return {}
 
-    # Normalize common response variants (strip, lowercase, map synonyms/prefixes)
-    def _normalize_resp(val):
-        if pd.isna(val):
-            return None
-        s = str(val).strip().lower()
-        if s == "":
-            return None
-        # explicit matches
-        if s in ("correct", "corr", "c", "true", "1", "yes", "y"):
-            return "Correct"
-        if s in ("incorrect", "incorr", "inc", "i", "false", "0", "no", "n"):
-            return "Incorrect"
-        # prefix heuristics
-        if s.startswith("corr"):
-            return "Correct"
-        if s.startswith("inc") or s.startswith("wrong"):
-            return "Incorrect"
-        # fallback: keep as-is but title-cased
-        return s.title()
-
-    # Work on a copy to avoid mutating caller df
-    df = df_physio.copy()
-    df["_Response_norm"] = df["Response"].apply(_normalize_resp)
-
-    # Filter to rows with a normalized response (non-None)
-    valid_responses = df[df["_Response_norm"].notna()]
-    if valid_responses.empty:
+    # Keep only rows where Response is not null
+    df = df_physio[df_physio["Response"].notna()]
+    if df.empty:
         return {}
 
-    # Detect response changes: where normalized response value changes from previous row
-    response_changes = valid_responses["_Response_norm"].ne(valid_responses["_Response_norm"].shift()).cumsum()
+    # Identify points where response changes (block boundaries)
+    change_ids = df["Response"].ne(df["Response"].shift()).cumsum()
 
-    # Group by normalized response value and change index; take first timestamp of each group
-    response_ts_dict = {}
-    for (resp_val, change_idx), group in valid_responses.groupby([valid_responses["_Response_norm"], response_changes]):
+    response_ts_dict: Dict[str, List[np.datetime64]] = {}
+
+    # Group by (response_value, block_number) → first timestamp in each block
+    for (resp_val, block_id), group in df.groupby([df["Response"], change_ids]):
         label = f"Response_{resp_val}"
-        ts = group.index[0]
-        response_ts_dict.setdefault(label, []).append(np.datetime64(ts))
+        ts = np.datetime64(group.index[0])
+        response_ts_dict.setdefault(label, []).append(ts)
 
     return response_ts_dict
+
 
   
 def build_eeg_event_list(
