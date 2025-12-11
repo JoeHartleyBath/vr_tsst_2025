@@ -332,6 +332,103 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     return EEG
 
 
+def add_events_to_eeg_struct(EEG: dict, events: list) -> dict:
+    """
+    Attach EEGLAB-style `event` and `urevent` structures to the EEG dict.
+
+    Parameters
+    ----------
+    EEG : dict
+        EEG structure produced by `build_eeglab_struct`.
+    events : list of dict
+        Each event should be {'latency': int, 'type': <code>} where
+        `latency` is a zero-based sample index (as produced by
+        `build_eeg_event_list`).
+
+    Returns
+    -------
+    EEG : dict
+        EEG with added `event` and `urevent` fields compatible with
+        MATLAB/EEGLAB conventions (latency is 1-based integer).
+    """
+
+    # Defensive copy (don't mutate caller's dict unexpectedly)
+    EEG = dict(EEG)
+
+    ev_list = []
+    urevent_list = []
+
+    for i, ev in enumerate(events, start=1):
+        # Convert latency to 1-based sample index for EEGLAB
+        latency_1b = int(ev["latency"]) + 1
+
+        # EEGLAB stores type as a string or numeric; use numeric where possible
+        ev_type = ev.get("type")
+
+        event_struct = {
+            "latency": latency_1b,
+            "type": ev_type,
+            "duration": 0,
+        }
+
+        # urevent typically mirrors event with an index to the original event
+        urevent_struct = {
+            "latency": latency_1b,
+            "type": ev_type,
+        }
+
+        ev_list.append(event_struct)
+        urevent_list.append(urevent_struct)
+
+    EEG["event"] = ev_list
+    EEG["urevent"] = urevent_list
+
+    return EEG
+
+
+def save_set(eeg_struct, output_path: Path):
+    """Save the .set file to disk."""
+    # Ensure parent exists
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        from scipy.io import savemat
+    except Exception as e:
+        raise ImportError(
+            "Saving EEGLAB .set/.mat requires scipy. Install with `pip install scipy`."
+        ) from e
+
+    # MATLABs/EEGLAB expects a struct named `EEG` in the .mat file.
+    # `savemat` will convert nested Python dicts/lists into MATLAB structs/arrays
+    # where possible. We keep the structure simple and numeric where feasible.
+    mat_dict = {"EEG": eeg_struct}
+
+    # Write to .set (MATFILE). Many EEGLAB users use .set files backed by a
+    # MATLAB .mat; here we write a .set file that is actually a .mat container.
+    # Use the provided extension if present; otherwise default to .set
+    if output_path.suffix == "":
+        output_path = output_path.with_suffix(".set")
+
+    savemat(str(output_path), mat_dict, do_compression=True)
+
+    return output_path
+    chanlocs = [{"labels": name} for name in channel_names]
+
+
+    EEG = {
+        "data": data_ch_by_time,
+        "srate": srate,
+        "nbchan": nbchan,
+        "pnts": pnts,
+        "trials": 1,          # continuous data
+        "times": times,       # (pnts,) in ms
+        "chanlocs": chanlocs,
+    }
+
+    return EEG
+
+
 def add_exposure_type(df_physio: pd.DataFrame, exposure_labels: list[str]) -> pd.DataFrame:
     """
     Assigns experimental condition labels to each physio-row based on predefined boolean
@@ -646,20 +743,165 @@ def build_eeg_event_list(
 
 def save_set(eeg_struct, output_path: Path):
     """Save the .set file to disk."""
-    pass
+    # Ensure parent exists
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        from scipy.io import savemat
+    except Exception as e:
+        raise ImportError(
+            "Saving EEGLAB .set/.mat requires scipy. Install with `pip install scipy`."
+        ) from e
+
+    # MATLABs/EEGLAB expects a struct named `EEG` in the .mat file.
+    # `savemat` will convert nested Python dicts/lists into MATLAB structs/arrays
+    # where possible. We keep the structure simple and numeric where feasible.
+    mat_dict = {"EEG": eeg_struct}
+
+    # Write to .set (MATFILE). Many EEGLAB users use .set files backed by a
+    # MATLAB .mat; here we write a .set file that is actually a .mat container.
+    # Use the provided extension if present; otherwise default to .set
+    if output_path.suffix == "":
+        output_path = output_path.with_suffix(".set")
+
+    savemat(str(output_path), mat_dict, do_compression=True)
+
+    return output_path
 
 
-def xdf_to_set(xdf_path: Path, output_path: Path) -> Dict:
-    """High-level pipeline:
-    
-    1. Load XDF
-    2. Extract EEG
-    3. Extract event timestamps
-    4. Convert timestamps → latencies
-    5. Construct EEGLAB struct
-    6. Save .set
-    
-    Returns:
-        Summary dict with timings, event counts, etc.
+def add_events_to_eeg_struct(EEG: dict, events: list) -> dict:
     """
-    pass
+    Attach EEGLAB-style `event` and `urevent` structures to the EEG dict.
+
+    Parameters
+    ----------
+    EEG : dict
+        EEG structure produced by `build_eeglab_struct`.
+    events : list of dict
+        Each event should be {'latency': int, 'type': <code>} where
+        `latency` is a zero-based sample index (as produced by
+        `build_eeg_event_list`).
+
+    Returns
+    -------
+    EEG : dict
+        EEG with added `event` and `urevent` fields compatible with
+        MATLAB/EEGLAB conventions (latency is 1-based integer).
+    """
+
+    # Defensive copy (don't mutate caller's dict unexpectedly)
+    EEG = dict(EEG)
+
+    ev_list = []
+    urevent_list = []
+
+    for i, ev in enumerate(events, start=1):
+        # Convert latency to 1-based sample index for EEGLAB
+        latency_1b = int(ev["latency"]) + 1
+
+        # EEGLAB stores type as a string or numeric; use numeric where possible
+        ev_type = ev.get("type")
+
+        event_struct = {
+            "latency": latency_1b,
+            "type": ev_type,
+            "duration": 0,
+        }
+
+        # urevent typically mirrors event with an index to the original event
+        urevent_struct = {
+            "latency": latency_1b,
+            "type": ev_type,
+        }
+
+        ev_list.append(event_struct)
+        urevent_list.append(urevent_struct)
+
+    EEG["event"] = ev_list
+    EEG["urevent"] = urevent_list
+
+    return EEG
+
+
+def xdf_to_set(
+    xdf_path: Path,
+    output_path: Path,
+    physio_path: Path | None = None,
+    config_path: Path = Path("config/conditions.yaml"),
+) -> Dict:
+    """High-level pipeline that converts an XDF to an EEGLAB .set (MAT) file.
+
+    Steps:
+      - load and merge EEG streams
+      - load physio metadata and assign exposure labels
+      - align timestamps and extract first-onset timestamps
+      - convert timestamps into event latencies
+      - build EEGLAB struct and attach events
+      - save .set/.mat to disk
+
+    Returns a summary dict with keys: `path`, `n_events`, `nbchan`, `pnts`, `srate`.
+    """
+
+    xdf_path = Path(xdf_path)
+    output_path = Path(output_path)
+
+    # 1) Load/merge EEG streams
+    merged = load_and_merge(xdf_path)
+
+    eeg_ts = merged["timestamps"]
+    eeg_data = merged["data"]
+    srate = merged["srate"]
+
+    # 2) Resolve physio CSV path if not provided (assumes sibling metadata folder)
+    if physio_path is None:
+        physio_candidate = Path("data/raw/metadata") / f"{xdf_path.stem}.csv"
+        if physio_candidate.exists():
+            physio_path = physio_candidate
+        else:
+            raise FileNotFoundError(
+                f"Physio metadata not provided and could not find {physio_candidate}"
+            )
+
+    # 3) Load physio and condition config
+    df_physio = pd.read_csv(physio_path, low_memory=False)
+    cfg = load_condition_config(Path(config_path))
+
+    exposure_labels = cfg.get("exposure_labels")
+    export_labels = cfg.get("export_event_labels")
+
+    # 4) Assign exposure types and prepare datetime index
+    df_physio = add_exposure_type(df_physio, exposure_labels)
+    df_physio["LSL_Timestamp"] = pd.to_datetime(df_physio["LSL_Timestamp"], unit="s", origin="unix")
+    df_physio = df_physio.set_index("LSL_Timestamp")
+
+    # 5) Align timestamps (produce datetime64 array aligned to physio)
+    aligned = align_timestamps(df_physio, eeg_data, eeg_ts, srate)
+
+    # 6) Extract per-condition first timestamps
+    event_ts = extract_event_timestamps(df_physio)
+
+    # 7) Convert to EEG event markers (latencies)
+    event_list = build_eeg_event_list(
+        eeg_dt_aligned=aligned,
+        event_ts_dict=event_ts,
+        srate=srate,
+        export_event_labels=export_labels,
+    )
+
+    # 8) Build EEGLAB struct and attach events
+    EEG = build_eeglab_struct(merged)
+    EEG = add_events_to_eeg_struct(EEG, event_list)
+
+    # 9) Save to disk
+    saved = save_set(EEG, output_path)
+
+    summary = {
+        "path": str(saved),
+        "n_events": len(event_list),
+        "nbchan": EEG.get("nbchan"),
+        "pnts": EEG.get("pnts"),
+        "srate": EEG.get("srate"),
+    }
+
+    return summary
