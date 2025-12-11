@@ -10,7 +10,7 @@ from xdf_to_set.xdf_to_set import xdf_to_set
 print("Running xdf_to_set pipeline on P01...")
 result = xdf_to_set(
     Path("data/raw/eeg/P01.xdf"),
-    Path("output/processed/P01_with_responses.set"),
+    Path("output/processed/P01.set"),
     Path("data/raw/metadata/P01.csv"),
     Path("config/conditions.yaml")
 )
