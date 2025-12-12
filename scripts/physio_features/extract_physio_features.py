@@ -31,12 +31,14 @@ from private.load_data import (
     validate_loaded_data
 )
 
-# TODO: Import additional modules after creating them
-# from private.clean_hr_data import clean_hr_pipeline
-# from private.clean_gsr_data import clean_gsr_pipeline, resample_gsr_to_10hz
-# from private.clean_eye_data import clean_eye_pipeline
-# from private.extract_features import extract_all_features
-# from private.merge_with_eeg import merge_physio_with_eeg
+# Import cleaning modules
+from private.clean_hr_data import clean_hr_pipeline
+from private.clean_gsr_data import clean_gsr_pipeline, resample_gsr_to_10hz
+from private.clean_eye_data import clean_eye_pipeline
+
+# Import feature extraction and merge modules
+from private.extract_features import extract_all_features
+from private.merge_with_eeg import merge_physio_with_eeg, validate_merged_data
 
 
 def setup_logging():
@@ -63,6 +65,33 @@ def setup_logging():
     
     logging.info(f"Logging to: {log_filename}")
     return log_filename
+
+
+def setup_qc_loggers(config, participants):
+    """Create QC loggers for each participant."""
+    qc_loggers = {}
+    
+    physio_qc_path = config['paths'].get('physio_qc', 'output/qc/physio')
+    os.makedirs(physio_qc_path, exist_ok=True)
+    
+    for participant_id in participants:
+        qc_log_path = os.path.join(physio_qc_path, f'P{participant_id:02d}_qc.txt')
+        
+        logger = logging.getLogger(f'qc_logger_{participant_id}')
+        logger.setLevel(logging.INFO)
+        
+        # Avoid duplicate handlers
+        if not logger.handlers:
+            handler = logging.FileHandler(qc_log_path, mode='a')
+            formatter = logging.Formatter('%(asctime)s - %(message)s')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.propagate = False
+        
+        qc_loggers[participant_id] = logger
+    
+    logging.info(f"✅ Created QC loggers for {len(participants)} participants")
+    return qc_loggers
 
 
 def parse_arguments():
@@ -157,24 +186,27 @@ def main():
         if not validation['valid']:
             raise ValueError("Data validation failed. Check log for details.")
         
+        # Setup QC loggers for signal cleaning
+        logging.info("Setting up QC loggers...")
+        qc_loggers = setup_qc_loggers(config, participants)
+        
         # STEP 2: Signal cleaning
         if not args.skip_cleaning:
             logging.info("STEP 2: Cleaning physiological signals...")
             
             logging.info("  - Cleaning heart rate data...")
-            # TODO: Implement clean_hr_pipeline()
-            # phys_data_cleaned = clean_hr_pipeline(phys_data_raw, participants)
-            phys_data_cleaned = phys_data_raw  # Placeholder
+            phys_data_cleaned = clean_hr_pipeline(phys_data_raw, qc_loggers)
             
             logging.info("  - Resampling and cleaning GSR data...")
-            # TODO: Implement resample_gsr_to_10hz() and clean_gsr_pipeline()
-            # gsr_resampled = resample_gsr_to_10hz(phys_data_raw, participants)
-            # gsr_cleaned = clean_gsr_pipeline(gsr_resampled, participants)
-            gsr_cleaned = phys_data_raw  # Placeholder
+            gsr_resampled = resample_gsr_to_10hz(
+                phys_data_raw,
+                gsr_cols=['Shimmer_D36A_GSR_Skin_Conductance_uS',
+                         'Shimmer_D36A_GSR_Skin_Resistance_kOhms']
+            )
+            gsr_cleaned = clean_gsr_pipeline(gsr_resampled, qc_loggers)
             
             logging.info("  - Cleaning eye tracking data...")
-            # TODO: Implement clean_eye_pipeline()
-            # phys_data_cleaned = clean_eye_pipeline(phys_data_cleaned, participants)
+            phys_data_cleaned = clean_eye_pipeline(phys_data_cleaned, qc_loggers)
         else:
             logging.warning("Skipping signal cleaning (--skip-cleaning flag set)")
             phys_data_cleaned = phys_data_raw
@@ -182,25 +214,27 @@ def main():
         
         # STEP 3: Feature extraction
         logging.info("STEP 3: Extracting physiological features...")
-        # TODO: Implement extract_all_features()
-        # physio_features = extract_all_features(
-        #     phys_data_cleaned, 
-        #     gsr_cleaned,
-        #     eeg_data,
-        #     participants,
-        #     parallel=args.parallel
-        # )
-        physio_features = eeg_data  # Placeholder
+        physio_features = extract_all_features(
+            phys_data_cleaned, 
+            gsr_cleaned,
+            eeg_data,
+            participants,
+            parallel=args.parallel
+        )
         
         # STEP 4: Merge with EEG and subjective data
         logging.info("STEP 4: Merging physio features with EEG and subjective data...")
-        # TODO: Implement merge_physio_with_eeg()
-        # final_data = merge_physio_with_eeg(
-        #     physio_features,
-        #     eeg_data,
-        #     subjective_data
-        # )
-        final_data = eeg_data  # Placeholder
+        final_data = merge_physio_with_eeg(
+            physio_features,
+            eeg_data,
+            subjective_data
+        )
+        
+        # Validate final merged data
+        logging.info("Validating final merged dataset...")
+        merge_validation = validate_merged_data(final_data)
+        if not merge_validation['valid']:
+            logging.warning("Merged data validation found issues - check warnings above")
         
         # STEP 5: Export
         logging.info(f"STEP 5: Exporting final dataset to {args.output}...")
