@@ -1,0 +1,17 @@
+2025-12-12 10:51:24,709 - INFO - Logging to: logs\physio_extraction_2025-12-12_10-51-24.log
+2025-12-12 10:51:24,709 - INFO - Starting physiological feature extraction pipeline
+2025-12-12 10:51:24,710 - INFO - Arguments: Namespace(participants=[1, 2, 3], parallel=False, output='output/aggregated/all_data_aggregated.csv', force_reprocess=False, skip_cleaning=True)
+2025-12-12 10:51:24,710 - INFO - Processing specific participants: [1, 2, 3]
+2025-12-12 10:51:24,710 - INFO - STEP 0: Loading configuration...
+2025-12-12 10:51:24,736 - INFO - Loaded config from C:\phd_projects\vr_tsst_2025\config\general.yaml
+2025-12-12 10:51:24,736 - INFO - STEP 1: Loading raw physiological data...
+2025-12-12 10:51:24,737 - ERROR - Pipeline failed with error: [WinError 3] The system cannot find the path specified: 'E:\\PhD_Projects\\TSST_Stress_Workload_Pipeline\\data\\physio_cache'
+Traceback (most recent call last):
+  File "C:\phd_projects\vr_tsst_2025\scripts\physio_features\extract_physio_features.py", line 139, in main
+    phys_data_raw = load_raw_physio_data(
+                    ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\phd_projects\vr_tsst_2025\scripts\physio_features\private\load_data.py", line 120, in load_raw_physio_data
+    cache_dir.mkdir(exist_ok=True)
+  File "C:\Users\Joe\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1311, in mkdir
+    os.mkdir(self, mode)
+FileNotFoundError: [WinError 3] The system cannot find the path specified: 'E:\\PhD_Projects\\TSST_Stress_Workload_Pipeline\\data\\physio_cache'

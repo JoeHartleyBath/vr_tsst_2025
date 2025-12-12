@@ -22,8 +22,16 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 
-# TODO: Import helper modules after creating them
-# from private.load_data import load_physio_data, load_eeg_data, load_subjective_data
+# Import helper modules
+from private.load_data import (
+    load_config,
+    load_raw_physio_data,
+    load_eeg_features,
+    load_subjective_ratings,
+    validate_loaded_data
+)
+
+# TODO: Import additional modules after creating them
 # from private.clean_hr_data import clean_hr_pipeline
 # from private.clean_gsr_data import clean_gsr_pipeline, resample_gsr_to_10hz
 # from private.clean_eye_data import clean_eye_pipeline
@@ -121,18 +129,33 @@ def main():
         logging.info("Processing all 48 participants")
     
     try:
+        # STEP 0: Load configuration
+        logging.info("STEP 0: Loading configuration...")
+        config = load_config()
+        data_path = config["paths"]["raw_data"]
+        
         # STEP 1: Load data
         logging.info("STEP 1: Loading raw physiological data...")
-        # TODO: Implement load_physio_data()
-        # phys_data_raw = load_physio_data(force_reload=args.force_reprocess)
+        phys_data_raw = load_raw_physio_data(
+            data_path,
+            filename_filter='_RAW_DATA_',
+            force_reload=args.force_reprocess
+        )
+        logging.info(f"  Loaded {len(phys_data_raw)} physio rows")
         
         logging.info("Loading EEG features...")
-        # TODO: Implement load_eeg_data()
-        # eeg_data = load_eeg_data()
+        eeg_data = load_eeg_features(config, force_reload=args.force_reprocess)
+        logging.info(f"  Loaded {len(eeg_data)} EEG rows")
         
         logging.info("Loading subjective ratings...")
-        # TODO: Implement load_subjective_data()
-        # subjective_data = load_subjective_data()
+        subjective_data = load_subjective_ratings(config, force_reload=args.force_reprocess)
+        logging.info(f"  Loaded {len(subjective_data)} subjective rows")
+        
+        # Validate loaded data
+        logging.info("Validating loaded datasets...")
+        validation = validate_loaded_data(phys_data_raw, eeg_data, subjective_data)
+        if not validation['valid']:
+            raise ValueError("Data validation failed. Check log for details.")
         
         # STEP 2: Signal cleaning
         if not args.skip_cleaning:
@@ -141,18 +164,21 @@ def main():
             logging.info("  - Cleaning heart rate data...")
             # TODO: Implement clean_hr_pipeline()
             # phys_data_cleaned = clean_hr_pipeline(phys_data_raw, participants)
+            phys_data_cleaned = phys_data_raw  # Placeholder
             
             logging.info("  - Resampling and cleaning GSR data...")
             # TODO: Implement resample_gsr_to_10hz() and clean_gsr_pipeline()
             # gsr_resampled = resample_gsr_to_10hz(phys_data_raw, participants)
             # gsr_cleaned = clean_gsr_pipeline(gsr_resampled, participants)
+            gsr_cleaned = phys_data_raw  # Placeholder
             
             logging.info("  - Cleaning eye tracking data...")
             # TODO: Implement clean_eye_pipeline()
             # phys_data_cleaned = clean_eye_pipeline(phys_data_cleaned, participants)
         else:
             logging.warning("Skipping signal cleaning (--skip-cleaning flag set)")
-            # phys_data_cleaned = phys_data_raw
+            phys_data_cleaned = phys_data_raw
+            gsr_cleaned = phys_data_raw
         
         # STEP 3: Feature extraction
         logging.info("STEP 3: Extracting physiological features...")
@@ -164,6 +190,7 @@ def main():
         #     participants,
         #     parallel=args.parallel
         # )
+        physio_features = eeg_data  # Placeholder
         
         # STEP 4: Merge with EEG and subjective data
         logging.info("STEP 4: Merging physio features with EEG and subjective data...")
@@ -173,12 +200,12 @@ def main():
         #     eeg_data,
         #     subjective_data
         # )
+        final_data = eeg_data  # Placeholder
         
         # STEP 5: Export
         logging.info(f"STEP 5: Exporting final dataset to {args.output}...")
-        # TODO: Save final_data
-        # os.makedirs(os.path.dirname(args.output), exist_ok=True)
-        # final_data.to_csv(args.output, index=False)
+        os.makedirs(os.path.dirname(args.output), exist_ok=True)
+        final_data.to_csv(args.output, index=False)
         
         logging.info("=" * 80)
         logging.info("✅ Physiological feature extraction completed successfully!")
