@@ -89,7 +89,7 @@ def create_minimal_test_set():
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     mat_dict = {"EEG": EEG}
-    savemat(str(output_path), mat_dict, do_compression=True)
+    savemat(str(output_path), mat_dict, do_compression=True, oned_as='column')
     
     print(f"\n✓ Saved to: {output_path}")
     print(f"  File size: {output_path.stat().st_size:,} bytes")
