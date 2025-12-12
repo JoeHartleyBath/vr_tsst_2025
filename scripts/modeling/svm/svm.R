@@ -253,7 +253,7 @@ nested_loso <- function(df, target, progress_file) {
 # =====================================================================
 # 6. Parallel execution per target
 # =====================================================================
-cores <- min(16L, parallel::detectCores() - 1)
+cores <- min(14L, parallel::detectCores() - 2)  # CHANGED: Use 14 cores (leave 2 for system)
 cl <- makeCluster(cores)
 registerDoParallel(cl)
 

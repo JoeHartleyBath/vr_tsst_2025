@@ -281,7 +281,7 @@ toolbox_paths:
 # Parallel processing configuration
 parallel:
   enabled: true
-  num_workers: 8
+  num_workers: 12  # CHANGED: Use 12 workers (leave 4 threads for system)
 
 # Output configuration
 output:

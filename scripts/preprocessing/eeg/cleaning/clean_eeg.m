@@ -219,7 +219,7 @@ function [EEG, LL_trace] = run_amica_pipeline(EEG, participant_num, logfile)
     
     num_models   = 1;
     numprocs     = 1;
-    max_threads  = 4;
+    max_threads  = 8;        % CHANGED: Use 8 threads (Ryzen 7 5700X)
     max_iter     = 400;
     writeStep    = 10;
     
