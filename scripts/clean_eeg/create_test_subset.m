@@ -5,11 +5,14 @@
 fprintf('Creating test subset from P01.set\n');
 fprintf('==================================\n\n');
 
+% Navigate to project root
+cd('c:\phd_projects\vr_tsst_2025');
+
 % Add paths
 addpath('scripts/utils');
 
 % Load the full dataset
-input_file = 'output/processed/P01.set';
+input_file = fullfile('output', 'processed', 'P01.set');
 fprintf('Loading full dataset: %s\n', input_file);
 fprintf('This may take a minute...\n');
 
