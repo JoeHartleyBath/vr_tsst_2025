@@ -315,8 +315,12 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     if len(channel_names) != nbchan:
         raise ValueError(f"Expected {nbchan} channel names, found {len(channel_names)}")
 
-    # --- Chanlocs ---
-    chanlocs = [{"labels": name} for name in channel_names]
+    # --- Chanlocs as structured array for MATLAB compatibility ---
+    chanlocs_dtype = np.dtype([('labels', 'O')])
+    chanlocs = np.array(
+        [(name,) for name in channel_names],
+        dtype=chanlocs_dtype
+    )
 
     # --- Load EEGLAB template from config ---
     template_path = Path("config/eeglab_template.yaml")
@@ -365,7 +369,6 @@ def add_events_to_eeg_struct(EEG: dict, events: list) -> dict:
     EEG = dict(EEG)
 
     ev_list = []
-    urevent_list = []
 
     for i, ev in enumerate(events, start=1):
         # Convert latency to 1-based sample index for EEGLAB
@@ -380,17 +383,18 @@ def add_events_to_eeg_struct(EEG: dict, events: list) -> dict:
             "duration": 0,
         }
 
-        # urevent typically mirrors event with an index to the original event
-        urevent_struct = {
-            "latency": latency_1b,
-            "type": ev_type,
-        }
-
         ev_list.append(event_struct)
-        urevent_list.append(urevent_struct)
 
-    EEG["event"] = ev_list
-    EEG["urevent"] = urevent_list
+    # Convert to numpy structured array for MATLAB compatibility
+    if ev_list:
+        event_dtype = np.dtype([('latency', 'f8'), ('type', 'O'), ('duration', 'f8')])
+        event_array = np.array(
+            [(e['latency'], e['type'], e['duration']) for e in ev_list],
+            dtype=event_dtype
+        )
+        EEG["event"] = event_array
+    else:
+        EEG["event"] = np.array([], dtype=np.dtype([('latency', 'f8'), ('type', 'O'), ('duration', 'f8')]))
 
     return EEG
 
@@ -873,7 +877,13 @@ def save_set(eeg_struct, output_path: Path):
     if output_path.suffix == "":
         output_path = output_path.with_suffix(".set")
 
-    savemat(str(output_path), mat_dict, do_compression=True)
+    savemat(
+        str(output_path), 
+        mat_dict, 
+        do_compression=True,
+        oned_as='column',  # Ensure 1D arrays are column vectors
+        struct_as_record=True  # Preserve structured arrays
+    )
 
     return output_path
 
@@ -917,17 +927,18 @@ def add_events_to_eeg_struct(EEG: dict, events: list) -> dict:
             "duration": 0,
         }
 
-        # urevent typically mirrors event with an index to the original event
-        urevent_struct = {
-            "latency": latency_1b,
-            "type": ev_type,
-        }
-
         ev_list.append(event_struct)
-        urevent_list.append(urevent_struct)
 
-    EEG["event"] = ev_list
-    EEG["urevent"] = urevent_list
+    # Convert to numpy structured array for MATLAB compatibility
+    if ev_list:
+        event_dtype = np.dtype([('latency', 'f8'), ('type', 'O'), ('duration', 'f8')])
+        event_array = np.array(
+            [(e['latency'], e['type'], e['duration']) for e in ev_list],
+            dtype=event_dtype
+        )
+        EEG["event"] = event_array
+    else:
+        EEG["event"] = np.array([], dtype=np.dtype([('latency', 'f8'), ('type', 'O'), ('duration', 'f8')]))
 
     return EEG
 
