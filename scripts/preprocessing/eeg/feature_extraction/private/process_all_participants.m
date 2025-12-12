@@ -26,8 +26,7 @@ function process_all_participants(participants, temp_folder, config_feat, config
     
     % Get task conditions
     task_conditions = fieldnames(config_cond.conditions);
-    task_conditions = task_conditions(cellfun(@(c) config_cond.conditions.(c).include_in_analysis, ...
-                                              task_conditions));
+    % Note: All conditions from config are included
     
     % Get condition durations
     condition_durations = containers.Map();

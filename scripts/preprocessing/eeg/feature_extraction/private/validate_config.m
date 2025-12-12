@@ -1,8 +1,9 @@
-function validate_config(config_feat, config_cond, config_gen)
+function config_feat = validate_config(config_feat, config_cond, config_gen)
 % VALIDATE_CONFIG Validate loaded configuration files
 %
 % Checks that all required fields exist and have valid values.
 % Throws descriptive errors if validation fails.
+% Returns config_feat with converted cell arrays.
 
     fprintf('Validating configuration...\n');
     
@@ -24,11 +25,21 @@ function validate_config(config_feat, config_cond, config_gen)
     end
     for i = 1:length(band_names)
         band = bands.(band_names{i});
+        
+        % Handle cell array from yaml.ReadYaml (converts [4, 7.5] to {[4] [7.5]})
+        if iscell(band)
+            band = [band{:}];  % Convert {[4] [7.5]} to [4 7.5]
+        end
+        
         if ~isnumeric(band) || length(band) ~= 2 || band(1) >= band(2)
             error('Invalid frequency band definition: %s = %s', ...
                   band_names{i}, mat2str(band));
         end
+        
+        % Store back converted value
+        bands.(band_names{i}) = band;
     end
+    config_feat.frequency_bands = bands;  % Update config with converted values
     fprintf('  ✓ Frequency bands: %d defined\n', length(band_names));
     
     % Check regions
@@ -76,15 +87,8 @@ function validate_config(config_feat, config_cond, config_gen)
         error('No conditions defined in conditions.yaml');
     end
     
-    % Count included conditions
-    included = 0;
-    for i = 1:length(cond_names)
-        if config_cond.conditions.(cond_names{i}).include_in_analysis
-            included = included + 1;
-        end
-    end
-    fprintf('  ✓ Conditions: %d total, %d included in analysis\n', ...
-            length(cond_names), included);
+    % Just report condition count (include_in_analysis field doesn't exist in our YAML)
+    fprintf('  ✓ Conditions: %d defined\n', length(cond_names));
     
     % ===== General config =====
     if ~isfield(config_gen, 'paths')

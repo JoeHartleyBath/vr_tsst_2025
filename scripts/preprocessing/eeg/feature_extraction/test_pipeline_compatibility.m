@@ -21,7 +21,7 @@ function test_result = test_pipeline_compatibility()
     
     %% Test 1: Check if cleaned files exist
     fprintf('[Test 1] Checking for cleaned EEG files...\n');
-    config_gen = yaml.loadFile('config/general.yaml');
+    config_gen = yaml.ReadYaml('config/general.yaml');
     cleaned_folder = config_gen.paths.cleaned_eeg;
     
     if ~isfolder(cleaned_folder)

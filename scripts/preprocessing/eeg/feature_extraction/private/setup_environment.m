@@ -18,9 +18,9 @@ function [config_feat, config_cond, config_gen, output_folder, temp_folder, outp
     
     % ===== Load configurations =====
     fprintf('Loading configuration files...\n');
-    config_feat = yaml.loadFile(params.config_file);
-    config_cond = yaml.loadFile('config/conditions.yaml');
-    config_gen = yaml.loadFile('config/general.yaml');
+    config_feat = yaml.ReadYaml(params.config_file);
+    config_cond = yaml.ReadYaml('config/conditions.yaml');
+    config_gen = yaml.ReadYaml('config/general.yaml');
     fprintf('  ✓ Loaded 3 config files\n\n');
     
     % Override parallel settings from params if provided
@@ -32,7 +32,7 @@ function [config_feat, config_cond, config_gen, output_folder, temp_folder, outp
     end
     
     % ===== Validate configurations =====
-    validate_config(config_feat, config_cond, config_gen);
+    config_feat = validate_config(config_feat, config_cond, config_gen);
     
     % ===== Setup paths =====
     fprintf('Setting up paths...\n');
@@ -47,10 +47,18 @@ function [config_feat, config_cond, config_gen, output_folder, temp_folder, outp
     if ~isempty(params.output_folder)
         output_folder = params.output_folder;
     else
-        output_folder = fullfile(config_gen.paths.output, config_feat.output.folder);
+        % Use relative path if config path doesn't exist (cross-system compatibility)
+        config_output = fullfile(config_gen.paths.output, config_feat.output.folder);
+        if exist(fileparts(config_output), 'dir')
+            output_folder = config_output;
+        else
+            % Fallback to relative path from project root
+            output_folder = fullfile('output', config_feat.output.folder);
+            fprintf('  ⚠ Config path not found, using relative: %s\n', output_folder);
+        end
     end
     
-    % Create output folder
+    % Create output folder (with parents if needed)
     if ~exist(output_folder, 'dir')
         mkdir(output_folder);
         fprintf('  ✓ Created output folder: %s\n', output_folder);
