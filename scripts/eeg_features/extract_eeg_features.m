@@ -43,6 +43,14 @@ output_folder = fullfile(config_gen.paths.output, config_feat.output.folder);
 if ~exist(output_folder, 'dir'), mkdir(output_folder); end
 output_csv = fullfile(output_folder, config_feat.output.filename);
 
+% Temp folder for intermediate results (enables resume)
+temp_folder = fullfile(output_folder, 'temp');
+if ~exist(temp_folder, 'dir'), mkdir(temp_folder); end
+% Create log file for progress tracking
+log_file = fullfile(output_folder, sprintf('extraction_log_%s.txt', datestr(now, 'yyyymmdd_HHMMSS')));
+diary(log_file);
+fprintf('=== EEG Feature Extraction Started at %s ===\n', datestr(now));
+fprintf('Log file: %s\n', log_file);
 % Add toolbox paths
 addpath(genpath(config_feat.toolbox_paths.eeglab));
 addpath(genpath(config_feat.toolbox_paths.entropy_hub));
@@ -136,6 +144,28 @@ end
 
 participant_numbers = 1:48; % Adjust based on your dataset
 
+% Check for already-processed participants (resume capability)
+processed = [];
+for p = participant_numbers
+    temp_file = fullfile(temp_folder, sprintf('P%02d_features.csv', p));
+    if isfile(temp_file)
+        processed(end+1) = p; %#ok<SAGROW>
+    end
+end
+
+if ~isempty(processed)
+    fprintf('Found %d already-processed participants: %s\n', ...
+        length(processed), mat2str(processed));
+    fprintf('Skipping these. Delete temp files to reprocess.\n');
+    participant_numbers = setdiff(participant_numbers, processed);
+end
+
+if isempty(participant_numbers)
+    fprintf('All participants already processed. Merging results...\n');
+else
+    fprintf('Processing %d remaining participants...\n', length(participant_numbers));
+end
+
 % Copy config to local variables for parfor
 freq_bands_local = frequency_bands;
 regions_local = regions;
@@ -145,6 +175,11 @@ cols_local = cols;
 config_cond_local = config_cond;
 
 fprintf('\n=== PROCESSING %d PARTICIPANTS ===\n', length(participant_numbers));
+
+% Track overall timing
+tic;
+start_time = datetime('now');
+fprintf('Start time: %s\n', datestr(start_time));
 
 parfor p = participant_numbers
     try
@@ -261,14 +296,15 @@ parfor p = participant_numbers
             rows_this_participant{end+1} = row; %#ok<SAGROW>
         end
         
-        % Write rows for this participant
+        % Write rows to temp file for this participant
         if ~isempty(rows_this_participant)
-            fid = fopen(output_csv, 'a');
+            temp_file = fullfile(temp_folder, sprintf('P%02d_features.csv', p));
+            fid = fopen(temp_file, 'w');
             for r = 1:length(rows_this_participant)
                 fprintf(fid, '%s\n', strjoin(cellfun(@num2str, rows_this_participant{r}, 'UniformOutput', false), ','));
             end
             fclose(fid);
-            fprintf('[P%02d] Wrote %d condition(s)\n', p, length(rows_this_participant));
+            fprintf('[P%02d] Wrote %d condition(s) to temp file\n', p, length(rows_this_participant));
         end
         
     catch ME
@@ -276,8 +312,51 @@ parfor p = participant_numbers
     end
 end
 
+% Report processing time
+elapsed = toc;
+fprintf('\nParallel processing completed in %.1f minutes (%.1f hours)\n', elapsed/60, elapsed/3600);
+
+fprintf('\n=== MERGING RESULTS ===\n');
+
+% Merge all temp files into final output
+all_participants = 1:48; % Full participant list
+fid_out = fopen(output_csv, 'a');
+merged_count = 0;
+
+for p = all_participants
+    temp_file = fullfile(temp_folder, sprintf('P%02d_features.csv', p));
+    if isfile(temp_file)
+        % Read and append temp file contents
+        temp_data = fileread(temp_file);
+        if ~isempty(temp_data)
+            fprintf(fid_out, '%s', temp_data);
+            merged_count = merged_count + 1;
+        end
+    else
+        warning('[P%02d] Temp file not found - participant not processed', p);
+    end
+end
+
+fclose(fid_out);
+
 fprintf('\n=== EXTRACTION COMPLETE ===\n');
+fprintf('Merged %d participant files\n', merged_count);
 fprintf('Output: %s\n', output_csv);
+
+% Clean up temp folder (optional - comment out to keep for debugging)
+fprintf('\nCleaning up temp files...\n');
+for p = all_participants
+    temp_file = fullfile(temp_folder, sprintf('P%02d_features.csv', p));
+    if isfile(temp_file)
+        delete(temp_file);
+    end
+end
+rmdir(temp_folder);
+fprintf('Cleanup complete.\n');
+
+% Close log
+fprintf('\n=== Extraction finished at %s ===\n', datestr(now));
+diary off;
 
 %% ========================================================================
 %  HELPER FUNCTIONS
