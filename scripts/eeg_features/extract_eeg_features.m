@@ -35,8 +35,6 @@ config_gen = yaml.loadFile('config/general.yaml');
 % Extract settings
 frequency_bands = config_feat.frequency_bands;
 regions = config_feat.regions;
-notch_participants = config_feat.notch_exclusion.participants;
-notch_band = config_feat.notch_exclusion.band;
 num_workers = config_feat.parallel.num_workers;
 parallel_enabled = config_feat.parallel.enabled;
 
@@ -143,8 +141,6 @@ freq_bands_local = frequency_bands;
 regions_local = regions;
 conds_local = task_conditions;
 durations_local = condition_durations;
-notch_parts_local = notch_participants;
-notch_band_local = notch_band;
 cols_local = cols;
 config_cond_local = config_cond;
 
@@ -231,16 +227,9 @@ parfor p = participant_numbers
             % Extract window
             window_data = EEG.data(:, t0:t1);
             
-            % Check for notch exclusion
-            exclude_band = [];
-            if ismember(p, notch_parts_local)
-                exclude_band = notch_band_local;
-            end
-            
-            % Compute features
+            % Compute features (notch filtering already done in cleaning pipeline)
             feats = compute_features(window_data, EEG.srate, ...
-                freq_bands_local, regions_local, chan_labels, ...
-                exclude_band, config_feat);
+                freq_bands_local, regions_local, chan_labels, config_feat);
             
             % Build row
             row = {p, cond};
@@ -325,8 +314,9 @@ function cond = normalize_condition_label(raw_label, config_cond)
     end
 end
 
-function feats = compute_features(data, srate, frequency_bands, regions, chan_labels, exclude_band, config)
+function feats = compute_features(data, srate, frequency_bands, regions, chan_labels, config)
     % Compute all features for a data window
+    % Note: Assumes data is already cleaned (notch filters applied in cleaning pipeline)
     
     feats = struct();
     
@@ -348,15 +338,14 @@ function feats = compute_features(data, srate, frequency_bands, regions, chan_la
             band_range = frequency_bands.(band_names{bi});
             
             % Compute band power
-            bp = compute_band_power(psd, freqs, chan_mask, band_range, exclude_band);
+            bp = compute_band_power(psd, freqs, chan_mask, band_range);
             feats.band_power{ri, bi} = bp;
         end
     end
     
     % Power ratios
     if config.features.ratios
-        feats.ratios = compute_ratios(feats.band_power, region_names, band_names, ...
-            regions, chan_labels, psd, freqs, frequency_bands, exclude_band);
+        feats.ratios = compute_ratios(feats.band_power, region_names, band_names);
     end
     
     % Entropy
@@ -395,7 +384,7 @@ function [psd, freqs] = calc_psd(data, srate)
     psd = psd'; % Transpose to [channels × freqs]
 end
 
-function bp = compute_band_power(psd, freqs, chan_mask, band_range, exclude_band)
+function bp = compute_band_power(psd, freqs, chan_mask, band_range)
     % Compute band power for a region
     
     if ~any(chan_mask)
@@ -405,12 +394,6 @@ function bp = compute_band_power(psd, freqs, chan_mask, band_range, exclude_band
     
     % Frequency mask
     freq_mask = freqs >= band_range(1) & freqs <= band_range(2);
-    
-    % Exclude notch band if specified
-    if ~isempty(exclude_band)
-        notch_mask = freqs >= exclude_band(1) & freqs <= exclude_band(2);
-        freq_mask = freq_mask & ~notch_mask;
-    end
     
     if ~any(freq_mask)
         bp = NaN;
@@ -426,8 +409,8 @@ function bp = compute_band_power(psd, freqs, chan_mask, band_range, exclude_band
     bp = log10(max(bp, 1e-10));
 end
 
-function ratios = compute_ratios(band_power, region_names, band_names, regions, chan_labels, psd, freqs, frequency_bands, exclude_band)
-    % Compute power ratios
+function ratios = compute_ratios(band_power, region_names, band_names)
+    % Compute power ratios from pre-computed band powers
     
     ratios = struct();
     
