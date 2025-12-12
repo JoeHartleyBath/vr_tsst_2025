@@ -11,8 +11,17 @@ This package contains modular components for:
 Each module is self-contained and testable.
 """
 
+# Data loading
+from .load_data import (
+    load_config,
+    load_raw_physio_data,
+    load_eeg_features,
+    load_subjective_ratings,
+    validate_loaded_data,
+    fix_participant_ids
+)
+
 # Module imports will be added as helper functions are implemented
-# from .load_data import load_physio_data, load_eeg_data, load_subjective_data
 # from .clean_hr_data import clean_hr_pipeline
 # from .clean_gsr_data import clean_gsr_pipeline, resample_gsr_to_10hz
 # from .clean_eye_data import clean_eye_pipeline
