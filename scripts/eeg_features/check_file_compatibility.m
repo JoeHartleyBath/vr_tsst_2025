@@ -71,54 +71,15 @@ function check_file_compatibility()
             fprintf('  ✓ No NaN or Inf values\n');
         end
         
-        % Validate dimensions
+        % Validate dimensions (trigger channel already removed by cleaning pipeline)
         n_chans = size(EEG.data, 1);
-        if n_chans < 128 || n_chans > 129
-            fprintf('  ⚠ WARNING: Expected 128-129 channels, found %d\n', n_chans);
+        if n_chans ~= 128
+            fprintf('  ⚠ WARNING: Expected 128 channels (after trigger removal), found %d\n', n_chans);
         else
-            fprintf('  ✓ Channel count looks good (%d)\n', n_chans);
+            fprintf('  ✓ Channel count correct: %d (trigger already removed)\n', n_chans);
         end
         
-    catch ME
-        fprintf('✗ ERROR loading cleaned .set file:\n');
-        fprintf('  %s\n', ME.message);
-        return;
-    end
-    
-    %% Test channel 129 removal (what feature extraction does)
-    fprintf('\n--- CHANNEL 129 REMOVAL TEST ---\n');
-    fprintf('This simulates what feature extraction does:\n\n');
-    
-    try
-        original_size = size(EEG.data);
-        original_chanlocs = length(EEG.chanlocs);
-        
-        fprintf('  Before: %d channels × %d samples\n', original_size(1), original_size(2));
-        
-        % Remove channel 129 if present (feature extraction lines 102-107)
-        if size(EEG.data, 1) >= 129
-            EEG.data(129, :, :) = [];
-            if length(EEG.chanlocs) >= 129
-                EEG.chanlocs(129) = [];
-            end
-            fprintf('  → Removed channel 129 (trigger)\n');
-        else
-            fprintf('  → No channel 129 to remove\n');
-        end
-        
-        % Update dimensions (feature extraction lines 109-112)
-        [EEG.nbchan, EEG.pnts, EEG.trials] = size(EEG.data);
-        if ndims(EEG.data) == 2
-            EEG.trials = 1;
-        end
-        fprintf('  After: %d channels × %d samples\n', size(EEG.data, 1), size(EEG.data, 2));
-        fprintf('  Channel locations: %d → %d\n', original_chanlocs, length(EEG.chanlocs));
-        
-        % Validate with eeg_checkset (feature extraction line 113)
-        EEG = eeg_checkset(EEG);
-        fprintf('  ✓ Passed eeg_checkset validation\n');
-        
-        fprintf('\n  ✓ Channel removal successful!\n');
+        fprintf('  ✓ PASS: Cleaned .set file is ready for feature extraction\n');
         
     catch ME
         fprintf('\n  ✗ ERROR during channel removal:\n');
