@@ -20,7 +20,7 @@ load_and_prepare_data <- function(config) {
   
   # 3. Load and map counterbalance
   cb_long <- readxl::read_excel(
-    file.path(config$paths$counterbalance, "counterbalance.xlsx")
+    file.path(config$paths$counterbalance, "experimental_counterbalance.xlsx")
   ) %>%
     dplyr::rename(Participant_ID = Participant) %>%
     tidyr::pivot_longer(

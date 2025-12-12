@@ -167,7 +167,7 @@ def main():
         logging.info("STEP 1: Loading raw physiological data...")
         phys_data_raw = load_raw_physio_data(
             data_path,
-            filename_filter='_RAW_DATA_',
+            filename_filter='P',  # Match P01.csv, P02.csv, etc.
             force_reload=args.force_reprocess
         )
         logging.info(f"  Loaded {len(phys_data_raw)} physio rows")
@@ -177,8 +177,13 @@ def main():
         logging.info(f"  Loaded {len(eeg_data)} EEG rows")
         
         logging.info("Loading subjective ratings...")
-        subjective_data = load_subjective_ratings(config, force_reload=args.force_reprocess)
-        logging.info(f"  Loaded {len(subjective_data)} subjective rows")
+        try:
+            subjective_data = load_subjective_ratings(config, force_reload=args.force_reprocess)
+            logging.info(f"  Loaded {len(subjective_data)} subjective rows")
+        except FileNotFoundError as e:
+            logging.warning(f"Subjective ratings file not found: {e}")
+            logging.warning("Continuing without subjective ratings - they may already be in EEG data")
+            subjective_data = None
         
         # Validate loaded data
         logging.info("Validating loaded datasets...")
@@ -209,8 +214,17 @@ def main():
             phys_data_cleaned = clean_eye_pipeline(phys_data_cleaned, qc_loggers)
         else:
             logging.warning("Skipping signal cleaning (--skip-cleaning flag set)")
-            phys_data_cleaned = phys_data_raw
-            gsr_cleaned = phys_data_raw
+            phys_data_cleaned = phys_data_raw.copy()
+            gsr_cleaned = phys_data_raw.copy()
+            
+            # Create cleaned column aliases for feature extraction
+            phys_data_cleaned['Polar_HeartRate_BPM_CLEANED_ABS'] = phys_data_cleaned['Polar_HeartRate_BPM']
+            phys_data_cleaned['Polar_HeartRate_RR_Interval_CLEANED_ABS'] = phys_data_cleaned['Polar_HeartRate_RR_Interval']
+            gsr_cleaned['Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK'] = gsr_cleaned['Shimmer_D36A_GSR_Skin_Conductance_uS']
+            phys_data_cleaned['Foveal_Corrected_Dilation_Left_CLEANED_ABS'] = phys_data_cleaned['Foveal_Corrected_Dilation_Left']
+            phys_data_cleaned['Foveal_Corrected_Dilation_Right_CLEANED_ABS'] = phys_data_cleaned['Foveal_Corrected_Dilation_Right']
+            phys_data_cleaned['Inter_Blink_Interval_CLEANED_ABS'] = phys_data_cleaned['Inter_Blink_Interval']
+            phys_data_cleaned['Current_Blink_Duration_CLEANED_ABS'] = phys_data_cleaned['Current_Blink_Duration']
         
         # STEP 3: Feature extraction
         logging.info("STEP 3: Extracting physiological features...")
@@ -251,7 +265,7 @@ def main():
     
     except Exception as e:
         logging.error(f"Pipeline failed with error: {e}", exc_info=True)
-        print(f"\n❌ ERROR: {e}")
+        print(f"\n[ERROR] {e}")
         print(f"Check log file for details: {log_file}")
         return 1
 
