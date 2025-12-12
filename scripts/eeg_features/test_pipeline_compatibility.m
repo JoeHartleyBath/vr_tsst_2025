@@ -30,50 +30,33 @@ function test_result = test_pipeline_compatibility()
         return;
     end
     
-    cleaned_files = dir(fullfile(cleaned_folder, 'P*_cleaned.mat'));
+    cleaned_files = dir(fullfile(cleaned_folder, 'P*_cleaned.set'));
     if isempty(cleaned_files)
-        fprintf('  ✗ FAIL: No cleaned .mat files found in %s\n', cleaned_folder);
+        fprintf('  ✗ FAIL: No cleaned .set files found in %s\n', cleaned_folder);
         fprintf('  → Run the cleaning pipeline first!\n');
         test_result.tests{end+1} = struct('name', 'Cleaned files exist', 'passed', false);
         return;
     end
     
-    fprintf('  ✓ PASS: Found %d cleaned .mat files\n', length(cleaned_files));
+    fprintf('  ✓ PASS: Found %d cleaned .set files\n', length(cleaned_files));
     test_result.tests{end+1} = struct('name', 'Cleaned files exist', 'passed', true);
     
     %% Test 2: Validate cleaned file format
-    fprintf('\n[Test 2] Validating cleaned file format...\n');
+    fprintf('\n[Test 2] Validating cleaned .set file format...\n');
     test_file = fullfile(cleaned_folder, cleaned_files(1).name);
     fprintf('  Testing: %s\n', cleaned_files(1).name);
     
     try
-        data = load(test_file);
-        field_names = fieldnames(data);
+        eeglab nogui;
+        p_num = sscanf(cleaned_files(1).name, 'P%d_cleaned.set');
         
-        % Check that file has exactly one variable
-        if length(field_names) ~= 1
-            fprintf('  ✗ FAIL: Expected 1 variable, found %d: %s\n', ...
-                    length(field_names), strjoin(field_names, ', '));
-            test_result.tests{end+1} = struct('name', 'Single variable in .mat', 'passed', false);
-            return;
-        end
+        EEG = pop_loadset('filename', sprintf('P%02d_cleaned.set', p_num), ...
+                          'filepath', cleaned_folder);
         
-        % Check variable name
-        var_name = field_names{1};
-        expected_names = {'cleaned_EEG', 'Advanced_cleaned_EEG', 'basic_EEG_matrix'};
-        if ~any(strcmp(var_name, expected_names))
-            fprintf('  ⚠ WARNING: Variable name "%s" not in expected list: %s\n', ...
-                    var_name, strjoin(expected_names, ', '));
-            fprintf('  This should still work (using fieldnames), but check cleaning script.\n');
-        end
-        
-        % Extract data matrix
-        eeg_matrix = data.(var_name);
-        
-        % Check dimensions
-        [n_chans, n_samples] = size(eeg_matrix);
-        fprintf('  ✓ Variable: %s\n', var_name);
+        % Extract dimensions
+        [n_chans, n_samples] = size(EEG.data);
         fprintf('  ✓ Dimensions: %d channels × %d samples\n', n_chans, n_samples);
+        fprintf('  ✓ Sampling rate: %g Hz\n', EEG.srate);
         
         % Check for expected number of channels (128 or 129 with trigger)
         if n_chans < 128 || n_chans > 129
@@ -82,7 +65,14 @@ function test_result = test_pipeline_compatibility()
             return;
         end
         
-        fprintf('  ✓ PASS: Cleaned file format is valid\n');
+        % Check for data
+        if isempty(EEG.data)
+            fprintf('  ✗ FAIL: No data in .set file\n');
+            test_result.tests{end+1} = struct('name', 'Data present', 'passed', false);
+            return;
+        end
+        
+        fprintf('  ✓ PASS: Cleaned .set file format is valid\n');
         test_result.tests{end+1} = struct('name', 'Valid file format', 'passed', true);
         
     catch ME
@@ -91,28 +81,8 @@ function test_result = test_pipeline_compatibility()
         return;
     end
     
-    %% Test 3: Check filtered .set files (needed for metadata)
-    fprintf('\n[Test 3] Checking for filtered .set files...\n');
-    filtered_folder = fullfile(config_gen.paths.eeg_data, 'filtered');
-    
-    if ~isfolder(filtered_folder)
-        fprintf('  ✗ FAIL: Filtered folder not found: %s\n', filtered_folder);
-        test_result.tests{end+1} = struct('name', 'Filtered folder exists', 'passed', false);
-        return;
-    end
-    
-    filtered_files = dir(fullfile(filtered_folder, 'P*_filtered.set'));
-    if isempty(filtered_files)
-        fprintf('  ✗ FAIL: No filtered .set files found\n');
-        test_result.tests{end+1} = struct('name', 'Filtered .set files exist', 'passed', false);
-        return;
-    end
-    
-    fprintf('  ✓ PASS: Found %d filtered .set files\n', length(filtered_files));
-    test_result.tests{end+1} = struct('name', 'Filtered .set files exist', 'passed', true);
-    
-    %% Test 4: Check events files
-    fprintf('\n[Test 4] Checking for events files...\n');
+    %% Test 3: Check events files
+    fprintf('\n[Test 3] Checking for events files...\n');
     events_folder = config_gen.paths.events;
     
     if ~isfolder(events_folder)
@@ -131,24 +101,23 @@ function test_result = test_pipeline_compatibility()
     fprintf('  ✓ PASS: Found %d event files\n', length(event_files));
     test_result.tests{end+1} = struct('name', 'Event files exist', 'passed', true);
     
-    %% Test 5: Test feature extraction on one participant
-    fprintf('\n[Test 5] Testing feature extraction on one participant...\n');
+    %% Test 4: Test feature extraction on one participant
+    fprintf('\n[Test 4] Testing feature extraction on one participant...\n');
     
     % Find a participant with all required files
     test_participant = [];
     for i = 1:length(cleaned_files)
-        % Extract participant number from filename (e.g., P01_cleaned.mat → 1)
+        % Extract participant number from filename (e.g., P01_cleaned.set → 1)
         fname = cleaned_files(i).name;
-        p_num = sscanf(fname, 'P%d_cleaned.mat');
+        p_num = sscanf(fname, 'P%d_cleaned.set');
         
         if isempty(p_num), continue; end
         
         % Check all required files exist
-        cleaned_exists = isfile(fullfile(cleaned_folder, sprintf('P%02d_cleaned.mat', p_num)));
-        filtered_exists = isfile(fullfile(filtered_folder, sprintf('P%02d_filtered.set', p_num)));
+        cleaned_exists = isfile(fullfile(cleaned_folder, sprintf('P%02d_cleaned.set', p_num)));
         events_exists = isfile(fullfile(events_folder, sprintf('P%02d_events.csv', p_num)));
         
-        if cleaned_exists && filtered_exists && events_exists
+        if cleaned_exists && events_exists
             test_participant = p_num;
             break;
         end

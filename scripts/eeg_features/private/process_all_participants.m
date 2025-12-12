@@ -78,27 +78,21 @@ function process_single_participant(p, temp_folder, freq_bands, regions, ...
         fprintf('[P%02d] Starting...\n', p);
         
         % ===== Load data =====
-        % Load cleaned EEG data
-        cleaned_file = fullfile(config_gen.paths.cleaned_eeg, sprintf('P%d_cleaned.mat', p));
-        if ~isfile(cleaned_file)
-            warning('[P%02d] Cleaned file not found: %s', p, cleaned_file);
+        % Load cleaned EEG .set file (contains both data and metadata)
+        cleaned_set = fullfile(config_gen.paths.cleaned_eeg, sprintf('P%02d_cleaned.set', p));
+        if ~isfile(cleaned_set)
+            warning('[P%02d] Cleaned .set file not found: %s', p, cleaned_set);
             return;
         end
         
-        % Load filtered .set for metadata
-        filtered_set = fullfile(config_gen.paths.eeg_data, 'filtered', sprintf('P%02d_filtered.set', p));
-        if ~isfile(filtered_set)
-            warning('[P%02d] Filtered .set not found: %s', p, filtered_set);
+        EEG = pop_loadset('filename', sprintf('P%02d_cleaned.set', p), ...
+                          'filepath', config_gen.paths.cleaned_eeg);
+        
+        % Validate loaded data
+        if isempty(EEG.data)
+            warning('[P%02d] Loaded .set file has no data', p);
             return;
         end
-        
-        EEG = pop_loadset('filename', sprintf('P%02d_filtered.set', p), ...
-                          'filepath', fullfile(config_gen.paths.eeg_data, 'filtered'));
-        
-        % Load cleaned data matrix
-        cleaned_data = load(cleaned_file);
-        field_name = fieldnames(cleaned_data);
-        EEG.data = cleaned_data.(field_name{1});
         
         % Remove channel 129 if present (trigger channel)
         if size(EEG.data, 1) >= 129
