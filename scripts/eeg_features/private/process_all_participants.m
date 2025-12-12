@@ -109,14 +109,13 @@ function process_single_participant(p, temp_folder, freq_bands, regions, ...
         end
         EEG = eeg_checkset(EEG);
         
-        % Load events
-        events_file = fullfile(config_gen.paths.events, sprintf('P%02d_events.csv', p));
-        if ~isfile(events_file)
-            warning('[P%02d] Events file not found: %s', p, events_file);
+        % Check events exist in .set file
+        if ~isfield(EEG, 'event') || isempty(EEG.event)
+            warning('[P%02d] No events found in .set file', p);
             return;
         end
-        eventTable = readtable(events_file);
-        eventTable = sortrows(eventTable, 'latency');
+        
+        fprintf('[P%02d] Found %d events\n', p, length(EEG.event));
         
         % Get channel labels
         chan_labels = {EEG.chanlocs.labels};
@@ -125,8 +124,8 @@ function process_single_participant(p, temp_folder, freq_bands, regions, ...
         rows_this_participant = {};
         seen_conditions = {};
         
-        for i = 1:height(eventTable)
-            raw_cond = eventTable.type{i};
+        for i = 1:length(EEG.event)
+            raw_cond = EEG.event(i).type;
             cond = normalize_condition_label(raw_cond, config_cond);
             
             % Skip if not in analysis set or already processed
@@ -136,7 +135,7 @@ function process_single_participant(p, temp_folder, freq_bands, regions, ...
             seen_conditions{end+1} = cond; %#ok<AGROW>
             
             % Get timing
-            lat = round(eventTable.latency(i));
+            lat = round(EEG.event(i).latency);
             duration = condition_durations(cond);
             t0 = max(1, lat);
             t1 = min(EEG.pnts, t0 + duration * EEG.srate - 1);

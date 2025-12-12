@@ -115,9 +115,8 @@ function test_result = test_pipeline_compatibility()
         
         % Check all required files exist
         cleaned_exists = isfile(fullfile(cleaned_folder, sprintf('P%02d_cleaned.set', p_num)));
-        events_exists = isfile(fullfile(events_folder, sprintf('P%02d_events.csv', p_num)));
         
-        if cleaned_exists && events_exists
+        if cleaned_exists
             test_participant = p_num;
             break;
         end
