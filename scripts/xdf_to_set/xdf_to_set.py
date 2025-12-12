@@ -330,13 +330,13 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     # --- Build complete EEGLAB structure ---
     EEG = {
         **template,  # Start with template defaults
-        # Override with actual data
-        "nbchan": nbchan,
-        "trials": 1,
-        "pnts": pnts,
-        "srate": srate,
-        "xmin": 0,
-        "xmax": (pnts - 1) / srate,
+        # Override with actual data (ensure all numeric types are float for MATLAB compatibility)
+        "nbchan": int(nbchan),
+        "trials": int(1),
+        "pnts": int(pnts),
+        "srate": float(srate),
+        "xmin": float(0),
+        "xmax": float((pnts - 1) / srate),
         "times": times,
         "data": data_ch_by_time,
         "chanlocs": chanlocs,
@@ -881,8 +881,7 @@ def save_set(eeg_struct, output_path: Path):
         str(output_path), 
         mat_dict, 
         do_compression=True,
-        oned_as='column',  # Ensure 1D arrays are column vectors
-        struct_as_record=True  # Preserve structured arrays
+        oned_as='column'  # Ensure 1D arrays are column vectors
     )
 
     return output_path
