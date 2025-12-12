@@ -46,6 +46,63 @@
 
 ---
 
+### EEG Feature Extraction Refactoring
+**Goal: Simplify and streamline feature extraction pipeline**
+
+#### Analysis of Legacy Script:
+- **Original:** `extract_eeg_feats.m` (1003 lines)
+- **Identified issues:**
+  - Hardcoded paths, participant lists, frequency bands, regions
+  - Label mapping duplicated from `config/conditions.yaml`
+  - 107-line canonicalization function with hardcoded logic
+  - Complex LITE mode toggle with conditional features
+  - Rolling window features (64 columns, not needed)
+  - Connectivity features (wPLI, not needed)
+  - Aperiodic slope fitting (not needed)
+  - Statistics (Mean/SD/Slope, not needed)
+
+#### Refactored Solution:
+**Created `config/eeg_feature_extraction.yaml`:**
+- Frequency bands (8 bands: Delta, Theta, Alpha variants, Beta variants)
+- Channel regions (11 regions with channel lists)
+- Feature flags (simplified to 3: band_power, ratios, entropy)
+- Notch exclusion participants (P01-P07)
+- Parallel processing settings (8 workers)
+- Toolbox paths
+
+**Created `scripts/eeg_features/extract_eeg_features.m` (530 lines):**
+- Loads all config from YAML (no hardcoded values)
+- Computes only essential features:
+  * Band power per region × band: 88 features
+  * Power ratios: 5 features (frontal asymmetry, alpha/beta, theta/beta, etc.)
+  * Entropy per region: 22 features (sample + spectral)
+- **Total:** ~115 columns (vs 281 in legacy)
+- **Removed:** Rolling windows, statistics, connectivity, aperiodic (~600 lines of code)
+
+#### Benefits:
+- ✅ 47% code reduction (530 vs 1003 lines)
+- ✅ Configuration-driven (change YAML, not code)
+- ✅ No hardcoded paths, conditions, or channel definitions
+- ✅ Faster execution (fewer features)
+- ✅ Easier to maintain and test
+- ✅ Parallel processing retained (8 workers)
+
+#### File Organization:
+```
+scripts/eeg_features/
+├── extract_eeg_features.m          # New streamlined version (530 lines)
+├── extract_eeg_features_legacy.m   # Original (1003 lines)
+└── legacy/
+    ├── step03_extract_eeg_features_fixed_lite.m
+    └── step03_extract_eeg_features_ratios_only.m
+```
+
+#### Commits:
+- `44bf711`: "Organize EEG feature extraction scripts"
+- `90824d2`: "Create streamlined EEG feature extraction pipeline"
+
+---
+
 # Session Notes - December 11, 2025
 
 ## Work Completed Today
