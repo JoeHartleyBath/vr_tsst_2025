@@ -10,9 +10,9 @@ function check_file_compatibility()
 
     fprintf('=== FILE FORMAT COMPATIBILITY CHECK ===\n\n');
     
-    %% Load configs
-    config_gen = yaml.loadFile('config/general.yaml');
-    cleaned_folder = config_gen.paths.cleaned_eeg;
+    %% Load configs (hardcoded for quick testing)
+    project_root = fileparts(fileparts(pwd));  % Go up 2 levels from scripts/eeg_features
+    cleaned_folder = fullfile(project_root, 'output', 'cleaned_eeg');
     
     %% Find test file
     cleaned_files = dir(fullfile(cleaned_folder, 'P*_cleaned.set'));
@@ -108,14 +108,22 @@ function check_file_compatibility()
             return;
         end
         
-        % Show event types
-        event_types = unique({EEG.event.type});
-        fprintf('  Event types (%d unique): %s\n', length(event_types), strjoin(event_types, ', '));
+        % Show event types (handle both numeric and string types)
+        event_types_raw = {EEG.event.type};
+        % Convert numeric to strings for display
+        event_types_str = cellfun(@(x) num2str(x), event_types_raw, 'UniformOutput', false);
+        event_types_unique = unique(event_types_str);
+        fprintf('  Event types (%d unique): %s\n', length(event_types_unique), strjoin(event_types_unique, ', '));
         
         % Show first few events
         fprintf('  First 3 events:\n');
         for i = 1:min(3, length(EEG.event))
-            fprintf('    [%d] %s at sample %d\n', i, EEG.event(i).type, round(EEG.event(i).latency));
+            evt_type = EEG.event(i).type;
+            if isnumeric(evt_type)
+                fprintf('    [%d] %d at sample %d\n', i, evt_type, round(EEG.event(i).latency));
+            else
+                fprintf('    [%d] %s at sample %d\n', i, evt_type, round(EEG.event(i).latency));
+            end
         end
         
         fprintf('  ✓ Events are valid and accessible\n');
