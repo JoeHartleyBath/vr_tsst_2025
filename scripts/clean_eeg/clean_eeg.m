@@ -49,6 +49,14 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
         error('Loaded dataset contains no data.');
     end
     
+    % Fix data types for MATLAB compatibility (in case Python saved as integers)
+    EEG.xmin = double(EEG.xmin);
+    EEG.xmax = double(EEG.xmax);
+    EEG.srate = double(EEG.srate);
+    EEG.pnts = double(EEG.pnts);
+    EEG.nbchan = double(EEG.nbchan);
+    EEG.trials = double(EEG.trials);
+    
     log_message(logfile, sprintf('Loaded: %d channels, %d samples, %.1f Hz', ...
         EEG.nbchan, EEG.pnts, EEG.srate));
     save_visualization(EEG, vis_folder, sprintf('P%02d_01_raw_loaded.png', participant_num));
@@ -59,9 +67,9 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     %% Step 2: Assign Channel Locations
     log_message(logfile, '=== Step 2: Assign Channel Locations ===');
     
-    % Assign standard channel locations for the 128 EEG channels
-    EEG = pop_chanedit(EEG, 'lookup', ...
-        'C:\Users\Joe\Documents\MATLAB\eeglab_current\eeglab2024.0\sample_locs\NA-271.elc');
+    % Assign ANT Neuro 128-channel equidistant layout
+    chanlocs_file = fullfile(fileparts(mfilename('fullpath')), '..', '..', 'config', 'chanlocs', 'NA-271.elc');
+    EEG = pop_chanedit(EEG, 'lookup', chanlocs_file);
     
     if isempty(EEG.chanlocs) || isempty(EEG.chanlocs(1).X)
         warning('Failed to assign channel locations.');
@@ -84,9 +92,9 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     EEG = pop_eegfiltnew(EEG, 'locutoff', 1, 'hicutoff', 49);
     log_message(logfile, 'Applied 1-49 Hz band-pass filter.');
     
-    % Remove 50 Hz line noise
-    EEG = pop_cleanline(EEG, 'linefreqs', 50, 'sigtype', 'Channels');
-    log_message(logfile, 'Applied CleanLine (50 Hz).');
+    % Remove 50 Hz line noise with notch filter
+    EEG = pop_eegfiltnew(EEG, 'locutoff', 49, 'hicutoff', 51, 'revfilt', 1);
+    log_message(logfile, 'Applied 50 Hz notch filter.');
     
     % Apply 25 Hz notch for participants 1-7
     if ismember(participant_num, 1:7)

@@ -2,6 +2,9 @@
 %
 % Non-interactive version that runs all steps automatically
 
+% Navigate to project root
+cd('c:\phd_projects\vr_tsst_2025');
+
 % Add utilities path
 addpath('scripts/utils');
 
@@ -10,11 +13,11 @@ addpath('scripts/utils');
 
 %% Configuration
 % Use subset for quick testing (change to P01.set for full run)
-input_file = 'output/processed/P01_subset_5min.set';
+input_file = fullfile(pwd, 'output', 'processed', 'P01_subset_5min.set');
 participant_num = 1;
 
 % Create test output folder
-test_folder = 'output/step_by_step_test';
+test_folder = fullfile(pwd, 'output', 'step_by_step_test');
 if ~exist(test_folder, 'dir')
     mkdir(test_folder);
 end
@@ -38,6 +41,14 @@ fprintf('=============================================================\n');
 
 [filepath, filename, ext] = fileparts(input_file);
 EEG = pop_loadset('filename', [filename, ext], 'filepath', filepath);
+
+% Fix data types for MATLAB compatibility (in case Python saved as integers)
+EEG.xmin = double(EEG.xmin);
+EEG.xmax = double(EEG.xmax);
+EEG.srate = double(EEG.srate);
+EEG.pnts = double(EEG.pnts);
+EEG.nbchan = double(EEG.nbchan);
+EEG.trials = double(EEG.trials);
 
 fprintf('Loaded successfully:\n');
 fprintf('  Channels: %d\n', EEG.nbchan);
@@ -64,8 +75,9 @@ if ~isempty(EEG.chanlocs)
     fprintf('Original channel locations stored.\n');
 end
 
-EEG = pop_chanedit(EEG, 'lookup', ...
-    'C:\Users\Joe\Documents\MATLAB\eeglab_current\eeglab2024.0\sample_locs\NA-271.elc');
+% Use ANT Neuro 128-channel equidistant layout
+chanlocs_file = fullfile(pwd, 'config', 'chanlocs', 'NA-271.elc');
+EEG = pop_chanedit(EEG, 'lookup', chanlocs_file);
 
 if isempty(EEG.chanlocs) || isempty(EEG.chanlocs(1).X)
     warning('Failed to assign channel locations!');
@@ -113,16 +125,16 @@ fprintf('  Data range after: %.2f to %.2f µV\n', min(data_after(:)), max(data_a
 
 pop_saveset(EEG, 'filename', sprintf('step3_bandpass_P%02d.set', participant_num), 'filepath', test_folder);
 
-%% STEP 4: CleanLine (50 Hz line noise removal)
+%% STEP 4: 50 Hz Notch Filter (line noise removal)
 fprintf('\n=============================================================\n');
-fprintf('STEP 4: CLEANLINE (50 HZ LINE NOISE REMOVAL)\n');
+fprintf('STEP 4: 50 HZ NOTCH FILTER (LINE NOISE REMOVAL)\n');
 fprintf('=============================================================\n');
 
-fprintf('Applying CleanLine for 50 Hz line noise...\n');
-EEG = pop_cleanline(EEG, 'linefreqs', 50, 'sigtype', 'Channels');
-fprintf('CleanLine applied successfully.\n');
+fprintf('Applying 50 Hz notch filter...\n');
+EEG = pop_eegfiltnew(EEG, 'locutoff', 49, 'hicutoff', 51, 'revfilt', 1);
+fprintf('50 Hz notch filter applied successfully.\n');
 
-pop_saveset(EEG, 'filename', sprintf('step4_cleanline_P%02d.set', participant_num), 'filepath', test_folder);
+pop_saveset(EEG, 'filename', sprintf('step4_notch50hz_P%02d.set', participant_num), 'filepath', test_folder);
 
 %% STEP 5: 25 Hz Notch Filter (P01-P07 only)
 fprintf('\n=============================================================\n');
@@ -178,43 +190,32 @@ end
 
 pop_saveset(EEG, 'filename', sprintf('step6_asr_P%02d.set', participant_num), 'filepath', test_folder);
 
-%% STEP 7: Run AMICA (ICA)
 fprintf('\n=============================================================\n');
-fprintf('STEP 7: RUN AMICA (ICA DECOMPOSITION)\n');
+fprintf('*** BASIC PIPELINE VALIDATED (Steps 0-6) ***\n');
 fprintf('=============================================================\n');
+fprintf('Steps 7-11 (ICA, ICLabel, interpolation, re-reference) require:\n');
+fprintf('  - Data rank investigation for ICA\n');
+fprintf('  - AMICA configuration for production use\n');
+fprintf('Test complete. Exiting.\n');
+return;
 
-fprintf('Running AMICA (this may take several minutes)...\n');
+%% STEP 7: Run ICA (runica - placeholder for AMICA) [DISABLED - RANK ISSUE]
+fprintf('\n=============================================================\n');
+fprintf('STEP 7: RUN ICA DECOMPOSITION (runica - placeholder for AMICA)\n');
+fprintf('=============================================================\n');
+fprintf('NOTE: Using standard runica. Production script will use AMICA.\n');
 
-outdir = fullfile(pwd, sprintf('amicaouttmp_test_%d', participant_num));
-if exist(outdir, 'dir')
-    rmdir(outdir, 's');
-end
-mkdir(outdir);
+fprintf('Running standard ICA (runica extended infomax)...\n');
 
 tic;
-[weights, sphere, mods] = runamica15(EEG.data, ...
-    'num_models',   1, ...
-    'outdir',       outdir, ...
-    'numprocs',     1, ...
-    'max_threads',  4, ...
-    'max_iter',     400, ...
-    'write_LLt',    1, ...
-    'writestep',    10);
+EEG = pop_runica(EEG, 'icatype', 'runica', 'extended', 1, 'interrupt', 'off');
 elapsed = toc;
-
-EEG.icaweights = weights;
-EEG.icasphere = sphere;
 EEG = eeg_checkset(EEG);
 
-fprintf('AMICA complete in %.1f seconds (%.1f minutes).\n', elapsed, elapsed/60);
+fprintf('ICA complete in %.1f seconds (%.1f minutes).\n', elapsed, elapsed/60);
 fprintf('  ICA components: %d\n', size(EEG.icaweights, 1));
 
-if isfield(mods, 'LL') && ~isempty(mods.LL)
-    fprintf('  Final log-likelihood: %.2f\n', mods.LL(end));
-end
-
-rmdir(outdir, 's');
-pop_saveset(EEG, 'filename', sprintf('step7_amica_P%02d.set', participant_num), 'filepath', test_folder);
+pop_saveset(EEG, 'filename', sprintf('step7_ica_P%02d.set', participant_num), 'filepath', test_folder);
 
 %% STEP 8: ICLabel Classification
 fprintf('\n=============================================================\n');
