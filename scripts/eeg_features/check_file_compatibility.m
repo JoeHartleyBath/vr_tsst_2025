@@ -129,11 +129,51 @@ function check_file_compatibility()
         return;
     end
     
+    %% Test events in .set file
+    fprintf('\n--- EVENTS IN .SET FILE ---\n');
+    
+    try
+        if ~isfield(EEG, 'event') || isempty(EEG.event)
+            fprintf('✗ No events in .set file!\n');
+            fprintf('  The cleaning pipeline should preserve event markers.\n');
+            return;
+        end
+        
+        fprintf('✓ Found %d events\n', length(EEG.event));
+        
+        % Check event structure
+        if ~isfield(EEG.event, 'type') || ~isfield(EEG.event, 'latency')
+            fprintf('✗ Events missing required fields (type, latency)\n');
+            return;
+        end
+        
+        % Show event types
+        event_types = unique({EEG.event.type});
+        fprintf('  Event types (%d unique): %s\n', length(event_types), strjoin(event_types, ', '));
+        
+        % Show first few events
+        fprintf('  First 3 events:\n');
+        for i = 1:min(3, length(EEG.event))
+            fprintf('    [%d] %s at sample %d\n', i, EEG.event(i).type, round(EEG.event(i).latency));
+        end
+        
+        fprintf('  ✓ Events are valid and accessible\n');
+        
+    catch ME
+        fprintf('✗ ERROR checking events:\n');
+        fprintf('  %s\n', ME.message);
+        return;
+    end
+    
     %% Summary
     fprintf('\n=== COMPATIBILITY CHECK SUMMARY ===\n\n');
     fprintf('✓✓✓ ALL CHECKS PASSED ✓✓✓\n\n');
     fprintf('Your cleaned EEG files are compatible with the refactored feature extraction script!\n');
-    fprintf('The exact loading code from the feature extraction script works correctly.\n\n');
+    fprintf('The .set file contains:\n');
+    fprintf('  - Cleaned EEG data (%d channels)\n', size(EEG.data, 1));
+    fprintf('  - Channel locations\n');
+    fprintf('  - Sampling rate (%g Hz)\n', EEG.srate);
+    fprintf('  - Event markers (%d events)\n\n', length(EEG.event));
     fprintf('Safe to proceed with full extraction:\n');
     fprintf('  extract_eeg_features()  %% All participants\n');
     fprintf('  extract_eeg_features(''participants'', 1:10)  %% Test subset first\n\n');
