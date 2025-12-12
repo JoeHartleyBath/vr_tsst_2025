@@ -391,8 +391,11 @@ def extract_all_features(
     
     ALL_PHYS_COLUMNS = HR_COLUMNS + GSR_COLUMNS + EYE_COLUMNS
     
-    # Ensure datetime formats
-    if 'Window_Start_Second' in eeg_data.columns:
+    # Check if EEG has temporal information or is pre-aggregated
+    has_temporal_eeg = 'Window_Start_Second' in eeg_data.columns
+    
+    # Ensure datetime formats if temporal EEG
+    if has_temporal_eeg:
         eeg_data['Window_Start_Second_dt'] = pd.to_datetime('1970-01-01') + \
             pd.to_timedelta(eeg_data['Window_Start_Second'], unit='s')
     
@@ -405,17 +408,30 @@ def extract_all_features(
             pd.to_timedelta(gsr_cleaned['Time_From_Start_Seconds'], unit='s')
     
     # Determine condition time ranges from EEG data
-    cond_time = eeg_data.groupby(['Participant_ID', 'Condition']).agg(
-        condition_start=('Window_Start_Second_dt', 'min'),
-        condition_end=('Window_Start_Second_dt', 'max')
-    ).reset_index()
-    
-    # Add 30s to capture full last window
-    cond_time['condition_end'] = cond_time['condition_end'] + pd.Timedelta(seconds=30)
-    
-    # Adjusted windows (skip first/last 30s for stable estimates)
-    cond_time['adjusted_condition_start'] = cond_time['condition_start']
-    cond_time['adjusted_condition_end'] = cond_time['condition_end']
+    if has_temporal_eeg:
+        cond_time = eeg_data.groupby(['Participant_ID', 'Condition']).agg(
+            condition_start=('Window_Start_Second_dt', 'min'),
+            condition_end=('Window_Start_Second_dt', 'max')
+        ).reset_index()
+        
+        # Add 30s to capture full last window
+        cond_time['condition_end'] = cond_time['condition_end'] + pd.Timedelta(seconds=30)
+        
+        # Adjusted windows (skip first/last 30s for stable estimates)
+        cond_time['adjusted_condition_start'] = cond_time['condition_start']
+        cond_time['adjusted_condition_end'] = cond_time['condition_end']
+    else:
+        # EEG is pre-aggregated - extract physio per full Study_Phase
+        logging.info("EEG data is pre-aggregated. Extracting physio features per Study_Phase.")
+        # Map conditions from physio data
+        cond_time = phys_cleaned.groupby(['Participant_ID', 'Study_Phase']).agg(
+            condition_start=('Time_From_Start_Seconds', 'min'),
+            condition_end=('Time_From_Start_Seconds', 'max')
+        ).reset_index()
+        cond_time = cond_time.rename(columns={'Study_Phase': 'Condition'})
+        # No temporal adjustment for pre-aggregated data - use full windows
+        cond_time['adjusted_condition_start'] = cond_time['condition_start']
+        cond_time['adjusted_condition_end'] = cond_time['condition_end']
     
     condition_stats_results = []
     
