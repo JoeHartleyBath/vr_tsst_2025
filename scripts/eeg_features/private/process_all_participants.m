@@ -94,15 +94,7 @@ function process_single_participant(p, temp_folder, freq_bands, regions, ...
             return;
         end
         
-        % Remove channel 129 if present (trigger channel)
-        if size(EEG.data, 1) >= 129
-            EEG.data(129, :, :) = [];
-            if length(EEG.chanlocs) >= 129
-                EEG.chanlocs(129) = [];
-            end
-        end
-        
-        % Update dimensions
+        % Update dimensions (trigger channel already removed by cleaning pipeline)
         [EEG.nbchan, EEG.pnts, EEG.trials] = size(EEG.data);
         if ndims(EEG.data) == 2
             EEG.trials = 1;
