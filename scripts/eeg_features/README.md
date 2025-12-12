@@ -62,6 +62,10 @@ scripts/eeg_features/
 ├── extract_eeg_features_refactored.m    # Main orchestration (113 lines)
 ├── extract_eeg_features.m               # Legacy script (561 lines)
 ├── extract_eeg_features_legacy.m        # Original script (1003 lines)
+├── check_file_compatibility.m           # Quick format validation
+├── test_pipeline_compatibility.m        # Full pipeline test
+├── README.md                            # This file
+├── REFACTORING_COMPARISON.md            # Before/after comparison
 ├── private/
 │   ├── parse_inputs.m                   # CLI argument parsing
 │   ├── validate_config.m                # Config validation
@@ -239,6 +243,36 @@ Potential improvements for future versions:
 4. **Performance profiling**: Identify bottlenecks for optimization
 5. **GPU support**: Accelerate entropy calculations if available
 6. **Real-time monitoring**: Web dashboard to track progress
+
+## Validation & Testing
+
+Before running the full 24-hour extraction, validate that your cleaned EEG files are compatible:
+
+### Quick Format Check (30 seconds)
+```matlab
+% Quick check without running full extraction
+check_file_compatibility()
+```
+
+This validates:
+- Cleaned .mat file format
+- Filtered .set file availability  
+- Data replacement logic
+- Uses exact loading code from feature extraction script
+
+### Full Pipeline Test (5-10 minutes)
+```matlab
+% Comprehensive test with actual feature extraction
+test_result = test_pipeline_compatibility()
+```
+
+This runs:
+1. File existence checks
+2. Format validation
+3. Full feature extraction on one participant
+4. Output validation
+
+**Run these tests after completing the cleaning pipeline to ensure compatibility!**
 
 ## Troubleshooting
 
