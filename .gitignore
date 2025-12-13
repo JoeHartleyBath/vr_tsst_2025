@@ -8,4 +8,8 @@ __pycache__/
 *.pyc
 
 /data/raw
+/data/raw_working
+/data/raw_archive
 output/
+results/
+venv/
