@@ -62,7 +62,7 @@ STAGES = {
     },
     6: {
         "name": "R Preprocessing (Final data prep)",
-        "script": "scripts/preproccess_for_xgb.R",
+        "script": "scripts/preprocessing/physio/preproccess_for_xgb.R",
         "type": "r",
         "duration_est": "5-10 min"
     }
