@@ -71,13 +71,29 @@ eeglab;  % Initialize
 % - Firfilt (for filtering)
 ```
 
-### Install AMICA
-1. Download from: https://sccn.ucsd.edu/~jason/amica_web.html
-2. Extract to: `C:\MATLAB\toolboxes\amica`
-3. Add to MATLAB path:
-```matlab
-addpath('C:\MATLAB\toolboxes\amica');
+### Install AMICA (Automated via GitHub)
+**Option 1: Automatic Installation (Recommended)**
+```powershell
+cd c:\vr_tsst_2025
+powershell -ExecutionPolicy Bypass install_amica.ps1
 ```
+This script clones AMICA from GitHub and configures it automatically.
+
+**Option 2: Manual Installation**
+1. Clone from GitHub:
+   ```bash
+   git clone https://github.com/sccn/amica.git C:\MATLAB\toolboxes\amica
+   ```
+   Or download from: https://github.com/sccn/amica/releases
+
+2. Extract to: `C:\MATLAB\toolboxes\amica`
+
+3. Verify: Check that `amicarunner.m` exists in the folder
+
+4. Add to MATLAB path:
+   ```matlab
+   addpath(genpath('C:\MATLAB\toolboxes\amica'));
+   ```
 
 ### Install yamlmatlab
 ```matlab

@@ -9,7 +9,7 @@ Before running the pipeline, ensure:
 - [ ] R 4.5.2 installed: `R --version`
 - [ ] MATLAB R2020a+ installed: `matlab -v`
 - [ ] EEGLAB toolbox in `c:/MATLAB/toolboxes/eeglab`
-- [ ] AMICA toolbox in `c:/MATLAB/toolboxes/amica`
+- [ ] AMICA installed: `powershell -ExecutionPolicy Bypass install_amica.ps1`
 - [ ] Raw data staged in `data/raw/eeg/`, `data/raw/metadata/`, `data/raw/subjective/`
 
 ## Run Pilot Test (P01–P03)
