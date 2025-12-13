@@ -20,7 +20,7 @@ config = yaml.loadFile('config/general.yaml');
 
 %% Configuration
 % Define participant numbers to process
-participant_numbers = [1];  % Update this list as needed
+participant_numbers = [1, 2, 3];  % Update this list as needed (now defaults to P01-P03)
 
 % Define paths
 raw_eeg_folder = 'data/raw/eeg';
