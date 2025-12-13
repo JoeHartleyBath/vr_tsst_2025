@@ -188,7 +188,7 @@ View history: `git log --oneline`
 | R 4.5.2 | ✓ Installed | Install from r-project.org |
 | MATLAB R2020a+ | ⏳ Manual install | Download + install MATLAB |
 | EEGLAB | ⏳ Awaiting MATLAB | Download to c:/MATLAB/toolboxes/eeglab |
-| AMICA | ⏳ Awaiting MATLAB | Download to c:/MATLAB/toolboxes/amica |
+| AMICA | ⏳ **Automated installer ready** | `powershell -ExecutionPolicy Bypass install_amica.ps1` |
 | Raw data (48 × 3 files) | ✓ Staged | Already in data/raw/ |
 
 ---

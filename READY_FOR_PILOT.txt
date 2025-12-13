@@ -50,8 +50,10 @@
 📋 WHAT YOU NEED TO DO NOW:
 
 PRIORITY 1: Install MATLAB/EEGLAB/AMICA (if not already done)
-   └─ See: NEW_PC_SETUP.md → MATLAB Setup section
-   └─ Time: 1–2 hours (manual)
+   └─ AMICA automatic installer: install_amica.ps1
+      Command: powershell -ExecutionPolicy Bypass install_amica.ps1
+   └─ See: AMICA_INSTALL.md for full guide
+   └─ Time: 10 minutes (automated) or 1–2 hours (manual)
 
 PRIORITY 2: Run health check
    python scripts/check_pipeline_health.py
