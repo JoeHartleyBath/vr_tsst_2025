@@ -10,10 +10,16 @@
 %   4. Run this script
 
 % Add utilities path
-addpath('scripts/utils');
+addpath(genpath('scripts/utils'));
+addpath(genpath('C:/MATLAB/toolboxes/eeglab'));
+addpath(genpath('C:/MATLAB/toolboxes/amica'));
 
-% Initialize EEGLAB
-[~, ~, ~, ~] = eeglab;
+% Initialize EEGLAB in GUI mode (non-batch)
+try
+    eeglab nogui;
+catch
+    warning('EEGLAB GUI initialization failed, continuing anyway');
+end
 
 % Load config
 config = yaml.loadFile('config/general.yaml');
@@ -23,7 +29,7 @@ config = yaml.loadFile('config/general.yaml');
 participant_numbers = [1, 2, 3];  % Update this list as needed (now defaults to P01-P03)
 
 % Define paths
-raw_eeg_folder = 'data/raw/eeg';
+raw_eeg_folder = 'output/sets';  % Input comes from Stage 1 (XDF→SET conversion)
 output_folder = 'output/cleaned_eeg';
 vis_base_folder = 'output/vis';
 qc_folder = 'output/qc';
@@ -59,7 +65,7 @@ for i = 1:length(participant_numbers)
     fprintf('=============================================================\n');
     
     % Define file paths
-    raw_set_filename = sprintf('P%02d_raw.set', participant_num);
+    raw_set_filename = sprintf('P%02d.set', participant_num);
     raw_set_path = fullfile(raw_eeg_folder, raw_set_filename);
     vis_folder = fullfile(vis_base_folder, sprintf('P%02d', participant_num));
     
