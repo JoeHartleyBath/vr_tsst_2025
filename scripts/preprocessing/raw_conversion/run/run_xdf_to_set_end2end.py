@@ -10,14 +10,27 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent.parent.parent  # Go up to c:\vr_tsst_2025
     participants = [1, 2, 3]
 
+    # Use pilot conditions file (without duration filtering)
+    pilot_config = base / "config/conditions_pilot.yaml"
+
+    success_count = 0
+    failure_count = 0
+
     for p in participants:
         xdf = base / f"data/RAW/eeg/P{p:02d}.xdf"
         out = base / f"output/sets/P{p:02d}.set"
         out.parent.mkdir(parents=True, exist_ok=True)
         try:
-            summary = xdf_to_set(xdf, out)
-            print(f"Conversion summary for P{p:02d}:")
+            summary = xdf_to_set(xdf, out, config_path=pilot_config)
+            print(f"✓ Conversion summary for P{p:02d}:")
             for k, v in summary.items():
-                print(f"{k}: {v}")
+                print(f"  {k}: {v}")
+            success_count += 1
         except Exception as e:
-            print(f"Conversion failed for P{p:02d}:", e)
+            print(f"✗ Conversion failed for P{p:02d}: {e}")
+            failure_count += 1
+
+    print(f"\nStage 1 Complete: {success_count} succeeded, {failure_count} failed")
+    
+    if failure_count > 0:
+        sys.exit(1)  # Exit with error if any conversion failed
