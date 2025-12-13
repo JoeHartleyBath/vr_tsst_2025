@@ -22,7 +22,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(log_file),
+        logging.FileHandler(log_file, encoding='utf-8'),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -126,7 +126,7 @@ Examples:
         "--stages",
         nargs="+",
         type=str,
-        default="1 2 3 4 5 6",
+        default=["1", "2", "3", "4", "5", "6"],
         help="Space-separated list of stages to run (e.g., '1 4 5' or '1-3')"
     )
     
@@ -135,11 +135,13 @@ Examples:
     # Parse stage input (handle ranges and lists)
     stage_list = []
     for item in args.stages:
-        if "-" in item:
+        if isinstance(item, str) and "-" in item:
             start, end = map(int, item.split("-"))
             stage_list.extend(range(start, end + 1))
-        else:
-            stage_list.append(int(item))
+        elif isinstance(item, str) and item.strip():
+            stage_list.append(int(item.strip()))
+        elif isinstance(item, int):
+            stage_list.append(item)
     
     stage_list = sorted(set(stage_list))  # Remove duplicates, sort
     
@@ -163,7 +165,7 @@ Examples:
         results[stage_num] = "✓ OK" if success else "✗ FAILED"
         
         if not success:
-            logger.warning(f"\nStage {stage_num} failed. Continue? (y/n): ", end="")
+            print(f"\nStage {stage_num} failed. Continue? (y/n): ", end="", flush=True)
             if input().lower() != "y":
                 logger.info("Pipeline stopped by user.")
                 break
