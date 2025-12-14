@@ -159,6 +159,9 @@ def extract_single_stream(stream: dict) -> dict:
     # Raw EEG samples: shape (samples, channels)
     data = np.asarray(stream["time_series"], dtype=float)
 
+    # Scale data: ANT eego streams appear to be in millivolts; EEGLAB expects microvolts
+    data = data * 1000.0
+
     # Timestamps: shape (samples,)
     timestamps = np.asarray(stream["time_stamps"], dtype=float)
 
@@ -305,7 +308,15 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     times = np.arange(pnts) / srate * 1000
     
     # --- Load channel names from config ---
-    meta_path = Path("config/eeg_metadata.yaml")
+    # Determine workspace root
+    current = Path.cwd()
+    workspace_root = current
+    while workspace_root != workspace_root.parent:
+        if (workspace_root / "config").exists():
+            break
+        workspace_root = workspace_root.parent
+    
+    meta_path = workspace_root / "config/eeg_metadata.yaml"
     with open(meta_path, "r") as f:
         eeg_meta = yaml.safe_load(f)
 
@@ -315,7 +326,7 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     if len(channel_names) != nbchan:
         raise ValueError(f"Expected {nbchan} channel names, found {len(channel_names)}")
 
-    # --- Chanlocs as structured array for MATLAB compatibility ---
+    # --- Chanlocs aworkspace_root / "config/eeglab_template.yaml"tibility ---
     chanlocs_dtype = np.dtype([('labels', 'O')])
     chanlocs = np.array(
         [(name,) for name in channel_names],
@@ -323,7 +334,7 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     )
 
     # --- Load EEGLAB template from config ---
-    template_path = Path("config/eeglab_template.yaml")
+    template_path = workspace_root / "config/eeglab_template.yaml"
     with open(template_path, "r") as f:
         template = yaml.safe_load(f)
 
@@ -631,6 +642,22 @@ def add_exposure_type_from_config(
         representing the assigned condition label for each row.
     """
 
+    # Normalize key columns to improve matching (trim and collapse whitespace)
+    cols_to_norm = [
+        "Unity Scene",
+        "Study_Phase",
+        "Shown_Scene",
+        "Arithmetic_Task",
+        "Participant_State",
+    ]
+    for col in cols_to_norm:
+        if col in df_physio.columns:
+            df_physio[col] = (
+                df_physio[col].astype(str)
+                .str.strip()
+                .str.replace(r"\s+", " ", regex=True)
+            )
+
     # Load conditions from config
     config_path = Path(config_path)
     with open(config_path, "r") as f:
@@ -644,6 +671,7 @@ def add_exposure_type_from_config(
     # Build boolean masks from filter definitions
     condition_masks = []
     label_order = []
+    match_counts = {}
 
     for label, filters in conditions_dict.items():
         # Start with all True
@@ -651,8 +679,9 @@ def add_exposure_type_from_config(
 
         # AND together all filters for this condition
         for col, value in filters.items():
+            # Skip filters for columns not in the dataframe (e.g., 'duration' used only for feature extraction)
             if col not in df_physio.columns:
-                raise ValueError(f"Column '{col}' not found in physio dataframe.")
+                continue
 
             if isinstance(value, list):
                 # Multiple allowed values: check membership
@@ -661,8 +690,13 @@ def add_exposure_type_from_config(
                 # Single value: check equality
                 mask &= (df_physio[col] == value)
 
+        match_count = int(mask.sum())
+        match_counts[label] = match_count
         condition_masks.append(mask)
         label_order.append(label)
+
+    # Store match counts in dataframe as metadata for caller to log
+    df_physio.attrs['label_match_counts'] = match_counts
 
     # Assign exposure_type using np.select
     df_physio["exposure_type"] = np.select(
@@ -823,9 +857,17 @@ def build_eeg_event_list(
 
     for exposure, onset_ts_or_list in event_ts_dict.items():
 
-        # Skip if label has no mapped short code
-        if exposure not in export_event_labels:
-            continue
+        # Skip if label not selected for export
+        # In pilot config, export_event_labels is a list, not a mapping.
+        # Use the exposure label itself as the event type when included.
+        if isinstance(export_event_labels, dict):
+            if exposure not in export_event_labels:
+                continue
+            event_type = export_event_labels[exposure]
+        else:
+            if exposure not in export_event_labels:
+                continue
+            event_type = exposure
 
         # Handle both single timestamp and list of timestamps
         timestamps = onset_ts_or_list if isinstance(onset_ts_or_list, list) else [onset_ts_or_list]
@@ -844,7 +886,7 @@ def build_eeg_event_list(
 
             events.append({
                 "latency": sample_idx,
-                "type": export_event_labels[exposure]
+                "type": event_type
             })
 
     # Sort by sample index
@@ -877,11 +919,12 @@ def save_set(eeg_struct, output_path: Path):
     if output_path.suffix == "":
         output_path = output_path.with_suffix(".set")
 
+    # Write with row-oriented vectors so event arrays are 1xN
     savemat(
-        str(output_path), 
-        mat_dict, 
+        str(output_path),
+        mat_dict,
         do_compression=True,
-        oned_as='column'  # Ensure 1D arrays are column vectors
+        oned_as='row'
     )
 
     return output_path
@@ -947,6 +990,7 @@ def xdf_to_set(
     output_path: Path,
     physio_path: Path | None = None,
     config_path: Path = Path("config/conditions.yaml"),
+    log_label_matches: bool = True,
 ) -> Dict:
     """High-level pipeline that converts an XDF to an EEGLAB .set (MAT) file.
 
@@ -958,12 +1002,20 @@ def xdf_to_set(
       - build EEGLAB struct and attach events
       - save .set/.mat to disk
 
-    Returns a summary dict with keys: `path`, `n_events`, `nbchan`, `pnts`, `srate`.
+    Returns a summary dict with keys: `path`, `n_events`, `nbchan`, `pnts`, `srate`, `label_matches`, `event_types`.
     """
 
     xdf_path = Path(xdf_path)
     output_path = Path(output_path)
 
+    # Determine workspace root (look for config/ directory as marker)
+    current = Path.cwd()
+    workspace_root = current
+    while workspace_root != workspace_root.parent:
+        if (workspace_root / "config").exists():
+            break
+        workspace_root = workspace_root.parent
+    
     # 1) Load/merge EEG streams
     merged = load_and_merge(xdf_path)
 
@@ -971,15 +1023,23 @@ def xdf_to_set(
     eeg_data = merged["data"]
     srate = merged["srate"]
 
-    # 2) Resolve physio CSV path if not provided (assumes sibling metadata folder)
+    # 2) Resolve physio CSV path if not provided (handle RAW/raw case-insensitive)
     if physio_path is None:
-        physio_candidate = Path("data/raw/metadata") / f"{xdf_path.stem}.csv"
-        if physio_candidate.exists():
-            physio_path = physio_candidate
-        else:
+        candidates = [
+            workspace_root / "data/RAW/metadata" / f"{xdf_path.stem}.csv",
+            workspace_root / "data/raw/metadata" / f"{xdf_path.stem}.csv",
+        ]
+        physio_found = None
+        for physio_candidate in candidates:
+            if physio_candidate.exists():
+                physio_found = physio_candidate
+                break
+        if physio_found is None:
             raise FileNotFoundError(
-                f"Physio metadata not provided and could not find {physio_candidate}"
+                "Physio metadata not provided and could not find any of: "
+                + ", ".join(str(c) for c in candidates)
             )
+        physio_path = physio_found
 
     # 3) Load physio and condition config
     df_physio = pd.read_csv(physio_path, low_memory=False)
@@ -1022,13 +1082,29 @@ def xdf_to_set(
 
     # 10) Save to disk
     saved = save_set(EEG, output_path)
+# Collect event type counts
+    event_types = {}
+    for ev in event_list:
+        ev_type = ev.get("type")
+        event_types[ev_type] = event_types.get(ev_type, 0) + 1
 
+    # Build summary with label match counts
     summary = {
         "path": str(saved),
         "n_events": len(event_list),
         "nbchan": EEG.get("nbchan"),
         "pnts": EEG.get("pnts"),
         "srate": EEG.get("srate"),
+        "label_matches": df_physio.attrs.get('label_match_counts', {}),
+        "event_types": event_types,
     }
+
+    # Optional: log label matches if requested
+    if log_label_matches and 'label_match_counts' in df_physio.attrs:
+        match_counts = df_physio.attrs['label_match_counts']
+        print(f"  Label matches (top 10):")
+        sorted_matches = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)
+        for label, count in sorted_matches[:10]:
+            print(f"    {label}: {count}")
 
     return summary
