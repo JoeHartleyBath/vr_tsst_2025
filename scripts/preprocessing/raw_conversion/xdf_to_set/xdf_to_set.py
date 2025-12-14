@@ -792,31 +792,75 @@ def extract_event_timestamps(df_physio: pd.DataFrame) -> Dict[str, np.datetime64
 
 def extract_response_timestamps(df_physio: pd.DataFrame) -> Dict[str, List[np.datetime64]]:
     """
-    Extract first timestamps for each contiguous block of Correct/Incorrect responses.
+    Identify true response events from the physio metadata.
+
+    Rules (based on metadata behavior):
+    - The Response column latches the last value across many rows.
+    - The Response_Time column is a per-trial timer that resets on each response.
+    - Emit an event when Response_Time decreases (reset), and also emit the
+      first non-null Response within each task block so single-response tasks
+      are not missed.
 
     Assumptions:
     - df_physio index is datetime64[ns]
     - 'Response' contains exactly: 'Correct', 'Incorrect', or NaN
+    - 'Response_Time' exists and resets to a low value (often 0) on each response
     """
 
-    if "Response" not in df_physio.columns:
+    required_cols = {"Response", "Response_Time"}
+    if not required_cols.issubset(df_physio.columns):
         return {}
 
-    # Keep only rows where Response is not null
-    df = df_physio[df_physio["Response"].notna()]
-    if df.empty:
+    # Ensure we have datetime index for downstream conversions
+    if not np.issubdtype(df_physio.index.dtype, np.datetime64):
+        raise ValueError("df_physio index must be datetime64[ns].")
+
+    resp = df_physio["Response"]
+    resp_time = pd.to_numeric(df_physio["Response_Time"], errors="coerce")
+    resp_notna = resp.notna()
+
+    # Detect timer resets: Response_Time drops relative to the previous sample.
+    reset_mask = (
+        resp_time.notna()
+        & resp_time.shift().notna()
+        & (resp_time < resp_time.shift())
+        & resp_notna
+    )
+
+    candidate_idx = pd.Index(df_physio.index[reset_mask])
+
+    # Also capture the first non-null Response within each task block so we
+    # still emit an event when only a single response occurs in that block.
+    task_key = None
+    if "Arithmetic_Task" in df_physio.columns:
+        task_key = df_physio["Arithmetic_Task"].ffill()
+    elif "Task_State" in df_physio.columns:
+        task_key = df_physio["Task_State"].ffill()
+
+    if task_key is not None:
+        task_df = (
+            df_physio.assign(_task=task_key)
+            .loc[resp_notna & task_key.notna(), ["Response", "_task"]]
+        )
+        if not task_df.empty:
+            first_per_task = task_df.groupby("_task", sort=False).head(1)
+            candidate_idx = candidate_idx.union(first_per_task.index)
+    else:
+        # Fallback: at least include the first observed non-null response overall
+        if resp_notna.any():
+            candidate_idx = candidate_idx.union(resp.index[resp_notna].take([0]))
+
+    if candidate_idx.empty:
         return {}
 
-    # Identify points where response changes (block boundaries)
-    change_ids = df["Response"].ne(df["Response"].shift()).cumsum()
-
+    # Build response event dict with de-duplicated, time-sorted indices
     response_ts_dict: Dict[str, List[np.datetime64]] = {}
-
-    # Group by (response_value, block_number) → first timestamp in each block
-    for (resp_val, block_id), group in df.groupby([df["Response"], change_ids]):
-        label = f"Response_{resp_val}"
-        ts = np.datetime64(group.index[0])
-        response_ts_dict.setdefault(label, []).append(ts)
+    for ts in candidate_idx.sort_values():
+        val = resp.loc[ts]
+        if pd.isna(val):
+            continue
+        label = f"Response_{val}"
+        response_ts_dict.setdefault(label, []).append(np.datetime64(ts))
 
     return response_ts_dict
 
