@@ -281,7 +281,7 @@ end
 %  MAIN PROCESSING LOOP
 %% ========================================================================
 
-participant_numbers = [1]; % TEST: Just P01 for now
+participant_numbers = [2]; % TEST: Just P02 for now
 
 % Check for already-processed participants (resume capability)
 processed = [];
