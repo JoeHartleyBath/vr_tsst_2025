@@ -128,8 +128,8 @@ if ~exist(qc_folder, 'dir'), mkdir(qc_folder); end
 
 %% Setup Parallel Pool
 % Balance CPU utilization with memory constraints
-% AMICA uses ~8GB per participant; 4 workers = ~32GB max (manageable on 32GB system)
-num_workers = min(4, length(participant_numbers));
+% AMICA uses ~8GB per participant; 3 workers = ~24GB max (safer for high CPU load)
+num_workers = min(3, length(participant_numbers));
 
 fprintf('=============================================================\n');
 fprintf('PARALLEL EEG CLEANING PIPELINE\n');
