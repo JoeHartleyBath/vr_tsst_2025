@@ -141,7 +141,7 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     % Run clean_artifacts (ASR) on full data with tuned parameters
     [EEG, com] = clean_artifacts(EEG, ...
         'FlatlineCriterion',  5, ...
-        'ChannelCriterion',   0.70, ...
+        'ChannelCriterion',   0.60, ...
         'LineNoiseCriterion', 4, ...
         'BurstCriterion',     50, ...
         'WindowCriterion',    0.60);
@@ -201,6 +201,23 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     log_message(logfile, '=== Step 6: ICLabel and Artifact Removal ===');
     
     EEG = iclabel(EEG);
+    % Save ICLabel results for post-hoc inspection (use correct field)
+    try
+        output_dir = fullfile(pwd, '../../../../output/ica_weights');
+        if ~exist(output_dir, 'dir')
+            mkdir(output_dir);
+        end
+        iclabel_snapshot_path = fullfile(output_dir, sprintf('P%02d_iclabel_snapshot.mat', participant_num));
+        if isfield(EEG, 'etc') && isfield(EEG.etc, 'ic_classification') && isfield(EEG.etc.ic_classification, 'ICLabel')
+            iclabel_results = EEG.etc.ic_classification.ICLabel;
+            save(iclabel_snapshot_path, 'iclabel_results', '-v7.3');
+            log_message(logfile, sprintf('ICLabel results snapshot saved: %s', iclabel_snapshot_path));
+        else
+            warning('[ICLabel Save] ICLabel results not found in EEG.etc.ic_classification.ICLabel');
+        end
+    catch ME
+        warning('[ICLabel Save] Failed to save ICLabel snapshot: %s', ME.message);
+    end
     log_message(logfile, sprintf('ICLabel applied. %d components classified.', size(EEG.icaweights, 1)));
     
     EEG = flag_and_remove_artifacts(EEG, logfile);
@@ -285,8 +302,8 @@ function [EEG, LL_trace] = run_amica_pipeline(EEG, participant_num, logfile)
     
     num_models   = 1;
     numprocs     = 1;
-    max_threads  = 8;        % CHANGED: Use 8 threads (Ryzen 7 5700X)
-    max_iter     = 400;
+    max_threads  = 2;        % CHANGED: Use 8 threads (Ryzen 7 5700X)
+    max_iter     = 2;
     writeStep    = 10;
     
     outdir = fullfile(pwd, sprintf('amicaouttmp_%d', participant_num));
