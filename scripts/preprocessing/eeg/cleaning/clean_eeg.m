@@ -303,7 +303,7 @@ function [EEG, LL_trace] = run_amica_pipeline(EEG, participant_num, logfile)
     num_models   = 1;
     numprocs     = 1;
     max_threads  = 2;        % CHANGED: Use 8 threads (Ryzen 7 5700X)
-    max_iter     = 2;
+    max_iter     = 200;
     writeStep    = 10;
     
     outdir = fullfile(pwd, sprintf('amicaouttmp_%d', participant_num));
@@ -364,8 +364,10 @@ function EEG = flag_and_remove_artifacts(EEG, logfile)
     probs = EEG.etc.ic_classification.ICLabel.classifications;
     eyeProb = probs(:, 3);
     muscleProb = probs(:, 2);
-    
-    toRemove = find(eyeProb >= 0.9 | muscleProb >= 0.9);
+    channelNoiseProb = probs(:, 6);
+
+    % Flag ICs for removal if Eye, Muscle, or Channel Noise probability >= 0.8
+    toRemove = find(eyeProb >= 0.8 | muscleProb >= 0.8 | channelNoiseProb >= 0.8);
     
     if isempty(toRemove)
         EEG.etc.badICs = [];
