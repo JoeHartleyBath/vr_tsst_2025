@@ -274,7 +274,7 @@ entropy_metrics:
 
 # MATLAB toolbox paths
 toolbox_paths:
-  eeglab: "C:/Program Files/MATLAB/R2025b/toolbox/eeglab2025.1.0"
+  eeglab: "C:/MATLAB/toolboxes/eeglab2025.1.0"
   entropy_hub: "C:/Program Files/MATLAB/R2025b/toolbox/EntropyHub"
   utils: "scripts/utils"
 

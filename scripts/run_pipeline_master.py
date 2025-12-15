@@ -6,10 +6,12 @@ Usage: python scripts/run_pipeline_master.py [--participants 1 2 3] [--stages 1 
 """
 import sys
 import subprocess
+from time import perf_counter
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import argparse
+from tqdm import tqdm
 import json
 
 # Setup logging
@@ -83,6 +85,8 @@ def run_stage(stage_num, stage_info):
         return False
     
     try:
+        stage_start_dt = datetime.now()
+        stage_start = perf_counter()
         if stage_type == "python":
             cmd = [sys.executable, script]
             logger.info(f"Running: {' '.join(cmd)}")
@@ -100,7 +104,9 @@ def run_stage(stage_num, stage_info):
             logger.info(f"Running: {' '.join(cmd)}")
             result = subprocess.run(cmd, check=True, capture_output=False)
         
-        logger.info(f"✓ Stage {stage_num} completed successfully")
+        elapsed_dt = datetime.now() - stage_start_dt
+        elapsed_s = perf_counter() - stage_start
+        logger.info(f"✓ Stage {stage_num} completed successfully in {elapsed_dt} (~{elapsed_s:.1f}s)")
         return True
     
     except subprocess.CalledProcessError as e:
@@ -155,20 +161,40 @@ Examples:
     logger.info(f"VR-TSST PIPELINE ORCHESTRATOR")
     logger.info(f"{'='*70}")
     logger.info(f"Stages to run: {stage_list}")
+    # Provide high-level status with estimated durations and ETA
+    total_est_minutes = 0
+    for s in stage_list:
+        est = STAGES[s]["duration_est"]
+        # crude parse: first number before space
+        try:
+            if "-" in est:
+                parts = est.split(" ")[0]
+                lo, hi = parts.split("-")
+                total_est_minutes += (int(lo) + int(hi)) // 2
+            elif "hour" in est:
+                # handle forms like '2-3 hours' or '2-3 hours (..)' already covered; single '2 hours'
+                num = int(est.split(" ")[0])
+                total_est_minutes += num * 60
+            else:
+                num = int(est.split(" ")[0])
+                total_est_minutes += num
+        except Exception:
+            pass
+    start_time = datetime.now()
+    eta = start_time + timedelta(minutes=total_est_minutes)
+    logger.info(f"Estimated total duration: ~{total_est_minutes} minutes")
+    logger.info(f"Estimated finish by: {eta.strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info(f"Log file: {log_file}")
     logger.info(f"{'='*70}\n")
     
-    # Run stages
+    # Run stages with progress bar (fail-fast: stop on first failure)
     results = {}
-    for stage_num in stage_list:
+    for stage_num in tqdm(stage_list, desc="Pipeline Stages", unit="stage"):
         success = run_stage(stage_num, STAGES[stage_num])
         results[stage_num] = "✓ OK" if success else "✗ FAILED"
-        
         if not success:
-            print(f"\nStage {stage_num} failed. Continue? (y/n): ", end="", flush=True)
-            if input().lower() != "y":
-                logger.info("Pipeline stopped by user.")
-                break
+            logger.error(f"Stage {stage_num} failed; stopping pipeline (fail-fast)")
+            break
     
     # Summary
     logger.info(f"\n{'='*70}")

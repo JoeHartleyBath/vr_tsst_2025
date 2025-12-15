@@ -1,61 +1,35 @@
-#!/usr/bin/env pwsh
-# Pipeline monitoring script - periodically checks latest log file
-# Usage: ./monitor_pipeline.ps1
+<# VR-TSST Pipeline Monitor: processes, logs, outputs #>
+$ErrorActionPreference = 'SilentlyContinue'
 
-$logDir = "output/logs"
-Write-Host "Pipeline Monitor Started - $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Green
-Write-Host "=============================================================" -ForegroundColor Green
-Write-Host ""
+Write-Host "`n=== VR-TSST Pipeline Monitor ===" -ForegroundColor Cyan
+Write-Host ("Timestamp: {0}" -f (Get-Date))
 
-while ($true) {
-    try {
-        # Find latest log file
-        $latestLog = Get-ChildItem -Path $logDir -Filter "pipeline_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-        
-        if ($latestLog) {
-            Write-Host "`n[$(Get-Date -Format 'HH:mm:ss')] Latest log: $($latestLog.Name)" -ForegroundColor Cyan
-            
-            # Get last 20 lines of log
-            $lastLines = Get-Content -Path $latestLog.FullName -Tail 20 | Where-Object { $_ -match "STAGE|Running|completed|ERROR|failed" }
-            
-            if ($lastLines) {
-                foreach ($line in $lastLines) {
-                    if ($line -match "ERROR|failed") {
-                        Write-Host $line -ForegroundColor Red
-                    } elseif ($line -match "completed successfully") {
-                        Write-Host $line -ForegroundColor Green
-                    } elseif ($line -match "STAGE") {
-                        Write-Host $line -ForegroundColor Yellow
-                    } else {
-                        Write-Host $line
-                    }
-                }
-            }
-            
-            # Check if pipeline completed
-            $content = Get-Content -Path $latestLog.FullName -Raw
-            if ($content -match "PIPELINE COMPLETE") {
-                Write-Host "`n==============================================================" -ForegroundColor Green
-                Write-Host "✓ PIPELINE COMPLETED SUCCESSFULLY!" -ForegroundColor Green
-                Write-Host "==============================================================" -ForegroundColor Green
-                break
-            } elseif ($content -match "PIPELINE FAILED") {
-                Write-Host "`n==============================================================" -ForegroundColor Red
-                Write-Host "✗ PIPELINE FAILED - Check log for details" -ForegroundColor Red
-                Write-Host "==============================================================" -ForegroundColor Red
-                break
-            }
-        } else {
-            Write-Host "No log files found in $logDir" -ForegroundColor Yellow
-        }
-        
-        Write-Host "`n[Sleeping 60s... Press Ctrl+C to stop monitoring]" -ForegroundColor DarkGray
-        Start-Sleep -Seconds 60
-        
-    } catch {
-        Write-Host "Error: $_" -ForegroundColor Red
-        break
-    }
+# Active processes
+Write-Host "`n--- Active Processes (python/matlab/R) ---" -ForegroundColor Yellow
+Get-Process -Name python, python3, matlab, R | Select-Object Name, Id, CPU, StartTime | Format-Table -AutoSize
+
+# Latest orchestrator log
+Write-Host "`n--- Latest Orchestrator Log (tail 60) ---" -ForegroundColor Yellow
+$logs = Get-ChildItem -Path "output/logs" -Filter "pipeline_*.log" | Sort-Object LastWriteTime -Descending
+if ($logs -and $logs.Count -gt 0) {
+    $latest = $logs[0].FullName
+    Write-Host ("Log: {0}" -f $latest)
+    Get-Content -Path $latest -Tail 60
+} else {
+    Write-Host "No pipeline logs found yet."
 }
 
-Write-Host "`nMonitor stopped at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Cyan
+# Stage outputs
+Write-Host "`n--- Stage Outputs ---" -ForegroundColor Yellow
+Write-Host "Stage 1 (.set files):"
+Get-ChildItem -Path "output/sets" -Filter "*.set" | Select-Object Name, Length, LastWriteTime | Format-Table -AutoSize
+
+Write-Host "`nStage 2 (cleaned EEG):"
+Get-ChildItem -Path "output/cleaned_eeg" -Filter "*.set" | Select-Object Name, Length, LastWriteTime | Format-Table -AutoSize
+
+Write-Host "`nQC Summary:"
+Get-ChildItem -Path "output/qc/summary" -Filter "*" | Select-Object Name, Length, LastWriteTime | Format-Table -AutoSize
+
+# Guidance
+Write-Host "`nTip: Auto-refresh every 10s with:" -ForegroundColor DarkCyan
+Write-Host "powershell -NoLogo -NoProfile -Command \"while ($true) { cls; & .\\monitor_pipeline.ps1; Start-Sleep -Seconds 10 }\""

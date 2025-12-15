@@ -1,0 +1,57 @@
+2025-12-13 11:56:05,548 - INFO - Logging to: logs\physio_extraction_2025-12-13_11-56-05.log
+2025-12-13 11:56:05,548 - INFO - Starting physiological feature extraction pipeline
+2025-12-13 11:56:05,548 - INFO - Arguments: Namespace(participants=None, parallel=False, output='output/aggregated/all_data_aggregated.csv', force_reprocess=False, skip_cleaning=False)
+2025-12-13 11:56:05,548 - INFO - Processing all 48 participants
+2025-12-13 11:56:05,549 - INFO - STEP 0: Loading configuration...
+2025-12-13 11:56:05,552 - INFO - Loaded config from C:\vr_tsst_2025\config\general.yaml
+2025-12-13 11:56:05,552 - INFO - STEP 1: Loading raw physiological data...
+2025-12-13 11:56:05,553 - INFO - Loading raw physio data from CSVs in data\raw\metadata
+2025-12-13 11:56:08,812 - WARNING - Found 24892 missing Participant_IDs
+2025-12-13 11:56:12,069 - WARNING - Found 24633 missing Participant_IDs
+2025-12-13 11:56:15,450 - WARNING - Found 24354 missing Participant_IDs
+2025-12-13 11:56:18,898 - WARNING - Found 24393 missing Participant_IDs
+2025-12-13 11:56:22,557 - WARNING - Found 27806 missing Participant_IDs
+2025-12-13 11:56:25,800 - WARNING - Found 26281 missing Participant_IDs
+2025-12-13 11:56:29,259 - WARNING - Found 24987 missing Participant_IDs
+2025-12-13 11:56:32,939 - WARNING - Found 25674 missing Participant_IDs
+2025-12-13 11:56:36,893 - WARNING - Found 30251 missing Participant_IDs
+2025-12-13 11:56:41,542 - WARNING - Found 31080 missing Participant_IDs
+2025-12-13 11:56:44,935 - WARNING - Found 26390 missing Participant_IDs
+2025-12-13 11:56:48,713 - WARNING - Found 22734 missing Participant_IDs
+2025-12-13 11:56:52,845 - WARNING - Found 26477 missing Participant_IDs
+2025-12-13 11:56:57,765 - WARNING - Found 28767 missing Participant_IDs
+2025-12-13 11:57:01,946 - WARNING - Found 27364 missing Participant_IDs
+2025-12-13 11:57:05,648 - WARNING - Found 28807 missing Participant_IDs
+2025-12-13 11:57:09,330 - WARNING - Found 27071 missing Participant_IDs
+2025-12-13 11:57:13,121 - WARNING - Found 26891 missing Participant_IDs
+2025-12-13 11:57:16,719 - WARNING - Found 25098 missing Participant_IDs
+2025-12-13 11:57:20,139 - WARNING - Found 26432 missing Participant_IDs
+2025-12-13 11:57:23,459 - WARNING - Found 23031 missing Participant_IDs
+2025-12-13 11:57:27,335 - WARNING - Found 25953 missing Participant_IDs
+2025-12-13 11:57:31,544 - WARNING - Found 23809 missing Participant_IDs
+2025-12-13 11:57:35,589 - WARNING - Found 25876 missing Participant_IDs
+2025-12-13 11:57:39,029 - WARNING - Found 26719 missing Participant_IDs
+2025-12-13 11:57:42,836 - WARNING - Found 27106 missing Participant_IDs
+2025-12-13 11:57:46,081 - WARNING - Found 25394 missing Participant_IDs
+2025-12-13 11:57:49,993 - WARNING - Found 27261 missing Participant_IDs
+2025-12-13 11:57:53,641 - WARNING - Found 26246 missing Participant_IDs
+2025-12-13 11:57:57,766 - WARNING - Found 27991 missing Participant_IDs
+2025-12-13 11:58:01,678 - WARNING - Found 26050 missing Participant_IDs
+2025-12-13 11:58:04,955 - WARNING - Found 25650 missing Participant_IDs
+2025-12-13 11:58:07,925 - WARNING - Found 24263 missing Participant_IDs
+2025-12-13 11:58:11,483 - WARNING - Found 27659 missing Participant_IDs
+2025-12-13 11:58:15,469 - WARNING - Found 25359 missing Participant_IDs
+2025-12-13 11:58:19,708 - WARNING - Found 24624 missing Participant_IDs
+2025-12-13 11:58:23,088 - WARNING - Found 24805 missing Participant_IDs
+2025-12-13 11:58:26,583 - WARNING - Found 25750 missing Participant_IDs
+2025-12-13 11:58:30,535 - WARNING - Found 24891 missing Participant_IDs
+2025-12-13 11:58:34,555 - WARNING - Found 25301 missing Participant_IDs
+2025-12-13 11:58:38,090 - WARNING - Found 25535 missing Participant_IDs
+2025-12-13 11:58:41,160 - WARNING - Found 25273 missing Participant_IDs
+2025-12-13 11:58:44,935 - WARNING - Found 26518 missing Participant_IDs
+2025-12-13 11:58:45,546 - WARNING - Found 3273 missing Participant_IDs
+2025-12-13 11:58:45,547 - ERROR - No valid Participant_IDs found in data
+2025-12-13 11:58:48,668 - WARNING - Found 25708 missing Participant_IDs
+2025-12-13 11:58:52,249 - WARNING - Found 24919 missing Participant_IDs
+2025-12-13 11:58:56,092 - WARNING - Found 26211 missing Participant_IDs
+2025-12-13 11:58:59,672 - WARNING - Found 25021 missing Participant_IDs

@@ -24,7 +24,26 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     
     %% Setup and Validation
     if nargin < 6 || isempty(config)
-        config = yaml.loadFile('config/general.yaml');
+        % Load config with fallback support (ReadYaml → SimpleYAML → skip)
+        projectRoot = fullfile(fileparts(mfilename('fullpath')), '..', '..', '..', '..');
+        projectRoot = char(java.io.File(projectRoot).getCanonicalPath());
+        configPath = fullfile(projectRoot, 'config', 'general.yaml');
+        config = struct();
+        
+        if exist('ReadYaml', 'file') == 2
+            try
+                config = ReadYaml(configPath);
+            catch
+                % Fall through to SimpleYAML
+            end
+        end
+        if isempty(fieldnames(config)) && exist('SimpleYAML', 'file') == 2
+            try
+                config = SimpleYAML.readFile(configPath);
+            catch
+                % Continue with empty config
+            end
+        end
     end
     
     if ~exist(output_folder, 'dir')
@@ -59,23 +78,29 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     
     log_message(logfile, sprintf('Loaded: %d channels, %d samples, %.1f Hz', ...
         EEG.nbchan, EEG.pnts, EEG.srate));
+
+    % Log amplitude stats after load
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats after load: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     save_visualization(EEG, vis_folder, sprintf('P%02d_01_raw_loaded.png', participant_num));
-    
-    % Store original channel locations before any processing
-    EEG.etc.orig_chanlocs = EEG.chanlocs;
     
     %% Step 2: Assign Channel Locations
     log_message(logfile, '=== Step 2: Assign Channel Locations ===');
-    
-    % Assign ANT Neuro 128-channel equidistant layout
-    chanlocs_file = fullfile(fileparts(mfilename('fullpath')), '..', '..', 'config', 'chanlocs', 'NA-271.elc');
+
+    % Assign ANT Neuro 128-channel equidistant layout (resolve via project root)
+    projectRoot = fullfile(fileparts(mfilename('fullpath')), '..', '..', '..', '..');
+    projectRoot = char(java.io.File(projectRoot).getCanonicalPath());
+    chanlocs_file = fullfile(projectRoot, 'config', 'chanlocs', 'NA-271.elc');
     EEG = pop_chanedit(EEG, 'lookup', chanlocs_file);
-    
+
     if isempty(EEG.chanlocs) || isempty(EEG.chanlocs(1).X)
         warning('Failed to assign channel locations.');
     else
         log_message(logfile, 'Channel locations assigned.');
     end
+
+    % Persist original chanlocs after template assignment for later interpolation/saving
+    EEG.etc.orig_chanlocs = EEG.chanlocs;
     
     save_visualization(EEG, vis_folder, sprintf('P%02d_02_chanlocs.png', participant_num));
     
@@ -101,21 +126,31 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
         EEG = pop_eegfiltnew(EEG, 'locutoff', 24.5, 'hicutoff', 25.5, 'revfilt', 1);
         log_message(logfile, 'Applied 25 Hz notch filter.');
     end
+
+    % Log amplitude stats after basic cleaning
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats after basic cleaning: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
     save_visualization(EEG, vis_folder, sprintf('P%02d_03_basic_clean.png', participant_num));
     
     %% Step 4: Advanced Cleaning (ASR + ICA)
     log_message(logfile, '=== Step 4: Advanced Cleaning ===');
     
-    % Run clean_artifacts (ASR)
+    % ASR calibration: using default behavior (let clean_artifacts auto-select clean data)
+
+    % Run clean_artifacts (ASR) on full data with tuned parameters
     [EEG, com] = clean_artifacts(EEG, ...
         'FlatlineCriterion',  5, ...
-        'ChannelCriterion',   0.85, ...
+        'ChannelCriterion',   0.70, ...
         'LineNoiseCriterion', 4, ...
-        'BurstCriterion',     20, ...
-        'WindowCriterion',    0.8);
+        'BurstCriterion',     50, ...
+        'WindowCriterion',    0.60);
     
-    log_message(logfile, 'clean_artifacts (ASR) completed.');
+    log_message(logfile, 'clean_artifacts (ASR) completed with tuned parameters (Burst=50, Channel=0.70, Window=0.60).');
+
+    % Log stats after ASR
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats after ASR: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
     % Validate clean_channel_mask exists
     if ~isfield(EEG.etc, 'clean_channel_mask')
@@ -155,6 +190,10 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
         end
         log_message(logfile, '--- End AMICA Trace ---');
     end
+
+    % Log stats after AMICA unmixing applied
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats after AMICA: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
     save_visualization(EEG, vis_folder, sprintf('P%02d_05_after_amica.png', participant_num));
     
@@ -165,6 +204,10 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     log_message(logfile, sprintf('ICLabel applied. %d components classified.', size(EEG.icaweights, 1)));
     
     EEG = flag_and_remove_artifacts(EEG, logfile);
+
+    % Log stats after IC removal step
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats after IC removal: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
     save_visualization(EEG, vis_folder, sprintf('P%02d_06_after_artifact_removal.png', participant_num));
     
@@ -176,6 +219,10 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     
     EEG = pop_reref(EEG, []);
     log_message(logfile, sprintf('Data re-referenced to average. Mean: %.4f', mean(EEG.data(:))));
+
+    % Log stats after interpolation + reref
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats after reref: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
     save_visualization(EEG, vis_folder, sprintf('P%02d_07_final_clean.png', participant_num));
     
@@ -198,9 +245,28 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     % Save as .mat (data matrix only)
     cleaned_mat_path = fullfile(output_folder, sprintf('P%02d_cleaned.mat', participant_num));
     cleaned_EEG = double(EEG.data);
+    stats = [min(cleaned_EEG(:)), max(cleaned_EEG(:)), mean(cleaned_EEG(:)), std(cleaned_EEG(:))];
+    log_message(logfile, sprintf('Stats at save: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     save(cleaned_mat_path, 'cleaned_EEG', '-v7.3');
     log_message(logfile, sprintf('Cleaned EEG matrix saved: %s', cleaned_mat_path));
     
+    % Ensure chanlocs are present before saving
+    if (isempty(EEG.chanlocs) || length(EEG.chanlocs) == 0 || isempty(EEG.chanlocs(1).X)) && isfield(EEG, 'etc') && isfield(EEG.etc, 'orig_chanlocs')
+        if ~isempty(EEG.etc.orig_chanlocs)
+            log_message(logfile, 'WARNING: chanlocs empty, restoring from orig_chanlocs');
+            EEG.chanlocs = EEG.etc.orig_chanlocs;
+        end
+    end
+
+    % Verify chanlocs before saving
+    if isempty(EEG.chanlocs) || length(EEG.chanlocs) < EEG.nbchan
+        log_message(logfile, sprintf('ERROR: chanlocs missing or incomplete! nbchan=%d, chanlocs length=%d', EEG.nbchan, length(EEG.chanlocs)));
+        error('Cannot save .set file without proper channel locations');
+    else
+        log_message(logfile, sprintf('Verified: %d chanlocs present (labels: %s, %s, %s, ...)', ...
+            length(EEG.chanlocs), EEG.chanlocs(1).labels, EEG.chanlocs(2).labels, EEG.chanlocs(3).labels));
+    end
+
     % Save as .set (full EEGLAB structure)
     cleaned_set_path = fullfile(output_folder, sprintf('P%02d_cleaned.set', participant_num));
     EEG.setname = sprintf('P%02d_cleaned', participant_num);
@@ -303,6 +369,10 @@ function EEG = flag_and_remove_artifacts(EEG, logfile)
     EEG = pop_subcomp(EEG, toRemove, 0);
     
     log_message(logfile, sprintf('Removed %d IC(s).', numel(toRemove)));
+
+    % Log stats inside IC removal helper
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats post-subcomp: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
 end
 
 

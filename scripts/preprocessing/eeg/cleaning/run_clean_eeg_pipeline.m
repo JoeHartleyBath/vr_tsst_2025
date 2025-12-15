@@ -9,30 +9,87 @@
 %   3. Verify paths in config/general.yaml
 %   4. Run this script
 
-% Add utilities path
-addpath(genpath('scripts/utils'));
-addpath(genpath('C:/MATLAB/toolboxes/eeglab'));
-addpath(genpath('C:/MATLAB/toolboxes/amica'));
+% Load config (project-root absolute path, independent of cwd)
+thisFile = mfilename('fullpath');
+thisDir = fileparts(thisFile);
+projectRoot = fullfile(thisDir, '..', '..', '..', '..');
+projectRoot = char(java.io.File(projectRoot).getCanonicalPath());
+cfgPath = fullfile(projectRoot, 'config', 'general.yaml');
+if ~exist(cfgPath, 'file')
+    error('Could not open file %s. No such file or directory.', cfgPath);
+end
+% Load YAML config with robust fallbacks
+try
+    config = yaml.loadFile(cfgPath);
+catch
+    try
+        % Alternate YAML parser API
+        config = ReadYaml(cfgPath);
+    catch
+        warning('YAML parser not available. Proceeding with empty config.');
+        config = struct();
+    end
+end
 
-% Initialize EEGLAB in GUI mode (non-batch)
+% Add utilities path
+addpath(genpath(fullfile(projectRoot, 'scripts', 'utils')));
+
+% Dynamically locate EEGLAB toolbox and add to path
+eeglabAdded = false;
+try
+    % Common installation root
+    eeglabRoot = 'C:/MATLAB/toolboxes';
+    if exist(fullfile(eeglabRoot, 'eeglab'), 'dir')
+        addpath(genpath(fullfile(eeglabRoot, 'eeglab')));
+        eeglabAdded = true;
+    else
+        d = dir(fullfile(eeglabRoot, 'eeglab*'));
+        if ~isempty(d)
+            addpath(genpath(fullfile(eeglabRoot, d(1).name)));
+            eeglabAdded = true;
+        end
+    end
+catch
+    % Continue to verification below
+end
+
+% Also attempt to add AMICA if present
+try
+    amicaRoot = 'C:/MATLAB/toolboxes';
+    if exist(fullfile(amicaRoot, 'amica'), 'dir')
+        addpath(genpath(fullfile(amicaRoot, 'amica')));
+    else
+        d2 = dir(fullfile(amicaRoot, 'amica*'));
+        if ~isempty(d2)
+            addpath(genpath(fullfile(amicaRoot, d2(1).name)));
+        end
+    end
+catch
+end
+
+% Verify EEGLAB core function is available
+if exist('pop_loadset', 'file') ~= 2
+    error(['EEGLAB not found on MATLAB path (missing pop_loadset). ', ...
+           'Please install EEGLAB or update paths. ', ...
+           'Tip: run install_eeglab_and_r.ps1 or adjust startup.m.']);
+end
+
+% Initialize EEGLAB (nogui); continue if GUI fails
 try
     eeglab nogui;
 catch
-    warning('EEGLAB GUI initialization failed, continuing anyway');
+    warning('EEGLAB initialization failed, continuing anyway');
 end
-
-% Load config
-config = yaml.loadFile('config/general.yaml');
 
 %% Configuration
 % Define participant numbers to process
 participant_numbers = [1, 2, 3];  % Update this list as needed (now defaults to P01-P03)
 
-% Define paths
-raw_eeg_folder = 'output/sets';  % Input comes from Stage 1 (XDF→SET conversion)
-output_folder = 'output/cleaned_eeg';
-vis_base_folder = 'output/vis';
-qc_folder = 'output/qc';
+% Define paths (use absolute paths relative to project root)
+raw_eeg_folder = fullfile(projectRoot, 'output', 'sets');
+output_folder = fullfile(projectRoot, 'output', 'cleaned_eeg');
+vis_base_folder = fullfile(projectRoot, 'output', 'vis');
+qc_folder = fullfile(projectRoot, 'output', 'qc');
 
 % Ensure output folders exist
 if ~exist(output_folder, 'dir')
