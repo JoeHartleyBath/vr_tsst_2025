@@ -490,18 +490,3 @@ function log_message(logfile, message)
 end
 
 
-function save_visualization(EEG, folder, filename)
-    % Save EEG visualization to PNG
-    if ~exist(folder, 'dir')
-        mkdir(folder);
-    end
-    
-    try
-        figure('Visible', 'off');
-        pop_eegplot(EEG, 1, 1, 1);
-        saveas(gcf, fullfile(folder, filename));
-        close(gcf);
-    catch ME
-        warning('Could not save visualization %s: %s', filename, ME.message);
-    end
-end
