@@ -25,7 +25,7 @@ kept_var_idx = vt.get_support(indices=True)
 kept_var_cols = [feature_cols[i] for i in kept_var_idx]
 
 # 2. Remove highly correlated features (correlation > 0.75)
-def remove_highly_correlated(X, cols, threshold=0.75):
+def remove_highly_correlated(X, cols, threshold=0.9):
     X = pd.DataFrame(X, columns=cols)
     corr_matrix = X.corr().abs()
     upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
@@ -41,7 +41,7 @@ def remove_highly_correlated(X, cols, threshold=0.75):
     keep_cols = [c for c in cols if c not in to_drop]
     return X[keep_cols], keep_cols
 
-X_pruned, pruned_cols = remove_highly_correlated(X_var, kept_var_cols, threshold=0.75)
+X_pruned, pruned_cols = remove_highly_correlated(X_var, kept_var_cols, threshold=0.90)
 
 # Standard z-score function
 zscore = lambda series: (series - np.nanmean(series)) / (np.nanstd(series, ddof=0) if np.nanstd(series, ddof=0) > 1e-6 else 1.0)
@@ -115,6 +115,12 @@ if window_acc:
     accs = [window_acc[w] / window_counts[w] for w in window_idxs]
     plt.figure(figsize=(10, 4))
     plt.plot(window_idxs, accs, marker='o', linestyle='-', color='b')
+    # Label the point with the highest accuracy
+    max_idx = np.argmax(accs)
+    max_win = window_idxs[max_idx]
+    max_acc = accs[max_idx]
+    plt.annotate(f'Max: {max_acc:.2f}', xy=(max_win, max_acc), xytext=(max_win, max_acc+0.05),
+                 arrowprops=dict(facecolor='red', shrink=0.05), ha='center', color='red', fontsize=10)
     plt.title('SVM Accuracy Over Condition (Rolling Windows)')
     plt.xlabel('Window Index')
     plt.ylabel('Accuracy')
@@ -124,13 +130,3 @@ if window_acc:
     plt.show()
 else:
     print('window_idx column not found in test set; cannot plot accuracy by window index.')
-import matplotlib.pyplot as plt
-plt.figure(figsize=(8, 4))
-plt.plot(range(1, len(results) + 1), results, marker='o', linestyle='-', color='b')
-plt.title('SVM Accuracy Over Condition (Rolling Windows)')
-plt.xlabel('Test Window (Fold)')
-plt.ylabel('Accuracy')
-plt.ylim(0, 1)
-plt.grid(True, linestyle='--', alpha=0.5)
-plt.tight_layout()
-plt.show()
