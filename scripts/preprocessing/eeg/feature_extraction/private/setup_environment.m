@@ -19,8 +19,8 @@ function [config_feat, config_cond, config_gen, output_folder, temp_folder, outp
     % ===== Load configurations =====
     fprintf('Loading configuration files...\n');
     config_feat = yaml.ReadYaml(params.config_file);
-    config_cond = yaml.ReadYaml('config/conditions.yaml');
-    config_gen = yaml.ReadYaml('config/general.yaml');
+    config_cond = yaml.ReadYaml(params.conditions_file);
+    config_gen = yaml.ReadYaml(params.general_file);
     fprintf('  ✓ Loaded 3 config files\n\n');
     
     % Override parallel settings from params if provided

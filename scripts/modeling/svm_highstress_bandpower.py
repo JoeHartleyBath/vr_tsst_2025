@@ -5,6 +5,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
+from sklearn.model_selection import GridSearchCV
 
 # Load data
 df = pd.read_csv(r'C:/vr_tsst_2025/output/aggregated/eeg_features_highstress.csv')
@@ -13,6 +14,8 @@ df = pd.read_csv(r'C:/vr_tsst_2025/output/aggregated/eeg_features_highstress.csv
 group_cols = ['pid', 'label']
 feature_cols = [col for col in df.columns if col not in group_cols]
 
+# Remove features containing 'Delta' or 'Occipital' before pruning
+feature_cols = [col for col in feature_cols if 'Delta' not in col and 'Occipital' not in col]
 
 # --- Feature pruning ---
 # 1. Remove near-zero variance features (threshold very low, e.g. 1e-6)
@@ -40,31 +43,38 @@ def remove_highly_correlated(X, cols, threshold=0.75):
 
 X_pruned, pruned_cols = remove_highly_correlated(X_var, kept_var_cols, threshold=0.75)
 
+# Standard z-score function
+zscore = lambda series: (series - np.nanmean(series)) / (np.nanstd(series, ddof=0) if np.nanstd(series, ddof=0) > 1e-6 else 1.0)
+
 # Prepare data for SVM
 groups = df['pid'].values
 labels = df['label'].values
 results = []
 all_true = []
 all_pred = []
-gkf = GroupKFold(n_splits=5)
+window_acc = dict()  # window_idx -> accuracy
+window_counts = dict()  # window_idx -> count (for averaging if needed)
+gkf = GroupKFold(n_splits=min(5, len(np.unique(groups))))
+
+print(f'Number of features after pruning: {len(pruned_cols)}')
+print(f'Features used after pruning: {pruned_cols}')
 
 for train_idx, test_idx in gkf.split(df, labels, groups):
     train = df.iloc[train_idx].copy()
     test = df.iloc[test_idx].copy()
-    # Z-score within each participant in train, then apply to test
+    # Standard z-score within each participant in train, then apply to test
     train_z = train.copy()
     for pid, group in train.groupby('pid'):
-        train_z.loc[group.index, pruned_cols] = (group[pruned_cols] - group[pruned_cols].mean()) / group[pruned_cols].std(ddof=0)
+        train_z.loc[group.index, pruned_cols] = group[pruned_cols].apply(zscore, axis=0)
     test_z = test.copy()
     for pid, group in test.groupby('pid'):
-        # Use train mean/std for this participant if available, else use test's own
         if pid in train['pid'].values:
             ref = train[train['pid'] == pid][pruned_cols]
             mu = ref.mean()
-            sigma = ref.std(ddof=0)
+            sigma = ref.std(ddof=0).replace(0, 1.0)
         else:
             mu = group[pruned_cols].mean()
-            sigma = group[pruned_cols].std(ddof=0)
+            sigma = group[pruned_cols].std(ddof=0).replace(0, 1.0)
         test_z.loc[group.index, pruned_cols] = (group[pruned_cols] - mu) / sigma
     X_train = train_z[pruned_cols].values
     y_train = train_z['label'].values
@@ -73,15 +83,54 @@ for train_idx, test_idx in gkf.split(df, labels, groups):
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    clf = SVC(kernel='linear', random_state=42)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
+    # Small hyperparameter grid search
+    param_grid = {'C': [0.1, 1, 10], 'gamma': [0.01, 0.1, 1]}
+    grid = GridSearchCV(SVC(kernel='rbf', random_state=42), param_grid, cv=3, scoring='accuracy', n_jobs=-1)
+    grid.fit(X_train, y_train)
+    best_clf = grid.best_estimator_
+    y_pred = best_clf.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
     results.append(acc)
     all_true.extend(y_test)
     all_pred.extend(y_pred)
+    # Track accuracy for each window_idx in the test set
+    if 'window_idx' in test_z.columns:
+        for idx, win_idx in zip(test_z.index, test_z['window_idx']):
+            correct = int(y_pred[list(test_z.index).index(idx)] == y_test[list(test_z.index).index(idx)])
+            if win_idx not in window_acc:
+                window_acc[win_idx] = 0
+                window_counts[win_idx] = 0
+            window_acc[win_idx] += correct
+            window_counts[win_idx] += 1
 
-print(f'Fold Accuracies: {results}')
+
 print(f'Mean Accuracy: {np.mean(results):.3f}')
 print('\nClassification Report:')
 print(classification_report(all_true, all_pred, digits=3))
+
+# --- Plot accuracy over window_idx ---
+import matplotlib.pyplot as plt
+if window_acc:
+    window_idxs = sorted(window_acc.keys())
+    accs = [window_acc[w] / window_counts[w] for w in window_idxs]
+    plt.figure(figsize=(10, 4))
+    plt.plot(window_idxs, accs, marker='o', linestyle='-', color='b')
+    plt.title('SVM Accuracy Over Condition (Rolling Windows)')
+    plt.xlabel('Window Index')
+    plt.ylabel('Accuracy')
+    plt.ylim(0, 1)
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+else:
+    print('window_idx column not found in test set; cannot plot accuracy by window index.')
+import matplotlib.pyplot as plt
+plt.figure(figsize=(8, 4))
+plt.plot(range(1, len(results) + 1), results, marker='o', linestyle='-', color='b')
+plt.title('SVM Accuracy Over Condition (Rolling Windows)')
+plt.xlabel('Test Window (Fold)')
+plt.ylabel('Accuracy')
+plt.ylim(0, 1)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.tight_layout()
+plt.show()

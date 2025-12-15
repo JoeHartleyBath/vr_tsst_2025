@@ -29,6 +29,8 @@ function params = parse_inputs(varargin)
     addParameter(p, 'force_reprocess', false, @islogical);
     addParameter(p, 'output_folder', '', @ischar);
     addParameter(p, 'config_file', 'config/eeg_feature_extraction.yaml', @ischar);
+    addParameter(p, 'conditions_file', 'config/conditions.yaml', @ischar);
+    addParameter(p, 'general_file', 'config/general.yaml', @ischar);
     addParameter(p, 'parallel', [], @(x) isempty(x) || islogical(x));
     addParameter(p, 'num_workers', [], ...
         @(x) isempty(x) || (isnumeric(x) && x > 0 && mod(x,1) == 0));
@@ -44,6 +46,8 @@ function params = parse_inputs(varargin)
     params.config_file = p.Results.config_file;
     params.parallel_enabled = p.Results.parallel;
     params.num_workers = p.Results.num_workers;
+    params.conditions_file = p.Results.conditions_file;
+    params.general_file = p.Results.general_file;
     
     % Validate participants
     if any(params.participants < 1) || any(params.participants > 100)
@@ -53,6 +57,14 @@ function params = parse_inputs(varargin)
     % Validate config file exists
     if ~isfile(params.config_file)
         error('Config file not found: %s', params.config_file);
+    end
+    % Validate conditions file exists
+    if ~isfile(params.conditions_file)
+        error('Conditions file not found: %s', params.conditions_file);
+    end
+    % Validate general file exists
+    if ~isfile(params.general_file)
+        error('General config file not found: %s', params.general_file);
     end
     
     fprintf('Input parameters:\n');
