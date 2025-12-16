@@ -13,8 +13,14 @@ def main():
     base = Path(__file__).parent.parent.parent.parent.parent  # Go up to c:\vr_tsst_2025
 
     parser = argparse.ArgumentParser(description="XDF→SET conversion for participants")
-    parser.add_argument("--participants", nargs="*", type=int, default=[1, 2, 3], help="Participant numbers, e.g., 1 2 3")
-    parser.add_argument("--config", type=str, default=str(base / "config/conditions_pilot.yaml"), help="Path to conditions YAML")
+    parser.add_argument(
+    "--participants",
+    nargs="+",
+    type=int,
+    required=True,
+    help="Participant numbers, e.g. --participants 10 17 23"
+)
+    parser.add_argument("--config", type=str, default=str(base / "config/conditions.yaml"), help="Path to conditions YAML")
     args = parser.parse_args()
 
     participants = args.participants

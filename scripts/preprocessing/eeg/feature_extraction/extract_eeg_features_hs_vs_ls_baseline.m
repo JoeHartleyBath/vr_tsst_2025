@@ -1,12 +1,8 @@
-function extract_eeg_features_highstress_baseline(varargin)
-% EXTRACT_EEG_FEATURES_HIGHSTRESS_BASELINE
-% Extracts band power features for high stress, high/low workload conditions
-% using 10s windows with 50% overlap, and applies precondition baseline subtraction.
+function extract_eeg_features_rolling_windows(varargin)
+% EXTRACT_EEG_FEATURES_ROLLING_WINDOWS
+% Extracts band power features for all allowed conditions using 4s windows with 80% overlap, and applies precondition baseline subtraction.
 %
-% For each participant and condition, identifies the correct relation (baseline) scene,
-% computes features for both baseline and condition, and outputs baseline-corrected features.
-%
-% Output: output/aggregated/eeg_features_highstress_baseline.csv
+% Output: output/aggregated/eeg_features_rolling_windows.csv
 
     %% SETUP
     params = parse_inputs(varargin{:});
@@ -17,11 +13,12 @@ function extract_eeg_features_highstress_baseline(varargin)
     config_feat.features.ratios = false;
     config_feat.features.entropy = false;
 
-    allowed_conditions = {'HighStress_HighCog1022_Task', 'HighStress_HighCog2043_Task', 'HighStress_LowCog_Task'};
+    allowed_conditions = {'HighStress_HighCog1022_Task', 'HighStress_HighCog2043_Task', 'HighStress_LowCog_Task', ...
+                         'LowStress_HighCog1022_Task', 'LowStress_HighCog2043_Task', 'LowStress_LowCog_Task'};
     config_cond.conditions = rmfield(config_cond.conditions, setdiff(fieldnames(config_cond.conditions), allowed_conditions));
 
     % Build output schema: pid, label, window_idx, features
-    header_cols = [{'pid','label','window_idx'}];
+    header_cols = [{'pid','event_label','window_idx'}];
     region_names = fieldnames(config_feat.regions);
     band_names = fieldnames(config_feat.frequency_bands);
     for ri = 1:length(region_names)
@@ -30,7 +27,7 @@ function extract_eeg_features_highstress_baseline(varargin)
         end
     end
 
-    output_csv_hs = fullfile('output', 'aggregated', 'eeg_features_highstress_baseline.csv');
+    output_csv_hs = fullfile('output', 'aggregated', 'eeg_features_rolling_windows.csv');
     fid = fopen(output_csv_hs, 'w');
     if fid == -1, error('Could not create output file: %s', output_csv_hs); end
     fprintf(fid, '%s\n', strjoin(header_cols, ','));
@@ -54,7 +51,7 @@ function extract_eeg_features_highstress_baseline(varargin)
             if ~isfield(EEG, 'event') || isempty(EEG.event), warning('[P%02d] No events', p); continue; end
             chan_labels = {EEG.chanlocs.labels};
 
-            % Identify all baseline (relaxation) scenes for this participant
+            % Identify all baseline (Forest) scenes for this participant
             baseline_events = {};
             for i = 1:length(EEG.event)
                 raw_cond = EEG.event(i).type;
@@ -68,22 +65,17 @@ function extract_eeg_features_highstress_baseline(varargin)
                 raw_cond = EEG.event(i).type;
                 cond = normalize_condition_label(raw_cond, config_cond);
                 if isempty(cond) || ~ismember(cond, allowed_conditions), continue; end
-                % Label: 1 for HighStress_LowCog_Task, 2 for others
-                if strcmp(cond, 'HighStress_LowCog_Task')
-                    label = 1;
-                else
-                    label = 2;
-                end
+                % Use event label (condition name) instead of numeric label
+                event_label = cond;
                 lat = round(EEG.event(i).latency);
                 duration = config_cond.conditions.(cond).duration;
                 t0 = max(1, lat);
                 t1 = min(EEG.pnts, t0 + duration * EEG.srate - 1);
                 if t1 <= t0, warning('[P%02d] Invalid time range for %s', p, cond); continue; end
-                window_len = 10 * EEG.srate;
-                step = round(window_len * 0.5);
+                window_len = 15 * EEG.srate;
+                step = round(window_len * 0.5); % 80% overlap
 
-                % --- Find the correct baseline (relaxation) event for this condition ---
-                % Use the closest preceding relaxation scene (or the last one before the task)
+                % --- Find the correct baseline (Forest) event for this condition ---
                 baseline_idx = -1;
                 baseline_latency = -1;
                 for b = 1:length(baseline_events)
@@ -130,7 +122,7 @@ function extract_eeg_features_highstress_baseline(varargin)
                     if win_end > t1, break; end
                     window_data = EEG.data(:, win_start:win_end);
                     feats = compute_features(window_data, EEG.srate, config_feat.frequency_bands, config_feat.regions, chan_labels, config_feat);
-                    row = {p, label, win_idx};
+                    row = {p, event_label, win_idx};
                     cond_vec = [];
                     for ri = 1:length(region_names)
                         for bi = 1:length(band_names)
@@ -153,5 +145,5 @@ function extract_eeg_features_highstress_baseline(varargin)
             fprintf('[P%02d] ERROR: %s\n', p, ME.message);
         end
     end
-    fprintf('\n✓ High-stress band power feature extraction with baseline correction complete!\n');
+    fprintf('\n✓ HS vs LS band power feature extraction with baseline correction complete!\n');
 end

@@ -299,13 +299,14 @@ def build_eeglab_struct(merged_stream: dict) -> dict:
     srate = merged_stream["srate"]
 
     # EEGLAB format: (channels, samples)
-    data_ch_by_time = data.T
+    data_ch_by_time = data.T.astype(np.float32)
 
     nbchan = data_ch_by_time.shape[0]
     pnts   = data_ch_by_time.shape[1]
 
-    # time axis in milliseconds
-    times = np.arange(pnts) / srate * 1000
+    # time axis in milliseconds (float32 to avoid bloating MAT files)
+    times = (np.arange(pnts, dtype=np.float32) / np.float32(srate)) * np.float32(1000)* np.float32(1000)
+
     
     # --- Load channel names from config ---
     # Determine workspace root
@@ -432,7 +433,7 @@ def save_set(eeg_struct, output_path: Path):
     # MATLAB .mat; here we write a .set file that is actually a .mat container.
     # Use the provided extension if present; otherwise default to .set
     if output_path.suffix == "":
-        output_path = output_path.with_suffix(".set")
+        output_path = output_path.with_suffix(".mat")
 
     savemat(str(output_path), mat_dict, do_compression=True)
 

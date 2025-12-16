@@ -1,17 +1,61 @@
+"""
+This script has been renamed to svm_rolling_windows.py.
+Please use scripts/modeling/svm_rolling_windows.py for all future work.
+"""
+
+
+print("[INFO] Starting SVM rolling windows classification script...")
 import pandas as pd
 import numpy as np
+import argparse
+import yaml
 from sklearn.model_selection import GroupKFold
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.model_selection import GridSearchCV
 
-# Load data
-df = pd.read_csv(r'C:/vr_tsst_2025/output/aggregated/eeg_features_highstress.csv')
+
+
+try:
+    parser = argparse.ArgumentParser(description='SVM classification for EEG rolling window features with flexible label mapping.')
+    parser.add_argument('--features', type=str, default='C:/vr_tsst_2025/output/aggregated/eeg_features_rolling_windows.csv', help='Path to rolling window features CSV')
+    parser.add_argument('--label_config', type=str, default='scripts/modeling/model_class_labels.yaml', help='Path to YAML file with label mappings')
+    parser.add_argument('--task', type=str, required=True, help='Classification task name (must match a key in the YAML config)')
+    args = parser.parse_args()
+    print(f"[INFO] Task: {args.task}")
+    print(f"[INFO] Features file: {args.features}")
+    print(f"[INFO] Label config: {args.label_config}")
+except Exception as e:
+    print(f"[ERROR] Argument parsing failed: {e}")
+    raise
+
+
+try:
+    df = pd.read_csv(args.features)
+    print(f"[INFO] Loaded features: {df.shape[0]} rows, {df.shape[1]} columns")
+except Exception as e:
+    print(f"[ERROR] Failed to load features file: {e}")
+    raise
+
+
+try:
+    with open(args.label_config, 'r') as f:
+        label_map = yaml.safe_load(f)
+    if args.task not in label_map:
+        raise ValueError(f"Task '{args.task}' not found in label config. Available: {list(label_map.keys())}")
+    task_map = label_map[args.task]
+    df = df[df['event_label'].isin(task_map.keys())].copy()
+    df['class_label'] = df['event_label'].map(task_map)
+    print(f"[INFO] Filtered to {df.shape[0]} rows for task '{args.task}'")
+except Exception as e:
+    print(f"[ERROR] Failed to load or apply label mapping: {e}")
+    raise
+
+
 
 # Identify columns
-group_cols = ['pid', 'label']
+group_cols = ['pid', 'event_label', 'window_idx', 'class_label']
 feature_cols = [col for col in df.columns if col not in group_cols]
 
 # Remove features containing 'Delta' or 'Occipital' before pruning
@@ -24,8 +68,8 @@ X_var = vt.fit_transform(df[feature_cols])
 kept_var_idx = vt.get_support(indices=True)
 kept_var_cols = [feature_cols[i] for i in kept_var_idx]
 
-# 2. Remove highly correlated features (correlation > 0.75)
-def remove_highly_correlated(X, cols, threshold=0.9):
+ # 2. Remove highly correlated features (correlation > 0.75)
+def remove_highly_correlated(X, cols, threshold=0.75):
     X = pd.DataFrame(X, columns=cols)
     corr_matrix = X.corr().abs()
     upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
@@ -41,20 +85,30 @@ def remove_highly_correlated(X, cols, threshold=0.9):
     keep_cols = [c for c in cols if c not in to_drop]
     return X[keep_cols], keep_cols
 
-X_pruned, pruned_cols = remove_highly_correlated(X_var, kept_var_cols, threshold=0.90)
+
+X_pruned, pruned_cols = remove_highly_correlated(X_var, kept_var_cols, threshold=0.75)
+
+# Print which columns are being z-scored
+print(f"Columns being z-scored: {pruned_cols}")
 
 # Standard z-score function
 zscore = lambda series: (series - np.nanmean(series)) / (np.nanstd(series, ddof=0) if np.nanstd(series, ddof=0) > 1e-6 else 1.0)
 
+
+
 # Prepare data for SVM
 groups = df['pid'].values
-labels = df['label'].values
+labels = df['class_label'].values
 results = []
 all_true = []
 all_pred = []
 window_acc = dict()  # window_idx -> accuracy
 window_counts = dict()  # window_idx -> count (for averaging if needed)
 gkf = GroupKFold(n_splits=min(5, len(np.unique(groups))))
+
+# Print window_idx range before z-scoring
+if 'window_idx' in df.columns:
+    print(f"window_idx range before z-scoring: min={df['window_idx'].min()}, max={df['window_idx'].max()}")
 
 print(f'Number of features after pruning: {len(pruned_cols)}')
 print(f'Features used after pruning: {pruned_cols}')
@@ -76,19 +130,23 @@ for train_idx, test_idx in gkf.split(df, labels, groups):
             mu = group[pruned_cols].mean()
             sigma = group[pruned_cols].std(ddof=0).replace(0, 1.0)
         test_z.loc[group.index, pruned_cols] = (group[pruned_cols] - mu) / sigma
+    # Print window_idx range after z-scoring features
+    if 'window_idx' in train_z.columns:
+        print(f"window_idx range after z-scoring: min={train_z['window_idx'].min()}, max={train_z['window_idx'].max()}")
+    # Print window_idx range after z-scoring features
+    if 'window_idx' in train_z.columns:
+        print(f"window_idx range after z-scoring: min={train_z['window_idx'].min()}, max={train_z['window_idx'].max()}")
     X_train = train_z[pruned_cols].values
-    y_train = train_z['label'].values
+    y_train = train_z['class_label'].values
     X_test = test_z[pruned_cols].values
-    y_test = test_z['label'].values
+    y_test = test_z['class_label'].values
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    # Small hyperparameter grid search
-    param_grid = {'C': [0.1, 1, 10], 'gamma': [0.01, 0.1, 1]}
-    grid = GridSearchCV(SVC(kernel='rbf', random_state=42), param_grid, cv=3, scoring='accuracy', n_jobs=-1)
-    grid.fit(X_train, y_train)
-    best_clf = grid.best_estimator_
-    y_pred = best_clf.predict(X_test)
+    # Use default SVC (RBF kernel) without grid search
+    clf = SVC(kernel='rbf', random_state=42)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
     results.append(acc)
     all_true.extend(y_test)

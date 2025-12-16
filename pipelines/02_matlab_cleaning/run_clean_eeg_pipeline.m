@@ -83,7 +83,7 @@ end
 
 %% Configuration
 % Define participant numbers to process
-participant_numbers = [1, 2, 3];  % Update this list as needed (now defaults to P01-P03)
+participant_numbers = [14]  % Update this list as needed
 
 % Define paths (use absolute paths relative to project root)
 raw_eeg_folder = fullfile(projectRoot, 'output', 'sets');

@@ -234,7 +234,11 @@ for i = 1:length(results)
         fprintf('✓ P%02d: SUCCESS\n', r.participant);
         success_count = success_count + 1;
     else
-        fprintf('✗ P%02d: FAILED - %s\n', r.participant, r.error);
+        if isfield(r, 'error')
+            fprintf('✗ P%02d: FAILED - %s\n', r.participant, r.error);
+        else
+            fprintf('✗ P%02d: %s\n', r.participant, r.status);
+        end
     end
 end
 
