@@ -208,6 +208,16 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
         log_message(logfile, '--- End AMICA Trace ---');
     end
 
+    % Save AMICA weights for QC
+    ica_weights_dir = fullfile('output', 'ica_weights');
+    if ~exist(ica_weights_dir, 'dir')
+        mkdir(ica_weights_dir);
+    end
+    amica_weights_path = fullfile(ica_weights_dir, sprintf('P%02d_amica_weights.mat', participant_num));
+    amica_weights = struct('weights', EEG.icaweights, 'sphere', EEG.icasphere, 'LL_trace', LL_trace);
+    save(amica_weights_path, 'amica_weights', '-v7.3');
+    log_message(logfile, sprintf('AMICA weights saved: %s', amica_weights_path));
+
     % Log stats after AMICA unmixing applied
     stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
     log_message(logfile, sprintf('Stats after AMICA: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
@@ -218,22 +228,23 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     log_message(logfile, '=== Step 6: ICLabel and Artifact Removal ===');
     
     EEG = iclabel(EEG);
-    % Save ICLabel results for post-hoc inspection (use correct field)
-    try
-        output_dir = fullfile(pwd, '../../../../output/ica_weights');
-        if ~exist(output_dir, 'dir')
-            mkdir(output_dir);
-        end
-        iclabel_snapshot_path = fullfile(output_dir, sprintf('P%02d_iclabel_snapshot.mat', participant_num));
-        if isfield(EEG, 'etc') && isfield(EEG.etc, 'ic_classification') && isfield(EEG.etc.ic_classification, 'ICLabel')
-            iclabel_results = EEG.etc.ic_classification.ICLabel;
+    % Save ICLabel results for post-hoc inspection
+    ica_weights_dir = fullfile('output', 'ica_weights');
+    if ~exist(ica_weights_dir, 'dir')
+        mkdir(ica_weights_dir);
+    end
+    iclabel_snapshot_path = fullfile(ica_weights_dir, sprintf('P%02d_iclabel_snapshot.mat', participant_num));
+    
+    if isfield(EEG, 'etc') && isfield(EEG.etc, 'ic_classification') && isfield(EEG.etc.ic_classification, 'ICLabel')
+        iclabel_results = EEG.etc.ic_classification.ICLabel;
+        try
             save(iclabel_snapshot_path, 'iclabel_results', '-v7.3');
             log_message(logfile, sprintf('ICLabel results snapshot saved: %s', iclabel_snapshot_path));
-        else
-            warning('[ICLabel Save] ICLabel results not found in EEG.etc.ic_classification.ICLabel');
+        catch ME
+            log_message(logfile, sprintf('ERROR: Failed to save ICLabel snapshot: %s', ME.message));
         end
-    catch ME
-        warning('[ICLabel Save] Failed to save ICLabel snapshot: %s', ME.message);
+    else
+        log_message(logfile, 'WARNING: ICLabel results not found in EEG.etc.ic_classification.ICLabel');
     end
     log_message(logfile, sprintf('ICLabel applied. %d components classified.', size(EEG.icaweights, 1)));
     
