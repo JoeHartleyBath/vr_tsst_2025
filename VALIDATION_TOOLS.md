@@ -118,6 +118,11 @@ If a stage fails, run it independently:
 # Stage 1: XDF → SET (5–10 min)
 python scripts/stages/run_stage_1_xdf_to_set.py
 
+## Known Issues: Missing EEG Condition Markers After ASR
+- Symptom: some cleaned sets lose task onset markers (101/102/103/104 etc.) because ASR removed brief artifact segments at the start of a condition.
+- Workaround: reattach raw events without rerunning AMICA using [pipelines/03_matlab_eeg_features/restore_events_from_raw.m](pipelines/03_matlab_eeg_features/restore_events_from_raw.m).
+- Usage: in MATLAB, add paths then call `restore_events_from_raw([5 26 37])` or empty array to auto-discover; outputs `Pxx_cleaned_events.set` alongside the originals.
+
 # Stage 2: EEG Cleaning / AMICA (2–3 hours) ← Usually slowest
 powershell -ExecutionPolicy Bypass scripts/stages/run_stage_2_eeg_cleaning.ps1
 
