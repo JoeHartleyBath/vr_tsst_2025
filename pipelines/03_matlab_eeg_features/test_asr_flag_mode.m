@@ -80,8 +80,7 @@ function test_asr_flag_mode(participant_ids)
         % Load raw to count events
         fprintf('  Loading raw set...\n');
         EEG_raw = pop_loadset('filename', sprintf('P%02d.set', p), 'filepath', raw_dir);
-        raw_event_types = {EEG_raw.event.type};
-        raw_event_counts = countcats(categorical(raw_event_types));
+        raw_event_types = cellfun(@num2str, {EEG_raw.event.type}, 'UniformOutput', false);
         raw_boundaries = sum(strcmp(raw_event_types, 'boundary'));
         raw_pnts = EEG_raw.pnts;
         
@@ -101,8 +100,7 @@ function test_asr_flag_mode(participant_ids)
             % Reload cleaned file
             EEG_clean = pop_loadset('filename', sprintf('P%02d_cleaned.set', p), 'filepath', clean_dir);
             
-            clean_event_types = {EEG_clean.event.type};
-            clean_event_counts = countcats(categorical(clean_event_types));
+            clean_event_types = cellfun(@num2str, {EEG_clean.event.type}, 'UniformOutput', false);
             clean_boundaries = sum(strcmp(clean_event_types, 'boundary'));
             clean_pnts = EEG_clean.pnts;
             

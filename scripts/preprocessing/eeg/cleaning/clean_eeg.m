@@ -138,16 +138,14 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     
     % ASR calibration: using default behavior (let clean_artifacts auto-select clean data)
 
-    % Run clean_artifacts (ASR) in flag/repair mode (no window rejection)
+    % Run clean_artifacts (ASR) without window rejection (omit WindowCriterion)
     [EEG, com] = clean_artifacts(EEG, ...
         'FlatlineCriterion',  5, ...
         'ChannelCriterion',   0.60, ...
         'LineNoiseCriterion', 4, ...
-        'BurstCriterion',     50, ...    % repair strength
-        'BurstRejection',     'off', ... % do not drop bursts after repair
-        'WindowCriterion',    'off');    % keep data, mark via mask
+        'BurstCriterion',     'off'); % disable burst correction, omit WindowCriterion
     
-    log_message(logfile, 'clean_artifacts (ASR) completed in repair/flag mode (Burst=50, no window removal).');
+    log_message(logfile, 'clean_artifacts (ASR) completed without window rejection (BurstCriterion=off, WindowCriterion omitted).');
 
     % Log stats after ASR
     stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];

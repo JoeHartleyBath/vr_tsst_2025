@@ -20,8 +20,8 @@ from pathlib import Path
 
 def load_config():
     """Load configuration from YAML files."""
-    # Get project root (5 levels up from this file: private/ → feature_extraction/ → physio/ → preprocessing/ → scripts/ → project_root)
-    project_root = Path(__file__).parent.parent.parent.parent.parent.parent
+    # Get project root (3 levels up from this file: private/ → 04_python_physio_features/ → pipelines/ → project_root)
+    project_root = Path(__file__).parent.parent.parent.parent
     
     config_dir = project_root / "config"
     
