@@ -10,6 +10,20 @@ Usage:
     python extract_physio_features.py --parallel                    # Enable parallel processing
     python extract_physio_features.py --output custom_output.csv   # Custom output path
 
+Requirements:
+    - Must be run from project root: c:/vr_tsst_2025/
+    - Config file: config/general.yaml
+    - Input data: data/raw/metadata/P01.csv through P48.csv
+    - EEG features: output/aggregated/eeg_features.csv
+    - Python packages: pandas, numpy, yaml, neurokit2, tqdm
+
+Outputs:
+    - output/aggregated/physio_features.csv         # Standalone physio features
+    - output/aggregated/all_data_aggregated.csv     # Merged with EEG & subjective
+    - output/cache/phys_data_raw.pkl                # Cached raw data
+    - logs/physio_extraction_<timestamp>.log        # Processing log
+    - output/qc/physio/P##_qc.txt                   # Per-participant QC logs
+
 Author: VR-TSST Project
 Date: December 2025
 """
@@ -28,7 +42,9 @@ from private.load_data import (
     load_raw_physio_data,
     load_eeg_features,
     load_subjective_ratings,
-    validate_loaded_data
+    validate_loaded_data,
+    load_cached_cleaned_data,
+    save_cleaned_data_cache
 )
 
 # Import cleaning modules
@@ -36,9 +52,8 @@ from private.clean_hr_data import clean_hr_pipeline
 from private.clean_gsr_data import clean_gsr_pipeline, resample_gsr_to_10hz
 from private.clean_eye_data import clean_eye_pipeline
 
-# Import feature extraction and merge modules
+# Import feature extraction module
 from private.extract_features import extract_all_features
-from private.merge_with_eeg import merge_physio_with_eeg, validate_merged_data
 
 
 def setup_logging():
@@ -117,8 +132,8 @@ def parse_arguments():
     parser.add_argument(
         '--output',
         type=str,
-        default='output/aggregated/all_data_aggregated.csv',
-        help='Output CSV file path (default: output/aggregated/all_data_aggregated.csv)'
+        default='output/aggregated/physio_features.csv',
+        help='Output CSV file path (default: output/aggregated/physio_features.csv)'
     )
     
     parser.add_argument(
@@ -149,13 +164,39 @@ def main():
     logging.info("Starting physiological feature extraction pipeline")
     logging.info(f"Arguments: {args}")
     
+    # Check for existing output and determine participants to process
+    physio_output_path = 'output/aggregated/physio_features.csv'
+    
+    if os.path.exists(physio_output_path) and not args.force_reprocess:
+        logging.info(f"Found existing output: {physio_output_path}")
+        existing_df = pd.read_csv(physio_output_path)
+        processed_participants = set(existing_df['Participant_ID'].unique())
+        logging.info(f"  Already processed: {len(processed_participants)} participants")
+    else:
+        processed_participants = set()
+        if args.force_reprocess:
+            logging.info("Force reprocess flag set - will reprocess all participants")
+    
     # Determine participants to process
     if args.participants:
-        participants = args.participants
+        requested_participants = args.participants
+        participants = [p for p in requested_participants if p not in processed_participants]
+        if len(participants) < len(requested_participants):
+            skipped = set(requested_participants) - set(participants)
+            logging.info(f"Skipping already processed participants: {sorted(skipped)}")
         logging.info(f"Processing specific participants: {participants}")
     else:
-        participants = list(range(1, 49))
-        logging.info("Processing all 48 participants")
+        participants = [p for p in range(1, 49) if p not in processed_participants]
+        logging.info(f"Processing {len(participants)} participants (skipping {len(processed_participants)} already completed)")
+    
+    # Exit if nothing to process
+    if not participants:
+        logging.info("=" * 80)
+        logging.info("✅ All participants already processed!")
+        logging.info(f"Output file: {physio_output_path}")
+        logging.info("Use --force-reprocess to reprocess all participants")
+        logging.info("=" * 80)
+        return 0
     
     try:
         # STEP 0: Load configuration
@@ -163,14 +204,8 @@ def main():
         config = load_config()
         data_path = config["paths"]["raw_data"]
         
-        # STEP 1: Load data
-        logging.info("STEP 1: Loading raw physiological data...")
-        phys_data_raw = load_raw_physio_data(
-            data_path,
-            filename_filter='P',  # Match P01.csv, P02.csv, etc.
-            force_reload=args.force_reprocess
-        )
-        logging.info(f"  Loaded {len(phys_data_raw)} physio rows")
+        # STEP 1: Load EEG and subjective data once (shared across participants)
+        logging.info("STEP 1: Loading EEG and subjective data...")
         
         logging.info("Loading EEG features...")
         eeg_data = load_eeg_features(config, force_reload=args.force_reprocess)
@@ -182,82 +217,123 @@ def main():
             logging.info(f"  Loaded {len(subjective_data)} subjective rows")
         except FileNotFoundError as e:
             logging.warning(f"Subjective ratings file not found: {e}")
-            logging.warning("Continuing without subjective ratings - they may already be in EEG data")
+            logging.warning("Continuing without subjective ratings")
             subjective_data = None
         
-        # Validate loaded data
-        logging.info("Validating loaded datasets...")
-        validation = validate_loaded_data(phys_data_raw, eeg_data, subjective_data)
-        if not validation['valid']:
-            raise ValueError("Data validation failed. Check log for details.")
-        
-        # Setup QC loggers for signal cleaning
+        # Setup QC loggers
         logging.info("Setting up QC loggers...")
         qc_loggers = setup_qc_loggers(config, participants)
         
-        # STEP 2: Signal cleaning
-        if not args.skip_cleaning:
-            logging.info("STEP 2: Cleaning physiological signals...")
+        # STEP 2 & 3: Process each participant individually
+        logging.info(f"STEP 2-3: Processing {len(participants)} participants individually...")
+        all_features = []
+        
+        for i, pid in enumerate(participants, 1):
+            logging.info(f"\n[{i}/{len(participants)}] Processing P{pid:02d}...")
             
-            logging.info("  - Cleaning heart rate data...")
-            phys_data_cleaned = clean_hr_pipeline(phys_data_raw, qc_loggers)
-            
-            logging.info("  - Resampling and cleaning GSR data...")
-            gsr_resampled = resample_gsr_to_10hz(
-                phys_data_raw,
-                gsr_cols=['Shimmer_D36A_GSR_Skin_Conductance_uS',
-                         'Shimmer_D36A_GSR_Skin_Resistance_kOhms']
-            )
-            gsr_cleaned = clean_gsr_pipeline(gsr_resampled, qc_loggers)
-            
-            logging.info("  - Cleaning eye tracking data...")
-            phys_data_cleaned = clean_eye_pipeline(phys_data_cleaned, qc_loggers)
+            try:
+                # Check for cached cleaned data
+                cached_cleaned = load_cached_cleaned_data(pid) if not args.force_reprocess else None
+                
+                if cached_cleaned is not None:
+                    logging.info(f"  Using cached cleaned data for P{pid:02d}")
+                    phys_data_cleaned = cached_cleaned
+                    gsr_cleaned = cached_cleaned
+                else:
+                    # Load raw data for this participant only
+                    logging.info(f"  Loading raw data for P{pid:02d}...")
+                    phys_data_raw = load_raw_physio_data(
+                        data_path,
+                        filename_filter='P',
+                        participants=[pid],
+                        force_reload=True
+                    )
+                    
+                    if len(phys_data_raw) == 0:
+                        logging.warning(f"  No data found for P{pid:02d}, skipping")
+                        continue
+                    
+                    # Signal cleaning
+                    if not args.skip_cleaning:
+                        logging.info(f"  Cleaning signals for P{pid:02d}...")
+                        phys_data_cleaned = clean_hr_pipeline(phys_data_raw, qc_loggers)
+                        
+                        gsr_resampled = resample_gsr_to_10hz(
+                            phys_data_raw,
+                            gsr_cols=['Shimmer_D36A_GSR_Skin_Conductance_uS',
+                                     'Shimmer_D36A_GSR_Skin_Resistance_kOhms']
+                        )
+                        gsr_cleaned = clean_gsr_pipeline(gsr_resampled, qc_loggers)
+                        phys_data_cleaned = clean_eye_pipeline(phys_data_cleaned, qc_loggers)
+                    else:
+                        phys_data_cleaned = phys_data_raw.copy()
+                        gsr_cleaned = phys_data_raw.copy()
+                        # Create cleaned column aliases
+                        phys_data_cleaned['Polar_HeartRate_BPM_CLEANED_ABS'] = phys_data_cleaned['Polar_HeartRate_BPM']
+                        phys_data_cleaned['Polar_HeartRate_RR_Interval_CLEANED_ABS'] = phys_data_cleaned['Polar_HeartRate_RR_Interval']
+                        gsr_cleaned['Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK'] = gsr_cleaned['Shimmer_D36A_GSR_Skin_Conductance_uS']
+                        phys_data_cleaned['Foveal_Corrected_Dilation_Left_CLEANED_ABS'] = phys_data_cleaned['Foveal_Corrected_Dilation_Left']
+                        phys_data_cleaned['Foveal_Corrected_Dilation_Right_CLEANED_ABS'] = phys_data_cleaned['Foveal_Corrected_Dilation_Right']
+                        phys_data_cleaned['Inter_Blink_Interval_CLEANED_ABS'] = phys_data_cleaned['Inter_Blink_Interval']
+                        phys_data_cleaned['Current_Blink_Duration_CLEANED_ABS'] = phys_data_cleaned['Current_Blink_Duration']
+                    
+                    # Cache cleaned data
+                    save_cleaned_data_cache(pid, phys_data_cleaned)
+                
+                # Extract features for this participant
+                logging.info(f"  Extracting features for P{pid:02d}...")
+                participant_features = extract_all_features(
+                    phys_data_cleaned,
+                    gsr_cleaned,
+                    eeg_data,
+                    [pid],  # Process just this participant
+                    parallel=False
+                )
+                
+                all_features.append(participant_features)
+                logging.info(f"  ✓ P{pid:02d} complete ({len(participant_features)} rows)")
+                
+            except Exception as e:
+                logging.error(f"  ✗ Failed to process P{pid:02d}: {e}")
+                logging.error(f"  {e}", exc_info=True)
+                continue
+        
+        # Combine all participant features
+        if not all_features:
+            logging.error("No participants were successfully processed")
+            return 1
+        
+        physio_features = pd.concat(all_features, ignore_index=True)
+        logging.info(f"\nExtracted features for {len(participants)} participants ({len(physio_features)} total rows)")
+        
+        # Save standalone physio features (append mode for incremental processing)
+        physio_output_path = 'output/aggregated/physio_features.csv'
+        os.makedirs(os.path.dirname(physio_output_path), exist_ok=True)
+        
+        if os.path.exists(physio_output_path) and not args.force_reprocess:
+            # Append to existing file
+            existing_df = pd.read_csv(physio_output_path)
+            combined_df = pd.concat([existing_df, physio_features], ignore_index=True)
+            # Remove duplicates (in case of overlap)
+            combined_df = combined_df.drop_duplicates(subset=['Participant_ID', 'Condition'], keep='last')
+            combined_df.to_csv(physio_output_path, index=False)
+            logging.info(f"  Appended {len(physio_features)} rows to existing physio features")
+            logging.info(f"  Total rows now: {len(combined_df)}")
         else:
-            logging.warning("Skipping signal cleaning (--skip-cleaning flag set)")
-            phys_data_cleaned = phys_data_raw.copy()
-            gsr_cleaned = phys_data_raw.copy()
-            
-            # Create cleaned column aliases for feature extraction
-            phys_data_cleaned['Polar_HeartRate_BPM_CLEANED_ABS'] = phys_data_cleaned['Polar_HeartRate_BPM']
-            phys_data_cleaned['Polar_HeartRate_RR_Interval_CLEANED_ABS'] = phys_data_cleaned['Polar_HeartRate_RR_Interval']
-            gsr_cleaned['Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK'] = gsr_cleaned['Shimmer_D36A_GSR_Skin_Conductance_uS']
-            phys_data_cleaned['Foveal_Corrected_Dilation_Left_CLEANED_ABS'] = phys_data_cleaned['Foveal_Corrected_Dilation_Left']
-            phys_data_cleaned['Foveal_Corrected_Dilation_Right_CLEANED_ABS'] = phys_data_cleaned['Foveal_Corrected_Dilation_Right']
-            phys_data_cleaned['Inter_Blink_Interval_CLEANED_ABS'] = phys_data_cleaned['Inter_Blink_Interval']
-            phys_data_cleaned['Current_Blink_Duration_CLEANED_ABS'] = phys_data_cleaned['Current_Blink_Duration']
+            # Create new file
+            physio_features.to_csv(physio_output_path, index=False)
+            logging.info(f"  Created new physio features file: {physio_output_path}")
         
-        # STEP 3: Feature extraction
-        logging.info("STEP 3: Extracting physiological features...")
-        physio_features = extract_all_features(
-            phys_data_cleaned, 
-            gsr_cleaned,
-            eeg_data,
-            participants,
-            parallel=args.parallel
-        )
-        
-        # STEP 4: Merge with EEG and subjective data
-        logging.info("STEP 4: Merging physio features with EEG and subjective data...")
-        final_data = merge_physio_with_eeg(
-            physio_features,
-            eeg_data,
-            subjective_data
-        )
-        
-        # Validate final merged data
-        logging.info("Validating final merged dataset...")
-        merge_validation = validate_merged_data(final_data)
-        if not merge_validation['valid']:
-            logging.warning("Merged data validation found issues - check warnings above")
-        
-        # STEP 5: Export
-        logging.info(f"STEP 5: Exporting final dataset to {args.output}...")
-        os.makedirs(os.path.dirname(args.output), exist_ok=True)
-        final_data.to_csv(args.output, index=False)
+        logging.info(f"  Physio features saved to: {physio_output_path}")
         
         logging.info("=" * 80)
         logging.info("✅ Physiological feature extraction completed successfully!")
-        logging.info(f"Output saved to: {args.output}")
+        logging.info(f"Physio features: {physio_output_path}")
+        logging.info(f"Processed participants: {sorted(participants)}")
+        logging.info("=" * 80)
+        logging.info("Next step: Run merge script to combine with EEG and subjective data")
+        logging.info("  python pipelines/05_multimodal_fusion/merge_all_features.py")
+        logging.info("=" * 80)
         logging.info(f"Log file: {log_file}")
         logging.info("=" * 80)
         

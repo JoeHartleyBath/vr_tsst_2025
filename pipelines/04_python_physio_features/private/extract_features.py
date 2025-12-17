@@ -6,7 +6,7 @@ Implements both rolling (30s EEG-aligned) and full condition statistics.
 
 Features computed (following feature_computation_analysis.md):
 - HR: Mean/Median/SD (exclude MIN/MAX as per validation)
-- HRV: RMSSD, SDNN, pNN50
+- HRV: RMSSD only (SDNN and pNN50 deprecated)
 - GSR: Tonic Mean/SD, Peak Rate/Height/Area, SCR counts
 - Pupil: Bilateral Mean/Median/SD/Asymmetry (exclude MIN/MAX/UnrestPower)
 - Response: Count, Rate, Latency, Accuracy
@@ -126,7 +126,7 @@ def extract_hrv_features(rr_intervals_ms: np.ndarray) -> pd.DataFrame:
     Returns
     -------
     DataFrame
-        Single-row DataFrame with HRV_RMSSD, HRV_SDNN, HRV_pNN50
+        Single-row DataFrame with HRV_RMSSD
     """
     # Clean up
     rr = np.asarray(rr_intervals_ms, dtype=float)
@@ -134,9 +134,7 @@ def extract_hrv_features(rr_intervals_ms: np.ndarray) -> pd.DataFrame:
     
     if len(rr) < 2:
         return pd.DataFrame([{
-            "HRV_RMSSD": np.nan,
-            "HRV_SDNN": np.nan,
-            "HRV_pNN50": np.nan
+            "HRV_RMSSD": np.nan
         }])
     
     # Convert to seconds
@@ -144,10 +142,10 @@ def extract_hrv_features(rr_intervals_ms: np.ndarray) -> pd.DataFrame:
     rri_time = np.cumsum(rr_s)
     rri_dict = {"RRI": rr_s, "RRI_Time": rri_time}
     
-    # Compute time-domain HRV
+    # Compute time-domain HRV (only RMSSD as per validated feature set)
     try:
         hrv_td = nk.hrv_time(rri_dict, sampling_rate=None, show=False)
-        metrics = hrv_td[["HRV_RMSSD", "HRV_SDNN", "HRV_pNN50"]].reset_index(drop=True)
+        metrics = hrv_td[["HRV_RMSSD"]].reset_index(drop=True)
         
         # Convert RMSSD from seconds to milliseconds
         metrics["HRV_RMSSD"] = metrics["HRV_RMSSD"] * 1000
@@ -156,9 +154,7 @@ def extract_hrv_features(rr_intervals_ms: np.ndarray) -> pd.DataFrame:
     except Exception as e:
         logging.warning(f"[HRV] Extraction error: {e}")
         return pd.DataFrame([{
-            "HRV_RMSSD": np.nan,
-            "HRV_SDNN": np.nan,
-            "HRV_pNN50": np.nan
+            "HRV_RMSSD": np.nan
         }])
 
 
@@ -211,18 +207,13 @@ def calculate_stats(data: pd.DataFrame, columns: List[str],
             stats = {
                 f"{column}_Median": np.nan,
                 f"{column}_Mean": np.nan,
-                f"{column}_SD": np.nan,
-                # MIN/MAX will be dropped by R, but compute for reference
-                f"{column}_MIN": np.nan,
-                f"{column}_MAX": np.nan
+                f"{column}_SD": np.nan
             }
         else:
             stats = {
                 f"{column}_Median": col_data.median(),
                 f"{column}_Mean": col_data.mean(),
-                f"{column}_SD": col_data.std(),
-                f"{column}_MIN": col_data.min(),
-                f"{column}_MAX": col_data.max()
+                f"{column}_SD": col_data.std()
             }
         
         # Detailed GSR features
@@ -470,15 +461,11 @@ def extract_all_features(
         if len(rr_intervals) >= 2:
             hrv_metrics = extract_hrv_features(rr_intervals)
             rmssd_ms = hrv_metrics["HRV_RMSSD"].iloc[0]
-            sdnn = hrv_metrics["HRV_SDNN"].iloc[0]
-            pnn50 = hrv_metrics["HRV_pNN50"].iloc[0]
         else:
-            rmssd_ms = sdnn = pnn50 = np.nan
+            rmssd_ms = np.nan
         
         stats_dict.update({
             'Full_RMSSD': rmssd_ms,
-            'Full_SDNN': sdnn,
-            'Full_pNN50': pnn50,
         })
         
         # Other physiological stats

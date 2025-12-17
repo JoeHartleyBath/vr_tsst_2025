@@ -2,7 +2,7 @@
 % This helps diagnose why some conditions weren't extracted
 
 % Participants with missing conditions (from EEG features completeness check)
-participants_to_check = [5, 8, 9, 13, 19, 22, 24, 26, 29, 31, 33, 34, 35, 37, 38, 45, 48];
+participants_to_check = [1 : 28];
 
 % Load configs
 config_gen = yaml.ReadYaml(fullfile('config', 'general.yaml'));

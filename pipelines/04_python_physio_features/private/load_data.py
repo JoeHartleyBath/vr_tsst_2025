@@ -18,6 +18,48 @@ import yaml
 from pathlib import Path
 
 
+def get_cache_dir():
+    """Get the cache directory for intermediate files."""
+    project_root = Path(__file__).parent.parent.parent.parent
+    cache_dir = project_root / "output" / "cache" / "physio_cleaned"
+    cache_dir.mkdir(exist_ok=True, parents=True)
+    return cache_dir
+
+
+def get_participant_cache_path(participant_id):
+    """Get the cache file path for a specific participant's cleaned data."""
+    cache_dir = get_cache_dir()
+    return cache_dir / f"P{participant_id:02d}_cleaned.parquet"
+
+
+def load_cached_cleaned_data(participant_id):
+    """
+    Load cached cleaned data for a participant if it exists.
+    
+    Returns None if cache doesn't exist.
+    """
+    cache_path = get_participant_cache_path(participant_id)
+    if cache_path.exists():
+        logging.info(f"  Loading cached cleaned data for P{participant_id:02d}")
+        return pd.read_parquet(cache_path)
+    return None
+
+
+def save_cleaned_data_cache(participant_id, cleaned_df):
+    """Save cleaned data for a participant to cache."""
+    cache_path = get_participant_cache_path(participant_id)
+    
+    # Convert object columns to avoid parquet conversion issues
+    df_to_save = cleaned_df.copy()
+    for col in df_to_save.columns:
+        if df_to_save[col].dtype == 'object':
+            # Try to convert to numeric, keep as string if fails
+            df_to_save[col] = pd.to_numeric(df_to_save[col], errors='ignore')
+    
+    df_to_save.to_parquet(cache_path, index=False)
+    logging.info(f"  Cached cleaned data for P{participant_id:02d}")
+
+
 def load_config():
     """Load configuration from YAML files."""
     # Get project root (3 levels up from this file: private/ → 04_python_physio_features/ → pipelines/ → project_root)
@@ -92,12 +134,12 @@ def fix_participant_ids(df):
     return df
 
 
-def load_raw_physio_data(data_path, filename_filter='_RAW_DATA_', force_reload=False):
+def load_raw_physio_data(data_path, filename_filter='_RAW_DATA_', participants=None, force_reload=False):
     """
     Load raw physiological data from CSV files.
     
     Searches recursively through data_path for CSV files matching the filter.
-    Results are cached as pickle for faster subsequent loads.
+    Can load specific participants or all participants.
     
     Parameters
     ----------
@@ -105,29 +147,22 @@ def load_raw_physio_data(data_path, filename_filter='_RAW_DATA_', force_reload=F
         Root directory containing participant data folders
     filename_filter : str
         String that must be in filename to be loaded
+    participants : list of int, optional
+        List of participant IDs to load. If None, loads all participants.
     force_reload : bool
-        If True, ignore cached pickle and reload from CSVs
+        If True, ignore cached data and reload from CSVs
     
     Returns
     -------
     pd.DataFrame
-        Combined dataframe with all participants' raw physio data
+        Combined dataframe with requested participants' raw physio data
     """
     data_path = Path(data_path)
     
-    # Cache in project output directory for consistency
-    project_root = Path(__file__).parent.parent.parent.parent
-    cache_dir = project_root / "output" / "cache"
-    cache_dir.mkdir(exist_ok=True, parents=True)
-    pickle_path = cache_dir / "phys_data_raw.pkl"
-    
-    if pickle_path.exists() and not force_reload:
-        logging.info(f"Loading cached physio data from {pickle_path}")
-        df = pd.read_pickle(pickle_path)
-        logging.info(f"Loaded {len(df)} rows from cache")
-        return df
-    
-    logging.info(f"Loading raw physio data from CSVs in {data_path}")
+    if participants is not None:
+        logging.info(f"Loading raw physio data for participants: {participants}")
+    else:
+        logging.info(f"Loading raw physio data from CSVs in {data_path}")
     
     df_list = []
     files_loaded = 0
@@ -139,18 +174,29 @@ def load_raw_physio_data(data_path, filename_filter='_RAW_DATA_', force_reload=F
                 file_path = Path(root) / filename
                 
                 try:
+                    # Extract participant ID from filename (e.g., P01.csv -> 1)
+                    match = re.search(r'[Pp](\d+)', filename)
+                    if match:
+                        file_participant_id = int(match.group(1))
+                    else:
+                        # Try folder name as fallback
+                        match = re.search(r'[Pp]?(\d+)', Path(root).name)
+                        if match:
+                            file_participant_id = int(match.group(1))
+                        else:
+                            logging.warning(f"Could not extract Participant_ID from {file_path}, skipping file")
+                            continue
+                    
+                    # Skip if we're filtering by participants and this isn't in the list
+                    if participants is not None and file_participant_id not in participants:
+                        continue
+                    
                     logging.debug(f"Reading {file_path}")
                     df = pd.read_csv(file_path, index_col=False, low_memory=False)
                     
-                    # Extract participant ID from path if not in data
+                    # Set participant ID if not in data
                     if 'Participant_ID' not in df.columns:
-                        # Try to extract from folder structure (e.g., "P01" or "01")
-                        match = re.search(r'[Pp]?(\d+)', Path(root).name)
-                        if match:
-                            df['Participant_ID'] = int(match.group(1))
-                        else:
-                            logging.warning(f"Could not extract Participant_ID from {file_path}")
-                            df['Participant_ID'] = -1
+                        df['Participant_ID'] = file_participant_id
                     
                     # Fix participant IDs
                     df = fix_participant_ids(df)
@@ -216,7 +262,7 @@ def load_raw_physio_data(data_path, filename_filter='_RAW_DATA_', force_reload=F
     # Combine all dataframes
     combined_df = pd.concat(df_list, ignore_index=True)
     
-    # Drop rows with missing critical timestamps (legacy compatibility)
+    # Drop rows with missing critical timestamps
     initial_rows = len(combined_df)
     if 'LSL_Timestamp' in combined_df.columns:
         combined_df.dropna(subset=['LSL_Timestamp', 'Participant_ID'], inplace=True)
@@ -226,10 +272,6 @@ def load_raw_physio_data(data_path, filename_filter='_RAW_DATA_', force_reload=F
     
     logging.info(f"Loaded {files_loaded} files, {len(combined_df)} total rows")
     logging.info(f"Participants: {sorted(combined_df['Participant_ID'].unique())}")
-    
-    # Cache for future use
-    combined_df.to_pickle(pickle_path)
-    logging.info(f"Cached physio data to {pickle_path}")
     
     return combined_df
 
@@ -312,48 +354,61 @@ def load_subjective_ratings(config, force_reload=False):
     logging.info(f"Loading subjective ratings from {subjective_path}")
     subjective_df = pd.read_csv(subjective_path)
     
-    # Mapping from subjective condition names to EEG condition names
-    condition_map = {
-        'Calm Addition': 'LowStress_LowCog_Task',
-        'Calm Subtraction': 'LowStress_HighCog_Task',
-        'Stress Addition': 'HighStress_LowCog_Task',
-        'Stress Subtraction': 'HighStress_HighCog_Task'
-    }
-    
-    # Reshape from wide to long format
-    reshaped_dict = {}
-    
-    for col in subjective_df.columns[1:]:  # Skip Participant_ID column
-        # Split column name: "Calm Addition Stress" -> ("Calm Addition", "Stress")
-        parts = col.rsplit(' ', 1)
-        if len(parts) != 2:
-            logging.warning(f"Unexpected subjective column format: {col}")
-            continue
+    # Check if data is already in long format (new pipeline output)
+    if 'Participant_ID' in subjective_df.columns and 'Condition' in subjective_df.columns:
+        logging.info("Detected long-format subjective data (new pipeline)")
+        subjective_long = subjective_df.copy()
         
-        task_type, metric = parts
-        condition = condition_map.get(task_type, task_type)
+        # Ensure Participant_ID is Int64 for consistency with other datasets
+        subjective_long['Participant_ID'] = (
+            subjective_long['Participant_ID'].astype('Int64')
+        )
+    else:
+        # Handle old wide format
+        logging.info("Detected wide-format subjective data (legacy format)")
         
-        for _, row in subjective_df.iterrows():
-            # Use integer-based string for consistency
-            participant = str(int(float(row['Participant_ID'])))
+        # Mapping from subjective condition names to EEG condition names
+        condition_map = {
+            'Calm Addition': 'LowStress_LowCog_Task',
+            'Calm Subtraction': 'LowStress_HighCog_Task',
+            'Stress Addition': 'HighStress_LowCog_Task',
+            'Stress Subtraction': 'HighStress_HighCog_Task'
+        }
+        
+        # Reshape from wide to long format
+        reshaped_dict = {}
+        
+        for col in subjective_df.columns[1:]:  # Skip Participant_ID column
+            # Split column name: "Calm Addition Stress" -> ("Calm Addition", "Stress")
+            parts = col.rsplit(' ', 1)
+            if len(parts) != 2:
+                logging.warning(f"Unexpected subjective column format: {col}")
+                continue
             
-            key = (participant, condition)
-            if key not in reshaped_dict:
-                reshaped_dict[key] = {
-                    'Participant_ID': participant,
-                    'Condition': condition
-                }
+            task_type, metric = parts
+            condition = condition_map.get(task_type, task_type)
             
-            reshaped_dict[key][metric] = row[col]
-    
-    # Convert to dataframe
-    subjective_long = pd.DataFrame.from_dict(reshaped_dict, orient='index')
-    subjective_long.reset_index(drop=True, inplace=True)
-    
-    # Clean Participant_ID
-    subjective_long['Participant_ID'] = (
-        subjective_long['Participant_ID'].astype(str).str.strip()
-    )
+            for _, row in subjective_df.iterrows():
+                # Use integer for consistency
+                participant = int(float(row['Participant_ID']))
+                
+                key = (participant, condition)
+                if key not in reshaped_dict:
+                    reshaped_dict[key] = {
+                        'Participant_ID': participant,
+                        'Condition': condition
+                    }
+                
+                reshaped_dict[key][metric] = row[col]
+        
+        # Convert to dataframe
+        subjective_long = pd.DataFrame.from_dict(reshaped_dict, orient='index')
+        subjective_long.reset_index(drop=True, inplace=True)
+        
+        # Ensure Participant_ID is Int64
+        subjective_long['Participant_ID'] = (
+            subjective_long['Participant_ID'].astype('Int64')
+        )
     
     logging.info(f"Reshaped subjective data: {len(subjective_long)} rows")
     logging.info(f"Subjective participants: {sorted(subjective_long['Participant_ID'].unique())}")
@@ -395,7 +450,7 @@ def validate_loaded_data(phys_df, eeg_df, subjective_df):
     eeg_pids = set(eeg_df['Participant_ID'].unique())
     
     if subjective_df is not None:
-        subj_pids = set(subjective_df['Participant_ID'].astype(int).unique())
+        subj_pids = set(subjective_df['Participant_ID'].unique())
         all_pids = phys_pids | eeg_pids | subj_pids
         overlap = phys_pids & eeg_pids & subj_pids
     else:
