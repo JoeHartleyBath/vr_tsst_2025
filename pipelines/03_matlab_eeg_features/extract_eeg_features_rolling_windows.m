@@ -51,16 +51,6 @@ function extract_eeg_features_rolling_windows(varargin)
             if ~isfield(EEG, 'event') || isempty(EEG.event), warning('[P%02d] No events', p); continue; end
             chan_labels = {EEG.chanlocs.labels};
 
-            % Identify all baseline (Forest) scenes for this participant
-            baseline_events = {};
-            for i = 1:length(EEG.event)
-                raw_cond = EEG.event(i).type;
-                cond = normalize_condition_label(raw_cond, config_cond);
-                if contains(cond, 'Forest', 'IgnoreCase', true)
-                    baseline_events{end+1} = struct('idx', i, 'cond', cond, 'latency', EEG.event(i).latency);
-                end
-            end
-
             for i = 1:length(EEG.event)
                 raw_cond = EEG.event(i).type;
                 cond = normalize_condition_label(raw_cond, config_cond);
@@ -75,47 +65,7 @@ function extract_eeg_features_rolling_windows(varargin)
                 window_len = 10 * EEG.srate;
                 step = round(window_len * 0.5); % 50% overlap
 
-                % --- Find the correct baseline (Forest) event for this condition ---
-                baseline_idx = -1;
-                baseline_latency = -1;
-                for b = 1:length(baseline_events)
-                    if baseline_events{b}.latency < lat
-                        if baseline_events{b}.latency > baseline_latency
-                            baseline_latency = baseline_events{b}.latency;
-                            baseline_idx = b;
-                        end
-                    end
-                end
-                if baseline_idx == -1
-                    warning('[P%02d] No baseline found for %s', p, cond); continue;
-                end
-                base_lat = round(baseline_events{baseline_idx}.latency);
-                base_dur = 180;
-                base_t0 = max(1, base_lat);
-                base_t1 = min(EEG.pnts, base_t0 + base_dur * EEG.srate - 1);
-                if base_t1 <= base_t0, warning('[P%02d] Invalid baseline time range', p); continue; end
-
-                % Compute baseline features (average over all windows in baseline)
-                base_feats_all = [];
-                for base_win_start = base_t0:step:(base_t1-window_len+1)
-                    base_win_end = base_win_start + window_len - 1;
-                    if base_win_end > base_t1, break; end
-                    base_window_data = EEG.data(:, base_win_start:base_win_end);
-                    base_feats = compute_features(base_window_data, EEG.srate, config_feat.frequency_bands, config_feat.regions, chan_labels, config_feat);
-                    base_vec = [];
-                    for ri = 1:length(region_names)
-                        for bi = 1:length(band_names)
-                            base_vec(end+1) = base_feats.band_power{ri,bi};
-                        end
-                    end
-                    base_feats_all = [base_feats_all; base_vec];
-                end
-                if isempty(base_feats_all)
-                    warning('[P%02d] No baseline windows for %s', p, cond); continue;
-                end
-                base_mean = mean(base_feats_all, 1);
-
-                % --- Condition windows ---
+                % --- Extract features from condition windows (raw features, no baseline correction) ---
                 win_idx = 1;
                 for win_start = t0:step:(t1-window_len+1)
                     win_end = win_start + window_len - 1;
@@ -129,10 +79,9 @@ function extract_eeg_features_rolling_windows(varargin)
                             cond_vec(end+1) = feats.band_power{ri,bi};
                         end
                     end
-                    % Subtract baseline mean from condition features
-                    corrected_vec = cond_vec - base_mean;
-                    for v = 1:length(corrected_vec)
-                        row{end+1} = corrected_vec(v);
+                    % Output raw features (baseline correction applied in downstream preprocessing)
+                    for v = 1:length(cond_vec)
+                        row{end+1} = cond_vec(v);
                     end
                     fid = fopen(output_csv_hs, 'a');
                     if fid == -1, error('[P%02d] Could not write to output file', p); end
@@ -145,5 +94,5 @@ function extract_eeg_features_rolling_windows(varargin)
             fprintf('[P%02d] ERROR: %s\n', p, ME.message);
         end
     end
-    fprintf('\n✓ Rolling window band power feature extraction with baseline correction complete!\n');
+    fprintf('\n✓ Rolling window band power feature extraction complete! (Raw features - baseline correction applied in downstream preprocessing)\n');
 end
