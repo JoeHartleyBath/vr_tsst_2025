@@ -89,6 +89,29 @@ def load_features(file_path: str, modality: str) -> pd.DataFrame:
         raise FileNotFoundError(f"{modality} features not found: {file_path}")
     
     df = pd.read_csv(file_path)
+    
+    # Standardize column names based on modality
+    if modality.upper() == "EEG":
+        # EEG files have: pid, event_label, window_idx
+        if 'pid' in df.columns:
+            df = df.rename(columns={'pid': 'Participant_ID'})
+        if 'event_label' in df.columns:
+            df = df.rename(columns={'event_label': 'Condition'})
+        if 'window_idx' in df.columns:
+            df = df.rename(columns={'window_idx': 'Window_Index'})
+    elif modality.upper() == "PHYSIO":
+        # Physio files have: participant_id, condition
+        if 'participant_id' in df.columns:
+            df = df.rename(columns={'participant_id': 'Participant_ID'})
+        if 'condition' in df.columns:
+            df = df.rename(columns={'condition': 'Condition'})
+    
+    # Verify required columns exist
+    if 'Participant_ID' not in df.columns:
+        raise ValueError(f"{modality} file missing participant ID column. Found columns: {df.columns.tolist()}")
+    if 'Condition' not in df.columns:
+        raise ValueError(f"{modality} file missing condition column. Found columns: {df.columns.tolist()}")
+    
     logging.info(f"Loaded {modality} features: {df.shape}")
     logging.info(f"  Participants: {df['Participant_ID'].nunique()}")
     logging.info(f"  Conditions: {df['Condition'].nunique()}")
@@ -103,64 +126,89 @@ def align_windows(
     time_tolerance: float
 ) -> pd.DataFrame:
     """
-    Align EEG and physio windows based on timestamps.
+    Align EEG and physio windows based on window index and participant/condition.
     
     Args:
         eeg_features: EEG rolling window features
         physio_features: Physio rolling window features
-        time_tolerance: Maximum time difference for alignment (seconds)
+        time_tolerance: Maximum time difference for alignment (seconds) - unused if no timestamps
         
     Returns:
         Merged DataFrame with aligned features
     """
-    logging.info(f"Aligning windows with tolerance: {time_tolerance}s")
+    logging.info("Aligning windows based on Window_Index, Participant_ID, and Condition")
     
-    # Rename columns to avoid conflicts
-    eeg_features = eeg_features.rename(columns={
-        'Window_Start': 'Window_Start_EEG',
-        'Window_End': 'Window_End_EEG',
-        'Window_Index': 'Window_Index_EEG'
-    })
+    # Check if timestamp columns exist
+    has_eeg_timestamps = 'Window_Start' in eeg_features.columns
+    has_physio_timestamps = 'Window_Start' in physio_features.columns
     
-    physio_features = physio_features.rename(columns={
-        'Window_Start': 'Window_Start_Physio',
-        'Window_End': 'Window_End_Physio',
-        'Window_Index': 'Window_Index_Physio'
-    })
-    
-    # Merge on participant and condition
-    merged = pd.merge(
-        eeg_features,
-        physio_features,
-        on=['Participant_ID', 'Condition'],
-        how='inner',
-        suffixes=('_EEG', '_Physio')
-    )
-    
-    logging.info(f"Initial merge: {len(merged)} potential pairs")
-    
-    # Calculate time difference between windows
-    merged['Time_Diff'] = np.abs(
-        merged['Window_Start_EEG'] - merged['Window_Start_Physio']
-    )
-    
-    # Filter to well-aligned windows
-    aligned = merged[merged['Time_Diff'] <= time_tolerance].copy()
-    
-    # Use average window start/end for aligned windows
-    aligned['Window_Start'] = (aligned['Window_Start_EEG'] + 
-                               aligned['Window_Start_Physio']) / 2
-    aligned['Window_End'] = (aligned['Window_End_EEG'] + 
-                            aligned['Window_End_Physio']) / 2
-    
-    # Drop redundant columns
-    aligned = aligned.drop(columns=[
-        'Window_Start_EEG', 'Window_Start_Physio',
-        'Window_End_EEG', 'Window_End_Physio',
-        'Time_Diff'
-    ])
-    
-    logging.info(f"Aligned windows: {len(aligned)} (kept {len(aligned)/len(merged)*100:.1f}%)")
+    if has_eeg_timestamps and has_physio_timestamps:
+        logging.info(f"Using timestamp-based alignment with tolerance: {time_tolerance}s")
+        
+        # Rename columns to avoid conflicts
+        eeg_features = eeg_features.rename(columns={
+            'Window_Start': 'Window_Start_EEG',
+            'Window_End': 'Window_End_EEG',
+            'Window_Index': 'Window_Index_EEG'
+        })
+        
+        physio_features = physio_features.rename(columns={
+            'Window_Start': 'Window_Start_Physio',
+            'Window_End': 'Window_End_Physio',
+            'Window_Index': 'Window_Index_Physio'
+        })
+        
+        # Merge on participant and condition
+        merged = pd.merge(
+            eeg_features,
+            physio_features,
+            on=['Participant_ID', 'Condition'],
+            how='inner',
+            suffixes=('_EEG', '_Physio')
+        )
+        
+        logging.info(f"Initial merge: {len(merged)} potential pairs")
+        
+        # Calculate time difference between windows
+        merged['Time_Diff'] = np.abs(
+            merged['Window_Start_EEG'] - merged['Window_Start_Physio']
+        )
+        
+        # Filter to well-aligned windows
+        aligned = merged[merged['Time_Diff'] <= time_tolerance].copy()
+        
+        # Use average window start/end for aligned windows
+        aligned['Window_Start'] = (aligned['Window_Start_EEG'] + 
+                                   aligned['Window_Start_Physio']) / 2
+        aligned['Window_End'] = (aligned['Window_End_EEG'] + 
+                                aligned['Window_End_Physio']) / 2
+        
+        # Drop redundant columns
+        aligned = aligned.drop(columns=[
+            'Window_Start_EEG', 'Window_Start_Physio',
+            'Window_End_EEG', 'Window_End_Physio',
+            'Time_Diff'
+        ])
+        
+        logging.info(f"Aligned windows: {len(aligned)} (kept {len(aligned)/len(merged)*100:.1f}%)")
+    else:
+        # Use index-based alignment when timestamps not available
+        logging.info("Using index-based alignment (no timestamps in EEG data)")
+        
+        # Merge on participant, condition, and window index
+        aligned = pd.merge(
+            eeg_features,
+            physio_features,
+            on=['Participant_ID', 'Condition', 'Window_Index'],
+            how='inner',
+            suffixes=('_EEG', '_Physio')
+        )
+        
+        logging.info(f"Aligned windows: {len(aligned)}")
+        
+        # If physio has timestamps, keep them
+        if has_physio_timestamps:
+            logging.info("  Using physio timestamps for Window_Start/Window_End")
     
     return aligned
 
