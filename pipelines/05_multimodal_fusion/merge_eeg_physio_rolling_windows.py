@@ -92,13 +92,20 @@ def load_features(file_path: str, modality: str) -> pd.DataFrame:
     
     # Standardize column names based on modality
     if modality.upper() == "EEG":
-        # EEG files have: pid, event_label, window_idx
+        # EEG files have: pid, event_label, window_idx, window_start, window_end
         if 'pid' in df.columns:
             df = df.rename(columns={'pid': 'Participant_ID'})
         if 'event_label' in df.columns:
             df = df.rename(columns={'event_label': 'Condition'})
         if 'window_idx' in df.columns:
             df = df.rename(columns={'window_idx': 'Window_Index'})
+            # CRITICAL FIX: Convert EEG from 1-indexed to 0-indexed to match physio
+            df['Window_Index'] = df['Window_Index'] - 1
+            logging.info(f"  Applied index offset: EEG Window_Index converted from 1-indexed to 0-indexed")
+        if 'window_start' in df.columns:
+            df = df.rename(columns={'window_start': 'Window_Start'})
+        if 'window_end' in df.columns:
+            df = df.rename(columns={'window_end': 'Window_End'})
     elif modality.upper() == "PHYSIO":
         # Physio files have: participant_id, condition
         if 'participant_id' in df.columns:
@@ -142,42 +149,52 @@ def align_windows(
     has_eeg_timestamps = 'Window_Start' in eeg_features.columns
     has_physio_timestamps = 'Window_Start' in physio_features.columns
     
+    # PRIMARY: Use index-based alignment (1-to-1 window matching)
+    logging.info("Using index-based alignment on Window_Index")
+    
+    # Rename columns to track source modality
+    eeg_features = eeg_features.rename(columns={
+        'Window_Start': 'Window_Start_EEG',
+        'Window_End': 'Window_End_EEG'
+    })
+    
+    physio_features = physio_features.rename(columns={
+        'Window_Start': 'Window_Start_Physio',
+        'Window_End': 'Window_End_Physio'
+    })
+    
+    # Merge on participant, condition, and window index (1-to-1 matching)
+    aligned = pd.merge(
+        eeg_features,
+        physio_features,
+        on=['Participant_ID', 'Condition', 'Window_Index'],
+        how='inner',
+        suffixes=('_EEG', '_Physio')
+    )
+    
+    logging.info(f"Aligned windows: {len(aligned)}")
+    
+    # SECONDARY: Validate alignment with timestamp comparison (if available)
     if has_eeg_timestamps and has_physio_timestamps:
-        logging.info(f"Using timestamp-based alignment with tolerance: {time_tolerance}s")
+        logging.info(f"Validating alignment with timestamp tolerance: {time_tolerance}s")
         
-        # Rename columns to avoid conflicts
-        eeg_features = eeg_features.rename(columns={
-            'Window_Start': 'Window_Start_EEG',
-            'Window_End': 'Window_End_EEG',
-            'Window_Index': 'Window_Index_EEG'
-        })
-        
-        physio_features = physio_features.rename(columns={
-            'Window_Start': 'Window_Start_Physio',
-            'Window_End': 'Window_End_Physio',
-            'Window_Index': 'Window_Index_Physio'
-        })
-        
-        # Merge on participant and condition
-        merged = pd.merge(
-            eeg_features,
-            physio_features,
-            on=['Participant_ID', 'Condition'],
-            how='inner',
-            suffixes=('_EEG', '_Physio')
+        # Calculate time difference between matched windows
+        aligned['Time_Diff'] = np.abs(
+            aligned['Window_Start_EEG'] - aligned['Window_Start_Physio']
         )
         
-        logging.info(f"Initial merge: {len(merged)} potential pairs")
+        # Report alignment quality
+        n_misaligned = (aligned['Time_Diff'] > time_tolerance).sum()
+        if n_misaligned > 0:
+            logging.warning(f"  {n_misaligned}/{len(aligned)} window pairs exceed time tolerance of {time_tolerance}s")
+            max_diff = aligned['Time_Diff'].max()
+            logging.warning(f"  Maximum time difference: {max_diff:.3f}s")
+        else:
+            logging.info(f"  All {len(aligned)} window pairs within {time_tolerance}s tolerance")
+            max_diff = aligned['Time_Diff'].max()
+            logging.info(f"  Maximum time difference: {max_diff:.3f}s")
         
-        # Calculate time difference between windows
-        merged['Time_Diff'] = np.abs(
-            merged['Window_Start_EEG'] - merged['Window_Start_Physio']
-        )
-        
-        # Filter to well-aligned windows
-        aligned = merged[merged['Time_Diff'] <= time_tolerance].copy()
-        
-        # Use average window start/end for aligned windows
+        # Use average window start/end for final timestamps
         aligned['Window_Start'] = (aligned['Window_Start_EEG'] + 
                                    aligned['Window_Start_Physio']) / 2
         aligned['Window_End'] = (aligned['Window_End_EEG'] + 
@@ -189,26 +206,12 @@ def align_windows(
             'Window_End_EEG', 'Window_End_Physio',
             'Time_Diff'
         ])
-        
-        logging.info(f"Aligned windows: {len(aligned)} (kept {len(aligned)/len(merged)*100:.1f}%)")
-    else:
-        # Use index-based alignment when timestamps not available
-        logging.info("Using index-based alignment (no timestamps in EEG data)")
-        
-        # Merge on participant, condition, and window index
-        aligned = pd.merge(
-            eeg_features,
-            physio_features,
-            on=['Participant_ID', 'Condition', 'Window_Index'],
-            how='inner',
-            suffixes=('_EEG', '_Physio')
-        )
-        
-        logging.info(f"Aligned windows: {len(aligned)}")
-        
-        # If physio has timestamps, keep them
-        if has_physio_timestamps:
-            logging.info("  Using physio timestamps for Window_Start/Window_End")
+    elif has_physio_timestamps:
+        # Use physio timestamps if EEG doesn't have them
+        logging.info("  Using physio timestamps for Window_Start/Window_End")
+        aligned['Window_Start'] = aligned['Window_Start_Physio']
+        aligned['Window_End'] = aligned['Window_End_Physio']
+        aligned = aligned.drop(columns=['Window_Start_Physio', 'Window_End_Physio'])
     
     return aligned
 
@@ -249,12 +252,38 @@ def generate_alignment_report(
         report.append(f"  P{pid:02d}: {n_windows} windows across {n_conditions} conditions")
     report.append("")
     
+    # Window count discrepancies per participant-condition
+    report.append("WINDOW COUNT ANALYSIS (EEG vs Physio per condition):")
+    mismatches = []
+    for pid in sorted(merged_features['Participant_ID'].unique()):
+        for cond in sorted(merged_features[merged_features['Participant_ID'] == pid]['Condition'].unique()):
+            eeg_count = len(eeg_features[(eeg_features['Participant_ID'] == pid) & (eeg_features['Condition'] == cond)])
+            physio_count = len(physio_features[(physio_features['Participant_ID'] == pid) & (physio_features['Condition'] == cond)])
+            merged_count = len(merged_features[(merged_features['Participant_ID'] == pid) & (merged_features['Condition'] == cond)])
+            
+            if abs(eeg_count - physio_count) > 1:  # Flag discrepancies > 1 window
+                diff = eeg_count - physio_count
+                mismatches.append(f"  P{pid:02d} {cond}: EEG={eeg_count}, Physio={physio_count}, Diff={diff:+d}, Merged={merged_count}")
+            
+            # Calculate window loss percentage
+            if eeg_count > 0:
+                loss_pct = (1 - merged_count / eeg_count) * 100
+                if loss_pct > 10:  # Flag >10% window loss
+                    mismatches.append(f"  P{pid:02d} {cond}: {loss_pct:.1f}% window loss (EEG={eeg_count}, Merged={merged_count})")
+    
+    if mismatches:
+        report.append("  DISCREPANCIES DETECTED:")
+        report.extend(mismatches)
+    else:
+        report.append("  No significant discrepancies detected (all within ±1 window)")
+    report.append("")
+    
     # Feature counts
     eeg_cols = [col for col in merged_features.columns if 'EEG' in col or any(
-        band in col for band in ['Theta', 'Alpha', 'Beta', 'Gamma', 'Delta']
+        band in col for band in ['Theta', 'Alpha', 'Beta']
     )]
     physio_cols = [col for col in merged_features.columns if any(
-        x in col for x in ['HR', 'HRV', 'GSR', 'EDA', 'Pupil', 'Blink']
+        x in col for x in ['HR','GSR', 'EDA', 'Pupil']
     )]
     
     report.append("FEATURE COUNTS:")
