@@ -2,12 +2,23 @@
 Rolling Window Feature Extraction
 
 Implements windowing logic for temporal physiological feature extraction.
-Reuses core feature computation functions from extract_features.py.
+Extracts only features suitable for 10s windows.
 
 Window Parameters:
     - Default: 10s windows with 50% overlap (5s stride)
     - Configurable via command-line arguments
     - Outputs timestamp metadata for multimodal alignment
+
+Features Extracted:
+    ✅ Heart Rate (mean, median, SD)
+    ✅ GSR Tonic (mean, median, SD) - baseline skin conductance
+    ✅ Pupil Dilation (mean, median, SD, asymmetry)
+    ✅ Blink Metrics (inter-blink interval, duration)
+
+Features EXCLUDED (unsuitable for 10s windows):
+    ❌ HRV (RMSSD) - requires ≥2 minutes for reliability
+    ❌ GSR Phasic (SCR peaks, counts) - need ≥30s for reliable SCR counts
+    ❌ Response Metrics (RT, accuracy) - aggregated version only
 
 Author: VR-TSST Project
 Date: December 2025
@@ -21,12 +32,7 @@ from tqdm import tqdm
 
 # Import core feature extraction functions (reuse existing code)
 from extract_features import (
-    calculate_stats,
-    extract_hrv_features,
-    extract_gsr_features,
-    extract_pupil_features,
-    extract_blink_features,
-    extract_response_features
+    calculate_stats
 )
 
 
@@ -117,76 +123,33 @@ def extract_features_from_window(
     }
     
     try:
-        # HR/HRV features (reuse existing functions)
-        hr_col = 'Shimmer_D36A_Internal_ADC_13_CLEANED_HR'
-        if hr_col in window_data.columns:
-            hr_stats = calculate_stats(
-                window_data, 
-                columns=[hr_col],
-                prefix='HR'
-            )
-            features.update(hr_stats)
-            
-            # HRV features (if RR intervals available)
-            rr_col = 'Shimmer_D36A_Internal_ADC_13_CLEANED_RR'
-            if rr_col in window_data.columns:
-                rr_intervals = window_data[rr_col].dropna()
-                if len(rr_intervals) >= 5:  # Need multiple beats for HRV
-                    hrv_features = extract_hrv_features(rr_intervals)
-                    features.update(hrv_features.iloc[0].to_dict())
-        
-        # GSR features (reuse existing function)
-        gsr_col = 'Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK'
-        if gsr_col in window_data.columns:
-            gsr_stats = calculate_stats(
-                window_data,
-                columns=[gsr_col],
-                prefix='GSR'
-            )
-            features.update(gsr_stats)
-            
-            # Detailed GSR features from neurokit
-            gsr_signal = window_data[gsr_col].dropna().values
-            if len(gsr_signal) > 10:
-                gsr_detailed = extract_gsr_features(
-                    signal_data=gsr_signal,
-                    sampling_rate=10  # GSR sampled at 10 Hz
-                )
-                features.update(gsr_detailed)
-        
-        # Pupil features (reuse existing function)
-        pupil_cols = [
-            'PupilLabs_Gaze_Pupil_diameter_left',
-            'PupilLabs_Gaze_Pupil_diameter_right'
+        # Define physiological columns (excluding GSR phasic features)
+        HR_COLUMNS = [
+            'Polar_HeartRate_BPM_CLEANED_ABS',
+            'Polar_HeartRate_RR_Interval_CLEANED_ABS'
         ]
         
-        available_pupil_cols = [col for col in pupil_cols if col in window_data.columns]
-        if available_pupil_cols:
-            pupil_features = extract_pupil_features(
-                window_data[available_pupil_cols + ['PupilLabs_Gaze_Pupil_confidence_left', 
-                                                      'PupilLabs_Gaze_Pupil_confidence_right']]
-                if all(c in window_data.columns for c in ['PupilLabs_Gaze_Pupil_confidence_left', 
-                                                            'PupilLabs_Gaze_Pupil_confidence_right'])
-                else window_data[available_pupil_cols]
-            )
-            features.update(pupil_features)
+        GSR_COLUMNS = [
+            'Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK'
+        ]
         
-        # Blink features (reuse existing function)
-        blink_col = 'Shimmer_D36A_Blinking'
-        if blink_col in window_data.columns:
-            blink_features = extract_blink_features(
-                window_data[blink_col],
-                sampling_rate=90  # Eye tracking at 90 Hz
-            )
-            features.update(blink_features)
+        EYE_COLUMNS = [
+            'Foveal_Corrected_Dilation_Left_CLEANED_ABS',
+            'Foveal_Corrected_Dilation_Right_CLEANED_ABS',
+            'Inter_Blink_Interval_CLEANED_ABS',
+            'Current_Blink_Duration_CLEANED_ABS'
+        ]
         
-        # Response features (button presses, accuracy)
-        response_cols = ['Unity_VR_Button', 'Unity_VR_Accuracy']
-        if all(col in window_data.columns for col in response_cols):
-            response_features = extract_response_features(
-                window_data[response_cols]
-            )
-            features.update(response_features)
+        # Only use HR (no HRV), GSR tonic (no phasic), and eye tracking
+        VALID_COLUMNS = HR_COLUMNS + GSR_COLUMNS + EYE_COLUMNS
+        
+        # Extract basic stats for all physio columns (mean, median, SD only)
+        # This excludes HRV (RMSSD), GSR phasic (SCR counts/peaks), and response metrics
+        phys_stats = calculate_stats(
+            window_data,
+            columns=VALID_COLUMNS
+        )
+        features.update(phys_stats)
             
     except Exception as e:
         logging.warning(f"Feature extraction error for P{participant_id} {condition} "
