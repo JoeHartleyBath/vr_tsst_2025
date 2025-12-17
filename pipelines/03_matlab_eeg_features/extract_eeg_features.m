@@ -7,6 +7,15 @@ function extract_eeg_features(varargin)
 %   • Power ratios (frontal asymmetry, alpha/beta, theta/beta, etc.)
 %   • Entropy (sample & spectral entropy per region)
 %
+% IMPORTANT: Run from project root with path added
+%   PowerShell command to run with 8 workers:
+%   matlab -batch "cd('c:\vr_tsst_2025'); addpath('pipelines/03_matlab_eeg_features'); extract_eeg_features('num_workers', 8)"
+%
+%   Or from within MATLAB:
+%   cd c:\vr_tsst_2025
+%   addpath('pipelines/03_matlab_eeg_features')
+%   extract_eeg_features('num_workers', 8)
+%
 % Usage:
 %   extract_eeg_features()                                    % Default: all 48 participants
 %   extract_eeg_features('participants', [1 5 10])           % Specific participants
@@ -14,7 +23,7 @@ function extract_eeg_features(varargin)
 %   extract_eeg_features('output_folder', 'custom/path')     % Custom output location
 %   extract_eeg_features('config_file', 'custom.yaml')       % Custom config file
 %   extract_eeg_features('parallel', false)                  % Disable parallel processing
-%   extract_eeg_features('num_workers', 4)                   % Override worker count
+%   extract_eeg_features('num_workers', 8)                   % Override worker count (recommended: 8)
 %
 % Examples:
 %   % Process first 10 participants only
