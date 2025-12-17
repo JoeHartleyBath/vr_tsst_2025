@@ -54,6 +54,7 @@ from private.clean_eye_data import clean_eye_pipeline
 
 # Import feature extraction module
 from private.extract_features import extract_all_features
+from private.assign_conditions import load_conditions_config, assign_conditions_to_dataframe
 
 
 def setup_logging():
@@ -211,6 +212,11 @@ def main():
         eeg_data = load_eeg_features(config, force_reload=args.force_reprocess)
         logging.info(f"  Loaded {len(eeg_data)} EEG rows")
         
+        # Load condition configuration for physio data assignment
+        logging.info("Loading condition configuration...")
+        conditions_config = load_conditions_config()
+        logging.info(f"  Loaded {len(conditions_config)} condition definitions")
+        
         logging.info("Loading subjective ratings...")
         try:
             subjective_data = load_subjective_ratings(config, force_reload=args.force_reprocess)
@@ -248,6 +254,9 @@ def main():
                         participants=[pid],
                         force_reload=True
                     )
+                    
+                    # Assign conditions from config
+                    phys_data_raw = assign_conditions_to_dataframe(phys_data_raw, conditions_config)
                     
                     if len(phys_data_raw) == 0:
                         logging.warning(f"  No data found for P{pid:02d}, skipping")

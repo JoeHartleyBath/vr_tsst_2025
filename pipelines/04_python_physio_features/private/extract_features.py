@@ -412,14 +412,13 @@ def extract_all_features(
         cond_time['adjusted_condition_start'] = cond_time['condition_start']
         cond_time['adjusted_condition_end'] = cond_time['condition_end']
     else:
-        # EEG is pre-aggregated - extract physio per full Study_Phase
-        logging.info("EEG data is pre-aggregated. Extracting physio features per Study_Phase.")
-        # Map conditions from physio data
-        cond_time = phys_cleaned.groupby(['Participant_ID', 'Study_Phase']).agg(
+        # EEG is pre-aggregated - extract physio per full Condition
+        logging.info("EEG data is pre-aggregated. Extracting physio features per Condition.")
+        # Map conditions from physio data (conditions already assigned from config)
+        cond_time = phys_cleaned.groupby(['Participant_ID', 'Condition']).agg(
             condition_start=('Time_From_Start_Seconds', 'min'),
             condition_end=('Time_From_Start_Seconds', 'max')
         ).reset_index()
-        cond_time = cond_time.rename(columns={'Study_Phase': 'Condition'})
         # No temporal adjustment for pre-aggregated data - use full windows
         cond_time['adjusted_condition_start'] = cond_time['condition_start']
         cond_time['adjusted_condition_end'] = cond_time['condition_end']

@@ -47,7 +47,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'private'))
 from load_data import load_raw_physio_data, load_eeg_features
 from clean_hr_data import clean_hr_pipeline
 from clean_gsr_data import clean_gsr_pipeline
-from clean_eye_data import clean_eye_data
+from clean_eye_data import clean_eye_pipeline
+from assign_conditions import load_conditions_config, assign_conditions_to_dataframe
 from extract_features_rolling import extract_rolling_window_features
 
 
@@ -135,43 +136,81 @@ def main():
         # STEP 1: Load raw physiological data
         logging.info("STEP 1: Loading raw physiological data...")
         phys_data = load_raw_physio_data(
-            participants=participants,
-            use_cache=True,
-            cache_path='output/cache/phys_data_raw.pkl'
+            data_path='data/raw/metadata',
+            filename_filter='.csv',  # Match all CSV files (P01.csv, P02.csv, etc.)
+            participants=participants
         )
         logging.info(f"  Loaded data shape: {phys_data.shape}")
         logging.info(f"  Participants found: {phys_data['Participant_ID'].nunique()}")
         logging.info("")
         
+        # STEP 1.5: Assign conditions from config
+        logging.info("STEP 1.5: Assigning conditions from config...")
+        conditions_config = load_conditions_config()
+        phys_data = assign_conditions_to_dataframe(phys_data, conditions_config)
+        n_with_conditions = phys_data['Condition'].notna().sum()
+        n_without_conditions = phys_data['Condition'].isna().sum()
+        logging.info(f"  Assigned conditions to {n_with_conditions} rows ({n_with_conditions/len(phys_data)*100:.1f}%)")
+        if n_without_conditions > 0:
+            logging.warning(f"  {n_without_conditions} rows without condition assignment ({n_without_conditions/len(phys_data)*100:.1f}%)")
+        logging.info(f"  Unique conditions: {phys_data['Condition'].nunique()}")
+        logging.info("")
+        
         # STEP 2: Clean data (HR, GSR, Eye tracking)
         logging.info("STEP 2: Cleaning physiological signals...")
+        
+        # Setup QC loggers for cleaning pipelines
+        qc_loggers = {}
+        for p_id in participants:
+            qc_loggers[p_id] = logging.getLogger(f'P{p_id:02d}')
         
         # HR cleaning
         logging.info("  Cleaning heart rate data...")
         phys_data_cleaned = clean_hr_pipeline(
             phys_data.copy(),
-            output_dir='output/qc/physio_rolling'
+            qc_loggers=qc_loggers
         )
         
         # GSR cleaning
         logging.info("  Cleaning GSR data...")
         gsr_cleaned = clean_gsr_pipeline(
             phys_data.copy(),
-            output_dir='output/qc/physio_rolling'
+            qc_loggers=qc_loggers
         )
         
         # Eye tracking cleaning
         logging.info("  Cleaning eye tracking data...")
-        eye_cleaned = clean_eye_data(phys_data.copy())
+        eye_cleaned = clean_eye_pipeline(
+            phys_data.copy(),
+            qc_loggers=qc_loggers
+        )
         
         # Merge cleaned signals
         phys_data_cleaned = phys_data_cleaned.copy()
+        
+        # Debug: Check columns
+        logging.info(f"  Columns in phys_data (original): {list(phys_data.columns)[:10]}...")
+        logging.info(f"  Columns in phys_data_cleaned: {list(phys_data_cleaned.columns)[:10]}...")
+        logging.info(f"  'Condition' in phys_data: {'Condition' in phys_data.columns}")
+        logging.info(f"  'Condition' in phys_data_cleaned: {'Condition' in phys_data_cleaned.columns}")
+        
+        # Preserve metadata columns from original data
+        metadata_cols = ['Study_Phase', 'Participant_ID', 'Time_From_Start_Seconds', 'LSL_Timestamp', 'Unity_Timestamp']
+        for col in metadata_cols:
+            if col in phys_data.columns:
+                if col not in phys_data_cleaned.columns:
+                    logging.info(f"  Adding missing column: {col}")
+                    phys_data_cleaned[col] = phys_data[col].values
+                else:
+                    logging.info(f"  Column already exists: {col}")
+        
+        # Merge GSR cleaned column
         gsr_col = 'Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK'
         if gsr_col in gsr_cleaned.columns:
             phys_data_cleaned[gsr_col] = gsr_cleaned[gsr_col]
         
-        # Merge eye data
-        eye_cols = [col for col in eye_cleaned.columns if 'Pupil' in col or 'Valid' in col]
+        # Merge eye data columns
+        eye_cols = [col for col in eye_cleaned.columns if 'CLEANED_ABS' in col or 'Valid' in col]
         for col in eye_cols:
             if col in eye_cleaned.columns:
                 phys_data_cleaned[col] = eye_cleaned[col]

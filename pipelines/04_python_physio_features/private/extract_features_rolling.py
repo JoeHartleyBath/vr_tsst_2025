@@ -196,7 +196,12 @@ def extract_rolling_window_features(
             continue
         
         # Get unique conditions for this participant
+        if 'Condition' not in p_data.columns:
+            logging.error(f"'Condition' column not found in data for P{participant_id}")
+            continue
+            
         conditions = p_data['Condition'].dropna().unique()
+        logging.info(f"P{participant_id}: Found {len(conditions)} conditions")
         
         # Process each condition
         for condition in conditions:
@@ -208,11 +213,15 @@ def extract_rolling_window_features(
             if len(cond_data) == 0:
                 continue
             
-            # Create rolling windows
-            time_col = 'Adjusted_Time'  # Relative time within condition
+            # Use Time_From_Start_Seconds as time column
+            time_col = 'Time_From_Start_Seconds'
             if time_col not in cond_data.columns:
                 logging.warning(f"Time column '{time_col}' not found for P{participant_id} {condition}")
                 continue
+            
+            # Convert to numeric seconds if datetime
+            if pd.api.types.is_datetime64_any_dtype(cond_data[time_col]):
+                cond_data[time_col] = (cond_data[time_col] - cond_data[time_col].iloc[0]).dt.total_seconds()
             
             windows = create_rolling_windows(
                 cond_data,
@@ -221,11 +230,13 @@ def extract_rolling_window_features(
                 overlap=overlap
             )
             
+            logging.info(f"P{participant_id} {condition}: Created {len(windows)} windows")
+            
             # Extract features from each window
             for window_meta in windows:
                 window_features = extract_features_from_window(
                     window_data=window_meta['data'],
-                    gsr_data=cond_gsr,  # Pass full condition GSR data for context
+                    gsr_data=cond_gsr,
                     participant_id=participant_id,
                     condition=condition,
                     window_metadata=window_meta
