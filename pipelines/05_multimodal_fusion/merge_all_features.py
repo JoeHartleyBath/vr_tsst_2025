@@ -26,6 +26,7 @@ import os
 import sys
 import argparse
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -126,6 +127,14 @@ def load_input_data(args):
     # Standardize column name
     if 'Participant' in eeg_df.columns:
         eeg_df.rename(columns={'Participant': 'Participant_ID'}, inplace=True)
+    
+    # Clean condition names: remove numeric suffixes like 1022, 2043
+    # This ensures compatibility between EEG and physio condition names
+    if 'Condition' in eeg_df.columns:
+        eeg_df['Condition'] = eeg_df['Condition'].apply(
+            lambda x: re.sub(r'(\d{4})', '', x) if pd.notna(x) else x
+        )
+        logging.info("  Cleaned numeric suffixes from EEG condition names")
     
     logging.info(f"  Loaded {len(eeg_df)} rows, {len(eeg_df.columns)} columns")
     logging.info(f"  Participants: {len(eeg_df['Participant_ID'].unique())}")

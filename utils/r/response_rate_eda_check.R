@@ -4,8 +4,8 @@
 #             mask tonic EDA effects due to increased movement.
 #
 # Feature of interest:
-#   response_rate_per_min_full_change_precond
-#   gsr_skin_conductance_eda_tonic_mean_nk_full_change_precond
+#   response_rate_per_min_precond
+#   eda_tonic_precond
 ###############################################################################
 
 suppressPackageStartupMessages({
@@ -36,8 +36,8 @@ df <- df %>%
 # ------------------------------------------------------------
 # 2. Define features
 # ------------------------------------------------------------
-feat_rr  <- "response_rate_per_min_full_change_precond"
-feat_eda <- "gsr_skin_conductance_eda_tonic_mean_nk_full_change_precond"
+feat_rr  <- "response_rate_per_min_precond"
+feat_eda <- "eda_tonic_precond"
 
 # Keep only required columns
 dat <- df %>%
@@ -101,8 +101,8 @@ library(lme4)
 library(lmerTest)
 
 m_lmm <- lmer(
-  gsr_skin_conductance_eda_tonic_mean_nk_full_change_precond ~ 
-    workload_level + stress_level + response_rate_per_min_full_change_precond +
+  eda_tonic_precond ~ 
+    workload_level + stress_level + response_rate_per_min_precond +
     (1 | participant_id),
   data = dat
 )

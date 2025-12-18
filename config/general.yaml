@@ -24,23 +24,23 @@ paths:
 
 canonical_features:
   - hrv_rmssd
-  - hr_heartrate_bpm_med_abs
-  - gsr_skin_conductance_eda_tonic_mean_nk
-  - gsr_skin_conductance_eda_pkht_mean_nk
-  - eeg_fm_theta_mean
-  - eeg_f_beta_mean
-  - eeg_p_alpha_mean
-  - pupil_dilation_med
+  - hr_med
+  - eda_tonic_mean
+  - eda_pkht_med
+  - eeg_fm_theta_power
+  - eeg_f_beta_power
+  - eeg_p_alpha_power
+  - pupil_full_pupil_med
 
 pretty_features:
-  hrv_rmssd: "HRV RMSSD"
-  hr_heartrate_bpm_med_abs: "Heart Rate (Median BPM)"
-  gsr_skin_conductance_eda_tonic_mean_nk: "EDA Tonic"
-  gsr_skin_conductance_eda_pkht_mean_nk: "EDA Peak Height"
-  eeg_fm_theta_mean: "EEG FM Theta"
-  eeg_f_beta_mean: "EEG Beta"
-  eeg_p_alpha_mean: "EEG Parietal Alpha"
-  pupil_dilation_med: "Pupil Dilation"
+  hrv_rmssd_precond: "HRV RMSSD"
+  hr_med_precond: "Heart Rate (Median BPM)"
+  eda_tonic_mean_precond: "EDA Tonic"
+  eda_pkht_med_precond: "EDA Peak Height"
+  eeg_fm_theta_power_precond: "EEG FM Theta"
+  eeg_f_beta_power_precond: "EEG Beta"
+  eeg_p_alpha_power_precond: "EEG Parietal Alpha"
+  pupil_full_pupil_med_precond: "Pupil Dilation"
 
 feature_order:
   - HRV RMSSD

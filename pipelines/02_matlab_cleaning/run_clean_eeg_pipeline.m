@@ -10,10 +10,8 @@
 %   4. Run this script
 
 % Load config (project-root absolute path, independent of cwd)
-thisFile = mfilename('fullpath');
-thisDir = fileparts(thisFile);
-projectRoot = fullfile(thisDir, '..', '..', '..', '..');
-projectRoot = char(java.io.File(projectRoot).getCanonicalPath());
+% Explicitly set paths for batch mode compatibility
+projectRoot = 'C:\vr_tsst_2025';
 cfgPath = fullfile(projectRoot, 'config', 'general.yaml');
 if ~exist(cfgPath, 'file')
     error('Could not open file %s. No such file or directory.', cfgPath);
@@ -83,7 +81,7 @@ end
 
 %% Configuration
 % Define participant numbers to process
-participant_numbers = [14]  % Update this list as needed
+participant_numbers = [44]  % Update this list as needed
 
 % Define paths (use absolute paths relative to project root)
 raw_eeg_folder = fullfile(projectRoot, 'output', 'sets');

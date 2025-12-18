@@ -5,9 +5,9 @@ apply_transformations <- function(final_data, subjective_cols, full_data) {
     select(where(is.numeric), -any_of(c("participant_id", "round", "condition", subjective_cols))) %>%
     colnames()
   
-  # 2. Keep only _full_change_precond features (the ones meant for baseline transform)
-  feature_cols <- feature_cols[str_detect(feature_cols, "_full_change_precond$")]
-  cat("Using", length(feature_cols), "features ending with _full_change_precond\n")
+  # 2. Keep only _precond features (the ones meant for baseline transform)
+  feature_cols <- feature_cols[str_detect(feature_cols, "_precond$")]
+  cat("Using", length(feature_cols), "features ending with _precond\n")
   
   # Figure out which transformation to apply per feature
   method_map <- setNames(
@@ -41,7 +41,7 @@ apply_transformations <- function(final_data, subjective_cols, full_data) {
 transform_deltas <- function(df, full_data, feature_cols, method_map = list()) {
   
   # Convert feature names to baseline versions
-  raw_feature_names <- str_remove(feature_cols, "_change_precond$")
+  raw_feature_names <- str_remove(feature_cols, "_precond$")
   
   # Step 1 — compute baseline stats
   baseline_data <- full_data %>%

@@ -9,6 +9,7 @@ library(yardstick)  # Added for F1 and AUC
 set.seed(42)
 
 source("scripts/prune_feats.R")
+source("utils/r/feature_selection.R")
 
 # =====================================================================
 # 1. Load data
@@ -60,12 +61,8 @@ df <- df %>%
 
 
 
-# Feature filtering
-drop_pattern <- paste0(
-  "response|eeg_o|(_min_|_max_)|head|totalscrs|_glob|_raw|_delta|_assym"
-)
-features <- names(df)[str_detect(names(df), "_precond$")]
-features <- features[!str_detect(features, drop_pattern)]
+# Feature filtering using centralized selection
+features <- select_analysis_features(df, suffix = "_precond")
 
 df <- df %>%
   select(participant_id, stress_label, workload_label, all_of(features))

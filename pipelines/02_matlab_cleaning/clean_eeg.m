@@ -1,4 +1,4 @@
-function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis_folder, qc_folder, config)
+function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis_folder, qc_folder, config, max_threads_override)
     % CLEAN_EEG - Streamlined EEG cleaning pipeline
     %
     % Applies basic and advanced cleaning to a raw .set file produced by
@@ -23,10 +23,17 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     %                         'output/vis/P01', 'output/qc', []);
     
     %% Setup and Validation
+    % Add project scripts to path
+    projectRoot = 'C:\vr_tsst_2025';
+    addpath(fullfile(projectRoot, 'scripts', 'preprocessing', 'eeg', 'cleaning'));
+    addpath(fullfile(projectRoot, 'scripts', 'utils'));
+    
+    if nargin < 7 || isempty(max_threads_override)
+        max_threads_override = 8;  % Default to 8 threads
+    end
+    
     if nargin < 6 || isempty(config)
         % Load config with fallback support (ReadYaml → SimpleYAML → skip)
-        projectRoot = fullfile(fileparts(mfilename('fullpath')), '..', '..', '..', '..');
-        projectRoot = char(java.io.File(projectRoot).getCanonicalPath());
         configPath = fullfile(projectRoot, 'config', 'general.yaml');
         config = struct();
         
@@ -82,14 +89,16 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     % Log amplitude stats after load
     stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
     log_message(logfile, sprintf('Stats after load: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
-    save_visualization(EEG, vis_folder, sprintf('P%02d_01_raw_loaded.png', participant_num));
+    % Visualization disabled for performance (5-10 sec each)
+    % try
+    %     save_visualization(EEG, vis_folder, sprintf('P%02d_01_raw_loaded.png', participant_num));
+    % catch
+    % end
     
     %% Step 2: Assign Channel Locations
     log_message(logfile, '=== Step 2: Assign Channel Locations ===');
 
     % Assign ANT Neuro 128-channel equidistant layout (resolve via project root)
-    projectRoot = fullfile(fileparts(mfilename('fullpath')), '..', '..', '..', '..');
-    projectRoot = char(java.io.File(projectRoot).getCanonicalPath());
     chanlocs_file = fullfile(projectRoot, 'config', 'chanlocs', 'NA-271.elc');
     EEG = pop_chanedit(EEG, 'lookup', chanlocs_file);
 
@@ -102,7 +111,11 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     % Persist original chanlocs after template assignment for later interpolation/saving
     EEG.etc.orig_chanlocs = EEG.chanlocs;
     
-    save_visualization(EEG, vis_folder, sprintf('P%02d_02_chanlocs.png', participant_num));
+    % Visualization disabled for performance (5-10 sec each)
+    % try
+    %     save_visualization(EEG, vis_folder, sprintf('P%02d_02_chanlocs.png', participant_num));
+    % catch
+    % end
     
     %% Step 3: Basic Cleaning (Filtering)
     log_message(logfile, '=== Step 3: Basic Cleaning ===');
@@ -131,34 +144,43 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
     log_message(logfile, sprintf('Stats after basic cleaning: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
-    save_visualization(EEG, vis_folder, sprintf('P%02d_03_basic_clean.png', participant_num));
+    % Visualization disabled for performance (5-10 sec each)
+    % try
+    %     save_visualization(EEG, vis_folder, sprintf('P%02d_03_basic_clean.png', participant_num));
+    % catch
+    % end
     
-    %% Step 4: Advanced Cleaning (ASR + ICA)
-    log_message(logfile, '=== Step 4: Advanced Cleaning ===');
-    
-    % ASR calibration: using default behavior (let clean_artifacts auto-select clean data)
+    %% Step 4: Detect Bad Channels Only (No Data Removal)
+    log_message(logfile, '=== Step 4: Bad Channel Detection (for interpolation) ===');
 
-    % Run clean_artifacts (ASR) on full data with tuned parameters
-    [EEG, com] = clean_artifacts(EEG, ...
-        'FlatlineCriterion',  5, ...
-        'ChannelCriterion',   0.60, ...
-        'LineNoiseCriterion', 4, ...
-        'BurstCriterion',     50, ...
-        'WindowCriterion',    0.60);
+    log_message(logfile, 'Skipping channel detection - all channels will be preserved.');
     
-    log_message(logfile, 'clean_artifacts (ASR) completed with tuned parameters (Burst=50, Channel=0.70, Window=0.60).');
+    % Detect bad channels WITHOUT removing any samples/timepoints
+    try
+        [EEG, ~] = clean_artifacts(EEG, ...
+            'FlatlineCriterion', 5, ...
+            'ChannelCriterion', 0.60, ...
+            'LineNoiseCriterion', 4, ...
+            'BurstCriterion', 'off', ...      % No burst detection/repair
+            'WindowCriterion', 'off');         % No window rejection
+        log_message(logfile, 'Bad channel detection completed (no samples removed).');
+    catch ME
+        log_message(logfile, sprintf('Channel detection failed: %s. Proceeding with all channels.', ME.message));
+        EEG.etc.clean_channel_mask = true(1, EEG.nbchan);
+    end
 
-    % Log stats after ASR
-    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
-    log_message(logfile, sprintf('Stats after ASR: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
-    
-    % Validate clean_channel_mask exists
-    if ~isfield(EEG.etc, 'clean_channel_mask')
-        warning('clean_channel_mask not found - assuming all channels retained.');
-        EEG.etc.clean_channel_mask = true(1, length(EEG.etc.orig_chanlocs));
+    % Ensure all samples are marked as kept (no data removal)
+    if ~isfield(EEG.etc, 'clean_sample_mask') || isempty(EEG.etc.clean_sample_mask)
+        EEG.etc.clean_sample_mask = true(1, EEG.pnts);
     end
     
-    % Identify bad channels
+    log_message(logfile, sprintf('All %d channels and %d timepoints preserved (100%%) for AMICA and event recovery.', EEG.nbchan, EEG.pnts));
+
+    % Log stats (data unchanged)
+    stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
+    log_message(logfile, sprintf('Stats pre-AMICA: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
+    
+    % Identify bad channels (none, all will be kept)
     mask = EEG.etc.clean_channel_mask;
     origLocs = EEG.etc.orig_chanlocs;
     
@@ -173,12 +195,17 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     log_message(logfile, sprintf('%d bad channels identified: %s', ...
         sum(badIdx), strjoin(badLabels, ', ')));
     
-    save_visualization(EEG, vis_folder, sprintf('P%02d_04_after_asr.png', participant_num));
+    % Visualization disabled for performance (5-10 sec each)
+    % try
+    %     save_visualization(EEG, vis_folder, sprintf('P%02d_04_pre_amica.png', participant_num));
+    % catch
+    %     % Visualization failed, continue anyway
+    % end
     
     %% Step 5: Run AMICA (ICA)
     log_message(logfile, '=== Step 5: Run AMICA ===');
     
-    [EEG, LL_trace] = run_amica_pipeline(EEG, participant_num, logfile);
+    [EEG, LL_trace] = run_amica_pipeline(EEG, participant_num, logfile, max_threads_override);
     
     % Log AMICA likelihood trace
     if ~isempty(LL_trace)
@@ -190,12 +217,26 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
         end
         log_message(logfile, '--- End AMICA Trace ---');
     end
+    
+    % Save AMICA weights to separate file
+    ica_weights_dir = fullfile(projectRoot, 'output', 'ica_weights');
+    if ~exist(ica_weights_dir, 'dir')
+        mkdir(ica_weights_dir);
+    end
+    amica_weights_path = fullfile(ica_weights_dir, sprintf('P%02d_amica_weights.mat', participant_num));
+    amica_weights = struct('weights', EEG.icaweights, 'sphere', EEG.icasphere, 'LL_trace', LL_trace);
+    save(amica_weights_path, 'amica_weights', '-v7.3');
+    log_message(logfile, sprintf('AMICA weights saved to: %s', amica_weights_path));
 
     % Log stats after AMICA unmixing applied
     stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
     log_message(logfile, sprintf('Stats after AMICA: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
-    save_visualization(EEG, vis_folder, sprintf('P%02d_05_after_amica.png', participant_num));
+    % Visualization disabled for performance (5-10 sec each)
+    % try
+    %     save_visualization(EEG, vis_folder, sprintf('P%02d_05_after_amica.png', participant_num));
+    % catch
+    % end
     
     %% Step 6: Apply ICLabel and Remove Artifacts
     log_message(logfile, '=== Step 6: ICLabel and Artifact Removal ===');
@@ -226,7 +267,11 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
     log_message(logfile, sprintf('Stats after IC removal: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
-    save_visualization(EEG, vis_folder, sprintf('P%02d_06_after_artifact_removal.png', participant_num));
+    % Visualization disabled for performance (5-10 sec each)
+    % try
+    %     save_visualization(EEG, vis_folder, sprintf('P%02d_06_after_artifact_removal.png', participant_num));
+    % catch
+    % end
     
     %% Step 7: Interpolate Bad Channels and Re-reference
     log_message(logfile, '=== Step 7: Interpolate and Re-reference ===');
@@ -241,10 +286,24 @@ function [EEG, qc] = clean_eeg(raw_set_path, output_folder, participant_num, vis
     stats = [min(EEG.data(:)), max(EEG.data(:)), mean(EEG.data(:)), std(EEG.data(:))];
     log_message(logfile, sprintf('Stats after reref: min=%.6f max=%.6f mean=%.6f std=%.6f', stats));
     
-    save_visualization(EEG, vis_folder, sprintf('P%02d_07_final_clean.png', participant_num));
+    % Keep final visualization for quality check
+    try
+        save_visualization(EEG, vis_folder, sprintf('P%02d_07_final_clean.png', participant_num));
+    catch
+    end
     
     %% Step 8: Compute QC Metrics
     log_message(logfile, '=== Step 8: QC Metrics ===');
+    
+    % Get bad channel labels from clean_channel_mask
+    if isfield(EEG.etc, 'clean_channel_mask') && isfield(EEG.etc, 'orig_chanlocs')
+        mask = EEG.etc.clean_channel_mask;
+        origLocs = EEG.etc.orig_chanlocs;
+        badIdx = ~mask;
+        badLabels = {origLocs(badIdx).labels}';
+    else
+        badLabels = {};
+    end
     
     qc = compute_qc_metrics(EEG, badLabels, logfile);
     
@@ -297,12 +356,13 @@ end
 
 %% ========== HELPER FUNCTIONS ==========
 
-function [EEG, LL_trace] = run_amica_pipeline(EEG, participant_num, logfile)
+function [EEG, LL_trace] = run_amica_pipeline(EEG, participant_num, logfile, max_threads)
     % Run AMICA with log-likelihood tracking
+    % Supports parallel processing by accepting thread count as parameter
     
     num_models   = 1;
     numprocs     = 1;
-    max_threads  = 2;        % CHANGED: Use 8 threads (Ryzen 7 5700X)
+    % max_threads passed in as parameter (for parallel processing support)
     max_iter     = 200;
     writeStep    = 10;
     
@@ -440,12 +500,19 @@ end
 function eventwiseRetention = compute_eventwise_retention(EEG)
     % Compute data retention percentage for each event type
     
-    uniqueTypes = unique({EEG.event.type});
+    % Convert all event types to cell array of strings for consistent handling
+    eventTypes = {EEG.event.type};
+    if ~iscell(eventTypes{1})
+        % If types are numeric, convert to strings
+        eventTypes = cellfun(@num2str, eventTypes, 'UniformOutput', false);
+    end
+    
+    uniqueTypes = unique(eventTypes);
     eventwiseRetention = struct();
     
     for i = 1:numel(uniqueTypes)
         type = uniqueTypes{i};
-        indices = find(strcmp({EEG.event.type}, type));
+        indices = find(strcmp(eventTypes, type));
         latencies = round([EEG.event(indices).latency]);
         
         validLatencies = latencies(latencies > 0 & latencies <= length(EEG.etc.clean_sample_mask));

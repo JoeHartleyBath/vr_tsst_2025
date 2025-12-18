@@ -1,5 +1,7 @@
 # scripts/utils/data_prep_helpers.R
 
+source("utils/r/feature_selection.R")
+
 load_and_prepare_data <- function(config) {
   # 1. Load raw data
   raw_data <- readr::read_csv(
@@ -15,8 +17,11 @@ load_and_prepare_data <- function(config) {
     dplyr::pull(Participant_ID) %>%
     unique()
   
+  # Convert "P02" format to numeric 2 for matching
+  failed_ids_numeric <- as.numeric(gsub("P", "", failed_ids))
+  
   data <- raw_data %>%
-    dplyr::filter(!Participant_ID %in% failed_ids)
+    dplyr::filter(!Participant_ID %in% failed_ids_numeric)
   
   # 3. Load and map counterbalance
   cb_long <- readxl::read_excel(
@@ -45,12 +50,17 @@ load_and_prepare_data <- function(config) {
     dplyr::mutate(
       Condition_Type = dplyr::case_when(
         stringr::str_detect(Condition, regex("Task", ignore_case = TRUE)) ~ "Task",
+        stringr::str_detect(Condition, regex("Forest", ignore_case = TRUE)) ~ "Relaxation",
         stringr::str_detect(Condition, regex("Relaxation", ignore_case = TRUE)) ~ "Relaxation",
         stringr::str_detect(Condition, regex("Pre", ignore_case = TRUE)) ~ "Pre_Baseline",
         stringr::str_detect(Condition, regex("Post", ignore_case = TRUE)) ~ "Post_Baseline",
         TRUE ~ NA_character_
       ),
       Relaxation_Level = dplyr::case_when(
+        str_detect(Condition, regex("Forest1", ignore_case = TRUE)) ~ "1",
+        str_detect(Condition, regex("Forest2", ignore_case = TRUE)) ~ "2",
+        str_detect(Condition, regex("Forest3", ignore_case = TRUE)) ~ "3",
+        str_detect(Condition, regex("Forest4", ignore_case = TRUE)) ~ "4",
         str_detect(Condition, regex("Relaxation1", ignore_case = TRUE)) ~ "1",
         str_detect(Condition, regex("Relaxation2", ignore_case = TRUE)) ~ "2",
         str_detect(Condition, regex("Relaxation3", ignore_case = TRUE)) ~ "3",
@@ -68,30 +78,12 @@ load_and_prepare_data <- function(config) {
           str_detect(Condition, regex("LowCog", ignore_case = TRUE))  ~ "Low Stress - Low Cog",
         TRUE ~ Condition
       ),
-      Full_Pupil_Dilation_Mean   = (Full_Foveal_Corrected_Dilation_Left_CLEANED_ABS_Mean +
-                                      Full_Foveal_Corrected_Dilation_Right_CLEANED_ABS_Mean) / 2,
-      Full_Pupil_Dilation_Min    = (Full_Foveal_Corrected_Dilation_Left_CLEANED_ABS_MIN +
-                                      Full_Foveal_Corrected_Dilation_Right_CLEANED_ABS_MIN)  / 2,
-      Full_Pupil_Dilation_Max    = (Full_Foveal_Corrected_Dilation_Left_CLEANED_ABS_MAX +
-                                      Full_Foveal_Corrected_Dilation_Right_CLEANED_ABS_MAX) / 2,
-      Full_Pupil_Dilation_Median = (Full_Foveal_Corrected_Dilation_Left_CLEANED_ABS_Median +
-                                      Full_Foveal_Corrected_Dilation_Right_CLEANED_ABS_Median) / 2,
-      Full_Pupil_Dilation_SD     = (Full_Foveal_Corrected_Dilation_Left_CLEANED_ABS_SD +
-                                      Full_Foveal_Corrected_Dilation_Right_CLEANED_ABS_SD) / 2,
-      Full_Pupil_Asymmetry = abs(
-        Full_Foveal_Corrected_Dilation_Left_CLEANED_ABS_Mean - 
-          Full_Foveal_Corrected_Dilation_Right_CLEANED_ABS_Mean),
+      # NOTE: Pupil features already computed in physio extraction
+      # Full_Pupil_Dilation_Mean, Median, SD, Asymmetry exist in merged data
         
-      # --- EEG Ratio features (full-window only) ---
-      Full_Alpha_Beta_Ratio =
-               (Full_FrontalMidline_Alpha_Mean / Full_FrontalMidline_Beta_Mean),
-      
-      Full_Theta_Beta_Ratio =
-               (Full_FrontalMidline_Theta_Mean / Full_FrontalMidline_Beta_Mean),
-
-      Full_Frontal_Alpha_Asymmetry =
-               (log(Full_FrontalRight_Alpha_Mean) -
-                 log(Full_FrontalLeft_Alpha_Mean))
+      # NOTE: EEG ratio features - check if already exist or compute if needed
+      # Features use _Power suffix not _Mean
+      # Full_Alpha_Beta_Ratio, Full_Theta_Beta_Ratio, Full_Frontal_Alpha_Asymmetry
     ) %>%
     left_join(
       cb_long,
@@ -110,8 +102,17 @@ prepare_full_window_data <- function(data) {
   # Drop baseline remnants
   data <- data %>% select(-matches("baseline", ignore.case = TRUE))
   
-  # Rename
-  names(data) <- vapply(names(data), rename_feature, character(1))
+  # Get canonical features from config to preserve their names
+  canonical_feats <- config$canonical_features
+  
+  # Rename all columns except canonical features
+  col_names <- names(data)
+  for (i in seq_along(col_names)) {
+    if (!col_names[i] %in% canonical_feats) {
+      col_names[i] <- rename_feature(col_names[i])
+    }
+  }
+  names(data) <- col_names
   
   # Define sets
   id_cols   <- c("participant_id", "round", "condition", "condition_type", "relaxation_level")
@@ -119,11 +120,14 @@ prepare_full_window_data <- function(data) {
     c("stress", "workload", "calm", "happy", "sad", "pleasure", "arousal"),
     names(data)
   )
-  full_cols <- str_subset(names(data), "_full$")
+  
+  # All features in aggregated data are full-window features
+  # Select all numeric columns except IDs and subjective ratings
+  feature_cols <- names(data %>% select(where(is.numeric), -any_of(c(id_cols, subjective_cols))))
   
   # Extract full window values
   full_data <- data %>%
-    select(any_of(c(id_cols, full_cols, subjective_cols))) %>%
+    select(any_of(c(id_cols, feature_cols, subjective_cols))) %>%
     arrange(participant_id, condition) %>%
     group_by(participant_id, condition) %>%
     summarise(across(everything(), first), .groups = "drop")
@@ -131,14 +135,14 @@ prepare_full_window_data <- function(data) {
   # Compute baselines
   glob_bl_full <- full_data %>%
     filter(condition_type == "Pre_Baseline") %>%
-    select(participant_id, all_of(full_cols)) %>%
+    select(participant_id, all_of(feature_cols)) %>%
     pivot_longer(-participant_id, names_to = "metric", values_to = "glob_bl") %>%
     distinct(participant_id, metric, .keep_all = TRUE)
   
   precond_bl_full <- full_data %>%
     filter(condition_type == "Relaxation") %>%
     mutate(round = as.character(relaxation_level)) %>%
-    select(participant_id, round, all_of(full_cols)) %>%
+    select(participant_id, round, all_of(feature_cols)) %>%
     pivot_longer(-c(participant_id, round), names_to = "metric", values_to = "precond_bl") %>%
     distinct(participant_id, round, metric, .keep_all = TRUE)
   
@@ -146,27 +150,18 @@ prepare_full_window_data <- function(data) {
   task_vals <- full_data %>%
     filter(condition_type == "Task") %>%
     mutate(round = as.character(round)) %>%
-    select(participant_id, round, all_of(full_cols)) %>%
+    select(participant_id, round, all_of(feature_cols)) %>%
     pivot_longer(-c(participant_id, round), names_to = "metric", values_to = "value")
   
-  # Compute deltas
+  # Compute deltas (only precondition baseline)
   change_long <- task_vals %>%
     left_join(precond_bl_full, by = c("participant_id", "round", "metric")) %>%
-    left_join(glob_bl_full,    by = c("participant_id", "metric")) %>%
-    mutate(
-      change_precond = value - precond_bl,
-      change_glob    = value - glob_bl
-    ) %>%
-    select(participant_id, round, metric, value, change_precond, change_glob)
+    mutate(change_precond = value - precond_bl) %>%
+    select(participant_id, round, metric, change_precond)
   
   change_long_clean <- change_long %>%
-    pivot_longer(
-      cols = c(value, change_precond, change_glob),
-      names_to = "change_type",
-      values_to = "value"
-    ) %>%
-    mutate(change_type = dplyr::recode(change_type, "value" = "raw"))%>%
-    mutate(feature = str_c(metric, change_type, sep = "_")) %>%
+    mutate(feature = str_c(metric, "precond", sep = "_")) %>%
+    rename(value = change_precond) %>%
     select(participant_id, round, feature, value)
   
   
@@ -213,7 +208,7 @@ make_anova_dataset <- function(final_data, subjective_cols, config) {
     )
   
   anova_features <- names(anova_data) %>% 
-    str_subset("_change_precond$")  # baseline-adjusted full-window features
+    str_subset("_precond$")  # baseline-adjusted features
   
   anova_dataset <- anova_data %>%
     select(
@@ -246,27 +241,8 @@ clean_feature_duplicates <- function(df) {
     stringr::str_replace_all("(?i)(_abs_|_nk_)", "_") %>%
     intersect(all_feats)
   
-  # 2. Drop irrelevant or invalid features
-  garbage_patterns <- paste0(
-    "(?i)", paste(c(
-      "_wpli",
-      "aperiodic",
-      "_dilation_(left|right)",
-      "rr_",
-      "slope",
-      "meaningful",
-      "unrest",
-      "blink",
-      "resistance",
-      "bpm_sd",
-      "interval_sd",
-      "sdnn",
-      "pnn50",
-      "conductance(?!_eda)",
-      "(?=.*eeg)(?=.*sd)"# drop conductance unless part of conductance_eda
-    ), collapse = "|")
-  )
-  
+  # 2. Drop irrelevant or invalid features using centralized pattern
+  garbage_patterns <- get_feature_drop_pattern()
   garbage_features <- stringr::str_subset(all_feats, garbage_patterns)
   
   to_drop <- unique(c(raw_equivalents, garbage_features))

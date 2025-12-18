@@ -10,6 +10,8 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
+source("utils/r/feature_selection.R")
+
 # =====================================================================
 # 0. CONFIG + GENERIC HELPERS
 # =====================================================================
@@ -71,43 +73,11 @@ cond_short_labs <- c(
 )
 
 # =====================================================================
-# 1. FEATURE METADATA (TYPICAL FEATURES, PRETTY LABELS, groupS)
+# 1. FEATURE METADATA (TYPICAL FEATURES, PRETTY LABELS, GROUPS)
 # =====================================================================
 
-drop_pattern <- paste0(
-  "(?i)", paste(c(
-    # Generic exclusions
-    "response",
-    "eeg_o",
-    "_min_", "_max_",
-    "head",
-    "totalscrs",
-    "_glob",
-    "_raw",
-    "_delta",
-    "bpm_mean",
-    "tonic_mean",
-    "dilation_mean",
-    "pkht_med",
-    
-    # Domain-specific exclusions
-    "_wpli",
-    "aperiodic",
-    "_dilation_(left|right)",
-    "rr_",
-    "slope",
-    "meaningful",
-    "unrest",
-    "blink",
-    "resistance",
-    "bpm_sd",
-    "interval_sd",
-    "sdnn",
-    "pnn50",
-    "conductance(?!_eda)"   # keep conductance_eda variants
-  ), collapse = "|")
-)
-
+# Use centralized drop pattern
+drop_pattern <- get_feature_drop_pattern()
 
 
 categorise_feature <- function(x) {
@@ -119,7 +89,7 @@ categorise_feature <- function(x) {
     str_starts(x, regex("eeg_p", ignore_case = TRUE))   ~ "EEG_Parietal",
     str_starts(x, regex("faa|ratio", ignore_case = TRUE)) ~ "EEG_Frontal",
     str_starts(x, regex("hr|hrv", ignore_case = TRUE)) ~ "HR/HRV",
-    str_starts(x, regex("gsr", ignore_case = TRUE)) ~ "EDA",
+    str_starts(x, regex("eda|gsr", ignore_case = TRUE)) ~ "EDA",
     str_starts(x, regex("pupil", ignore_case = TRUE))   ~ "Pupillometry",
     TRUE ~ "Other"
   )
@@ -284,8 +254,8 @@ plot_conditionwise_heatmap <- function(df, out_path) {
       rating     = factor(rating, levels = c("stress", "workload")),
       cond_short = factor(cond_short, levels = c("LS–LW","LS–HW","HS–LW","HS–HW")),
       feature_display = factor(
-        sub("_full_change_precond_Z$", "", feature),
-        levels = unique(sub("_full_change_precond_Z$", "", feature))
+        sub("_precond_Z$", "", feature),
+        levels = unique(sub("_precond_Z$", "", feature))
       )
     )
   
@@ -329,8 +299,8 @@ for (g in groups) {
     arrange(feature) %>%
     mutate(
       feature_display = factor(
-        sub("_full_change_precond_Z$", "", feature),
-        levels = unique(sub("_full_change_precond_Z$", "", feature))
+        sub("_precond_Z$", "", feature),
+        levels = unique(sub("_precond_Z$", "", feature))
       )
     )
   

@@ -5,12 +5,12 @@ from time import perf_counter
 from tqdm import tqdm
 
 # Add scripts directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 
-from xdf_to_set.xdf_to_set import xdf_to_set
+from xdf_to_set import xdf_to_set
 
 def main():
-    base = Path(__file__).parent.parent.parent.parent.parent  # Go up to c:\vr_tsst_2025
+    base = Path(__file__).parent.parent.parent  # Go up to c:\vr_tsst_2025
 
     parser = argparse.ArgumentParser(description="XDF→SET conversion for participants")
     parser.add_argument(

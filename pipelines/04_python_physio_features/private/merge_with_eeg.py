@@ -152,7 +152,7 @@ def validate_merged_data(
         )
     
     # Check for required columns
-    required_cols = ['Participant_ID', 'Condition', 'Sample_Frame']
+    required_cols = ['Participant_ID', 'Condition']
     missing_cols = [col for col in required_cols if col not in merged_data.columns]
     
     if missing_cols:

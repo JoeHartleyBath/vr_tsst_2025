@@ -106,13 +106,12 @@ def identify_feature_columns(df: pd.DataFrame) -> Dict[str, List[str]]:
         Dictionary with 'eeg' and 'physio' feature lists
     """
     eeg_features = [col for col in df.columns if any(
-        x in col for x in ['Theta', 'Alpha', 'Beta', 'Gamma', 'Delta', 
-                           'Frontal', 'Parietal', 'Temporal', 'Occipital', 'Central']
+        x in col for x in ['Theta', 'Alpha', 'Beta' 
+                           'Frontal', 'Parietal', 'Temporal', 'Central']
     )]
     
     physio_features = [col for col in df.columns if any(
-        x in col for x in ['HR', 'HRV', 'RMSSD', 'GSR', 'EDA', 'Pupil', 
-                           'Blink', 'Response', 'Shimmer']
+        x in col for x in ['HR', 'HRV', 'RMSSD', 'GSR', 'EDA', 'Pupil', 'Shimmer']
     )]
     
     # Remove any overlap

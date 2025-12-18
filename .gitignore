@@ -54,6 +54,7 @@ Thumbs.db
 *.asv
 *.m~
 *.mat
+*.fdt
 
 # Outputs (keep README only)
 /output/

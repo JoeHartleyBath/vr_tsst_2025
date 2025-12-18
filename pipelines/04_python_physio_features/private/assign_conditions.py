@@ -11,6 +11,7 @@ Date: December 2025
 import pandas as pd
 import yaml
 import logging
+import re
 from pathlib import Path
 from typing import Dict, Any
 
@@ -83,17 +84,37 @@ def assign_conditions_to_dataframe(
     df = df.copy()
     df[condition_col] = None
     
-    # Apply each condition's filters
+    # Apply each condition's filters using vectorized operations
     for condition_name, filters in conditions_config.items():
-        # Create boolean mask for this condition
-        mask = df.apply(lambda row: match_condition(row, filters), axis=1)
+        # Build boolean mask using vectorized comparisons
+        mask = pd.Series([True] * len(df), index=df.index)
+        
+        for col, expected_val in filters.items():
+            if col == 'duration':  # Skip duration metadata
+                continue
+            
+            if col not in df.columns:
+                mask &= False
+                continue
+            
+            # Handle list of acceptable values
+            if isinstance(expected_val, list):
+                mask &= df[col].isin(expected_val)
+            else:
+                mask &= (df[col] == expected_val)
         
         # Assign condition label where mask is True
-        df.loc[mask, condition_col] = condition_name
-        
         matched_count = mask.sum()
         if matched_count > 0:
+            df.loc[mask, condition_col] = condition_name
             logging.debug(f"  Matched {matched_count} rows to condition: {condition_name}")
+    
+    # Clean condition names: remove numeric suffixes like 1022, 2043
+    # e.g., "LowStress_HighCog2043_Task" -> "LowStress_HighCog_Task"
+    # This ensures compatibility with EEG feature condition names
+    df[condition_col] = df[condition_col].apply(
+        lambda x: re.sub(r'(\d{4})', '', x) if pd.notna(x) else x
+    )
     
     # Log unmatched rows
     unmatched = df[condition_col].isna().sum()

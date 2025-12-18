@@ -10,10 +10,10 @@ library(yaml)
 
 # Load config & helper scripts
 config <- yaml::read_yaml("scripts/utils/config.yaml")
-source("scripts/utils/feature_naming.R")
-source("scripts/utils/transform_functions.R")
-source("scripts/utils/data_prep_helpers.R")
-source("scripts/utils/save_helpers.R")
+source("utils/r/feature_naming.R")
+source("utils/r/transform_functions.R")
+source("utils/r/data_prep_helpers.R")
+source("utils/r/save_helpers.R")
 
 # 1. Load and pre-process raw data
 data <- load_and_prepare_data(config)

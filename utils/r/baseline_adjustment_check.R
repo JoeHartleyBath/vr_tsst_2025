@@ -1,7 +1,7 @@
 ###############################################################################
 # baseline_adjustment_check.R
 # Evaluate appropriateness of baseline correction for:
-#   pupil_dilation_med_full_change_precond
+#   pupil_med_precond
 ###############################################################################
 
 suppressPackageStartupMessages({

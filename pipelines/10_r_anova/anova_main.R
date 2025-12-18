@@ -24,7 +24,7 @@ out_dir_classic <- file.path(config$paths$results, "classic_analyses")
 dir.create(out_dir_classic, showWarnings = FALSE, recursive = TRUE)
 
 df <- readRDS(
-  "D:/phd_projects/vr_tsst_2025/output/anova_features_precond.rds"
+  file.path(config$paths$output, "anova_features_precond.rds")
 )
 
 df <- df %>%
@@ -42,8 +42,10 @@ stopifnot(all(c("participant_id", "stress_level", "workload_level") %in% names(d
 # ------------------------------------------------------------
 
 canonical_feats <- config$canonical_features
-suffix <- "_full_change_precond"  #baseline adjusted using precondition relaxation scene
+suffix <- "_precond"  # baseline adjusted using precondition relaxation scene
 features <- paste0(canonical_feats, suffix)
+
+cat(sprintf("Using %d canonical features from config\n", length(features)))
 
 feat_labels <- config$pretty_features
 # ------------------------------------------------------------
@@ -63,25 +65,55 @@ sig_marks <- function(p) {
 
 normality_results <- map_dfr(features, function(feat) {
   
+  # Filter for participants with all 4 conditions
+  complete_participants <- df %>%
+    select(participant_id, stress_level, workload_level, all_of(feat)) %>%
+    drop_na() %>%
+    group_by(participant_id) %>%
+    filter(n() == 4) %>%  # Must have all 4 condition combinations
+    pull(participant_id) %>%
+    unique()
+  
+  if (length(complete_participants) < 10) {
+    cat(sprintf("Skipping %s: only %d participants with complete data\n", 
+                feat, length(complete_participants)))
+    return(NULL)
+  }
+  
+  dat_feat <- df %>%
+    filter(participant_id %in% complete_participants)
+  
+  cat(sprintf("Analyzing %s: %d participants with complete data\n", 
+              feat, length(complete_participants)))
+  
   m <- afex::aov_car(
     as.formula(paste0(feat, " ~ stress_level * workload_level + Error(participant_id/(stress_level * workload_level))")),
-    data = df,
+    data = dat_feat,
     factorize = FALSE
   )
   
-  norm_check <- check_normality(m)
-  
-  # Save QQ plot
-  p <- plot(norm_check, type = "qq", detrend = TRUE)
-  ggsave(
-    filename = file.path(out_dir_classic, "anovas", paste0("qqplot_", feat, ".png")),
-    plot = p,
-    width = 6, height = 6, dpi = 300
+  norm_check <- tryCatch(
+    check_normality(m),
+    error = function(e) {
+      cat(sprintf("  Warning: Normality check failed for %s: %s\n", feat, e$message))
+      return(NULL)
+    }
   )
   
-  
-  # Extract p-value
-  p_value <- as.numeric(norm_check)
+  if (!is.null(norm_check)) {
+    # Save QQ plot
+    p <- plot(norm_check, type = "qq", detrend = TRUE)
+    ggsave(
+      filename = file.path(out_dir_classic, "anovas", paste0("qqplot_", feat, ".png")),
+      plot = p,
+      width = 6, height = 6, dpi = 300
+    )
+    
+    # Extract p-value
+    p_value <- as.numeric(norm_check)
+  } else {
+    p_value <- NA
+  }
   
   
   tibble(
@@ -98,11 +130,30 @@ term_labels <- c("Stress", "Workload", "Stress × Workload")
 
 art_results <- map_dfr(features, function(feat) {
   
+  # Filter for participants with all 4 conditions
+  complete_participants <- df %>%
+    select(participant_id, stress_level, workload_level, all_of(feat)) %>%
+    drop_na() %>%
+    group_by(participant_id) %>%
+    filter(n() == 4) %>%  # Must have all 4 condition combinations
+    pull(participant_id) %>%
+    unique()
+  
+  if (length(complete_participants) < 10) {
+    cat(sprintf("Skipping %s: only %d participants with complete data\n", 
+                feat, length(complete_participants)))
+    return(NULL)
+  }
+  
   dat <- df %>%
+    filter(participant_id %in% complete_participants) %>%
     select(participant_id, stress_level, workload_level, all_of(feat)) %>%
     drop_na()
   
   if (nrow(dat) == 0) return(NULL)
+  
+  cat(sprintf("Running ART ANOVA for %s: %d participants\n", 
+              feat, length(complete_participants)))
   
   m_art <- art(
     as.formula(
@@ -139,7 +190,7 @@ art_results <- map_dfr(features, function(feat) {
 
 
 # Re-fit only for the significant feature for clarity
-feat <- "gsr_skin_conductance_eda_tonic_mean_nk_full_change_precond"
+feat <- "eda_tonic_mean_precond"
 
 dat_feat <- df %>%
   select(participant_id, stress_level, workload_level, !!sym(feat)) %>%

@@ -24,6 +24,7 @@ Author: VR-TSST Project
 Date: December 2025
 """
 
+
 import logging
 import pandas as pd
 import numpy as np
@@ -147,7 +148,9 @@ def extract_features_from_window(
         # This excludes HRV (RMSSD), GSR phasic (SCR counts/peaks), and response metrics
         phys_stats = calculate_stats(
             window_data,
-            columns=VALID_COLUMNS
+            columns=VALID_COLUMNS,
+            participant_id=participant_id,
+            condition=condition
         )
         features.update(phys_stats)
             

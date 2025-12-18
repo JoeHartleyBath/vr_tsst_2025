@@ -21,7 +21,7 @@ derived_eeg <- c(
 
 modality_regex <- list(
   eeg   = "(frontal|temporal|central|parietal|occipital|frontalmidline|alpha|theta)",
-  gsr   = "gsr|conductance|resistance",
+  eda   = "gsr|conductance|resistance|eda",
   hr    = "heartrate|bpm",
   hrv   = "rr_interval|rmssd|sdnn|pnn50",
   pupil = "pupil|dilation|foveal",
@@ -43,38 +43,24 @@ rename_feature <- function(col) {
   if (col %in% names(special_map)) return(special_map[[col]])
   # ------------------------------------------------------------------------
   
-  # Tag (roll / full) ----------------------------------------------------
-  tag <- case_when(
-    str_starts(col, "rolling") | str_starts(col, "roll_") ~ "roll",
-    str_starts(col, "full")                               ~ "full",
-    TRUE                                                  ~ NA_character_
-  )
+  # Strip window prefix (but don't preserve as tag) ------------------------
   col  <- str_remove(col, "^(rolling_|roll_|full_)")
   
   # Derived EEG quick exit ----------------------------------------------
   if (any(str_detect(col, names(derived_eeg)))) {
     base <- derived_eeg[str_subset(names(derived_eeg), col)[1]]
-    final_tag <- ifelse(is.na(tag), "full", tag)  # derived metrics default to full
-    return(paste("eeg", base, final_tag, sep = "_"))
+    return(paste("eeg", base, sep = "_"))
   }
-  
-  # Cleanliness tag ------------------------------------------------------
-  clean_tag <- case_when(
-    str_detect(col, "cleaned_abs_cleaned_nk|cleaned_nk") ~ "nk",
-    str_detect(col, "cleaned_abs")                       ~ "abs",
-    TRUE                                                 ~ NA_character_
-  )
   
   # Detect modality **before** replacements -----------------------------
   mods <- names(Filter(function(rx) str_detect(col, rx), modality_regex))
   modality <- if (length(mods)) mods[1] else "other"
   
-  # If EEG & tag still NA  → treat as rolling ---------------------------
-  if (modality == "eeg" && is.na(tag)) tag <- "roll"
+  # No longer default EEG to roll - features without tag remain tagless
   
-  # Strip vendor / unit noise -------------------------------------------
+  # Strip vendor / unit / cleaning noise --------------------------------
   col <- str_remove_all(col,
-                        "shimmer_d36a_|polar_|cleaned_abs_cleaned_nk|cleaned_abs|cleaned_nk|_abs|_nk|_us|_kohms")
+                        "shimmer_d36a_|polar_|empatica_|cleaned_abs_cleaned_nk|cleaned_nk|cleaned_abs|cleaned|_abs|_nk|_us|_kohms")
   
   # Abbreviate region/band/metric tokens --------------------------------
   col <- str_replace_all(col, region_map)
@@ -92,17 +78,18 @@ rename_feature <- function(col) {
   metric <- pieces[, ncol(pieces)]
   source_vec <- if (ncol(pieces) > 1) pieces[, -ncol(pieces)] else character(0)
   
-  # drop leading token if it duplicates the modality (gsr, pupil, etc.)
-  if (length(source_vec) && source_vec[1] == modality)
+  # drop leading token if it duplicates the modality or related terms
+  if (length(source_vec) && source_vec[1] %in% c(modality, "gsr", "skin", "conductance", "heartrate", "dilation"))
     source_vec <- source_vec[-1]
+  
+  # Further simplification: remove redundant words
+  source_vec <- source_vec[!source_vec %in% c("skin", "conductance", "heartrate", "bpm", "eda", "dilation")]
   
   source <- paste(source_vec, collapse = "_")
   
-  out_parts <- c(modality,                      # modality prefix
+  out_parts <- c(modality,                      # modality prefix (eda, hr, hrv, eeg, pupil)
                  source,                        # source / band (may be empty)
-                 metric,                        # metric
-                 if (!is.na(clean_tag)) clean_tag,
-                 tag)                           # roll / full
+                 metric)                        # metric
   
   out <- paste(out_parts[out_parts != ""], collapse = "_") |>
     str_replace_all("_+", "_") |>          # tidy doubles

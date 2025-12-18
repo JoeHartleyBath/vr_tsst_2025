@@ -103,17 +103,13 @@ subset_defs <- list(
 # ------------------------------------------------------------
 
 canonical_feats <- config$canonical_features
-suffix <- "_full_change_precond"  #baseline adjusted using precondition relaxation scene
+suffix <- "_precond_Z"  # normalized baseline-adjusted features
 features <- paste0(canonical_feats, suffix)
 
 feat_labels <- config$pretty_features
 feature_order <- config$feature_order
 
-
-df <- df %>%
-  group_by(participant_id) %>%
-  mutate(across(all_of(features), ~ scale(.x)[,1], .names = "{.col}_Z")) %>%
-  ungroup()
+# Features already normalized with _Z suffix, no need to scale again
 
 
 # =====================================================================
