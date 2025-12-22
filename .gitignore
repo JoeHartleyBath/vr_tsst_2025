@@ -1,0 +1,96 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Data (never commit raw data)
+/data/raw
+/data/raw_working
+/data/raw_archive
+/data/interim
+/data/processed
+!data/README.md
+
+# MATLAB
+*.asv
+*.m~
+*.mat
+*.fdt
+
+# Outputs (keep README only)
+/output/
+/output/sets/
+/output/cleaned_eeg/
+/output/cleaned_eeg_fixed/
+/output/qc/
+/output/features/
+/output/logs/
+/output/visualizations/
+/output/dl_datasets/
+/output/aggregated/
+!output/README.md
+*.set
+
+# Results
+/results/
+*.rds
+
+# Logs
+/logs/
+*.log
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-project
+*.sublime-workspace
+
+# Environment variables
+.env
+.env.local
+
+# R History
+.Rhistory
+
+# Intermediate
+/intermediate

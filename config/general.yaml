@@ -1,0 +1,53 @@
+participant_id: 8
+
+paths:
+  eeg_data:      "data/raw/eeg"
+  events:        "data/raw/events"
+  metadata:      "data/raw/metadata"
+  physio:        "data/raw/metadata"
+  subjective:    "data/raw/subjective"
+  raw_data:      "data/raw/metadata"
+  filtered_eeg:  "data/eeg/filtered"
+  cleaned_eeg:   "output/cleaned_eeg"
+  output:        "output"
+  logs:          "output/logs"
+  results:       "results"
+  scripts:       "scripts"
+  vis:           "output/eeg_visualisations" 
+  eeg_qc:        "output/qc/eeg"
+  physio_qc:     "output/qc/physio"
+  failed_qc:     "output/qc/summary"
+  counterbalance: "data"
+  xgb_results:   "results/xgb/results"
+  xgb_bayes:     "results/xgb/bayes_opt"
+  init_pruned:   "results/xgb/init_pruned"
+
+canonical_features:
+  - hrv_rmssd
+  - hr_med
+  - eda_tonic_mean
+  - eda_pkht_med
+  - eeg_fm_theta_power
+  - eeg_f_beta_power
+  - eeg_p_alpha_power
+  - pupil_full_pupil_med
+
+pretty_features:
+  hrv_rmssd_precond: "HRV RMSSD"
+  hr_med_precond: "Heart Rate (Median BPM)"
+  eda_tonic_mean_precond: "EDA Tonic"
+  eda_pkht_med_precond: "EDA Peak Height"
+  eeg_fm_theta_power_precond: "EEG FM Theta"
+  eeg_f_beta_power_precond: "EEG Beta"
+  eeg_p_alpha_power_precond: "EEG Parietal Alpha"
+  pupil_full_pupil_med_precond: "Pupil Dilation"
+
+feature_order:
+  - HRV RMSSD
+  - Heart Rate (Median BPM)
+  - EDA Tonic
+  - EDA Peak Height
+  - Pupil Dilation
+  - EEG FM Theta
+  - EEG Beta
+  - EEG Parietal Alpha

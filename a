@@ -1,0 +1,44 @@
+[33mcommit d0e7e802bdbd87f6af4e6aa799b2fbab17dfaf51[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32meeg-refactor[m[33m)[m
+Merge: c0c00cb dcf8d2b
+Author: Joe Hartley <jh3968@bath.ac.uk>
+Date:   Tue Dec 9 13:52:36 2025 +0000
+
+    Merge branch 'main' of https://github.com/JoeHartleyBath/vr_tsst_2025
+    into eeg-refactor
+
+[33mcommit dcf8d2bf85b5391dd82232421535a3a3696fbc14[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: JoeHartleyBath <153727477+JoeHartleyBath@users.noreply.github.com>
+Date:   Tue Dec 9 13:51:29 2025 +0000
+
+    Add phys feat extract and clean script
+
+[33mcommit c0c00cba0a43da6bd24a217033296ec96c25c0b1[m
+Merge: 4764ec0 e7c433e
+Author: Joe Hartley <jh3968@bath.ac.uk>
+Date:   Tue Dec 9 13:13:29 2025 +0000
+
+    i Merge branch 'main' of https://github.com/JoeHartleyBath/vr_tsst_2025 into eeg-refactor
+
+[33mcommit e7c433ee02bb35fa77507d8084504e306e627400[m[33m ([m[1;32mmain[m[33m)[m
+Author: JoeHartleyBath <153727477+JoeHartleyBath@users.noreply.github.com>
+Date:   Tue Dec 9 12:56:45 2025 +0000
+
+    add scripts to sync, process subjective data and clean eeg data
+
+[33mcommit 6e2d8d772ea2084275df733176a136642ab73aef[m
+Author: Joe Hartley <jh3968@bath.ac.uk>
+Date:   Tue Dec 9 12:38:34 2025 +0000
+
+    Add sanity check scripts folder and script to compare baseline to task with t tests
+
+[33mcommit 4764ec0b756a6c08a18fbb4d15a43bfe6aacd3be[m
+Author: Joe Hartley <jh3968@bath.ac.uk>
+Date:   Tue Dec 9 12:15:18 2025 +0000
+
+    updated file path to new names - phd_projects/vr_tsst_2025
+
+[33mcommit 0d590911657cd89b35365ed68a74c3989fb9b63f[m[33m ([m[1;31morigin/refactor-eeg-feature-extraction[m[33m)[m
+Author: Joe Hartley <jh3968@bath.ac.uk>
+Date:   Tue Dec 9 11:12:23 2025 +0000
+
+    Initial Commit: add project strucutre and files
