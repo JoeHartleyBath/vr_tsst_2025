@@ -7,7 +7,7 @@
 ## Immediate Next Steps (On Laptop)
 1. **Pull the latest code**:
    ```bash
-   git pull origin feature/qc-eeg-only
+   git pull origin laptop-handoff-save
    ```
 2. **Review the Edit Ledger**:
    - Open `MANUAL_EDIT_LEDGER.md`.
