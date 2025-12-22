@@ -1,0 +1,69 @@
+# ============================================================
+# PILOT CONDITIONS (Simplified - No Duration Filter)
+# ============================================================
+# This is a simplified version of conditions.yaml for the pilot
+# run. Duration filtering has been removed since the metadata CSV
+# does not contain a pre-computed duration column.
+# ============================================================
+
+conditions:
+  Primary_Calibrations:
+    Unity Scene: PrimaryCalibration
+  
+  Blink_Calibration:
+    Unity Scene: BlinkCalibration
+  
+  Movement_Baseline:
+    Unity Scene: BaseLine
+  
+  Pre_Exposure_Blank_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: Start Blank Fixation
+  
+  Pre_Exposure_Room_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: Start Room Fixation
+  
+  Post_Exposure_Blank_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: End Blank Fixation
+  
+  Post_Exposure_Room_Fixation_Cross:
+    Unity Scene: Fixation
+    Study_Phase: End Room Fixation
+  
+  # Additional conditions (add as needed, without duration filter)
+  WaitingRoom:
+    Study_Phase: WaitingRoom
+  
+  Relaxation:
+    Study_Phase: Relaxation
+  
+  Exposure:
+    Study_Phase: Exposure
+
+# Event labels to export as EEG markers
+export_event_labels:
+  - Primary_Calibrations
+  - Blink_Calibration
+  - Movement_Baseline
+  - Pre_Exposure_Blank_Fixation_Cross
+  - Pre_Exposure_Room_Fixation_Cross
+  - Post_Exposure_Blank_Fixation_Cross
+  - Post_Exposure_Room_Fixation_Cross
+  - WaitingRoom
+  - Relaxation
+  - Exposure
+
+# Exposure type order for analysis
+exposure_labels:
+  - Primary_Calibrations
+  - Blink_Calibration
+  - Movement_Baseline
+  - Pre_Exposure_Blank_Fixation_Cross
+  - Pre_Exposure_Room_Fixation_Cross
+  - WaitingRoom
+  - Relaxation
+  - Exposure
+  - Post_Exposure_Room_Fixation_Cross
+  - Post_Exposure_Blank_Fixation_Cross

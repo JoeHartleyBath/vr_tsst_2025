@@ -1,0 +1,41 @@
+
+# model_class_labels.yaml
+# Defines label mappings for different classification tasks for EEG SVM analysis
+
+# Each task maps event_label (from rolling window features) to a class label (1 or 2)
+
+high_vs_low_stress:
+  HighStress_HighCog1022_Task: 2
+  HighStress_HighCog2043_Task: 2
+  HighStress_LowCog_Task: 2
+  LowStress_HighCog1022_Task: 1
+  LowStress_HighCog2043_Task: 1
+  LowStress_LowCog_Task: 1
+
+high_vs_low_mwl:
+  HighStress_HighCog1022_Task: 2
+  HighStress_HighCog2043_Task: 2
+  LowStress_HighCog1022_Task: 2
+  LowStress_HighCog2043_Task: 2
+  HighStress_LowCog_Task: 1
+  LowStress_LowCog_Task: 1
+
+high_vs_low_mwl_when_stress_is_low:
+  LowStress_HighCog1022_Task: 2
+  LowStress_HighCog2043_Task: 2
+  LowStress_LowCog_Task: 1
+
+high_vs_low_stress_when_mwl_is_low:
+  HighStress_LowCog_Task: 2
+  LowStress_LowCog_Task: 1
+
+high_vs_low_mwl_when_stress_is_high:
+  HighStress_HighCog1022_Task: 2
+  HighStress_HighCog2043_Task: 2
+  HighStress_LowCog_Task: 1
+
+high_vs_low_stress_when_mwl_is_high:
+  HighStress_HighCog1022_Task: 2
+  HighStress_HighCog2043_Task: 2
+  LowStress_HighCog1022_Task: 1
+  LowStress_HighCog2043_Task: 1

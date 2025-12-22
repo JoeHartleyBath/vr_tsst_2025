@@ -1,0 +1,39 @@
+# EEGLAB Structure Template
+# Default fields for creating EEGLAB-compatible .set files
+
+# Basic metadata fields
+setname: ""
+filename: ""
+filepath: ""
+subject: ""
+group: ""
+condition: ""
+session: []
+comments: "Created by xdf_to_set.py"
+
+# Reference and history
+ref: "common"
+history: "Created by xdf_to_set.py"
+saved: "no"
+
+# Empty/default fields for EEGLAB compatibility
+icaact: []
+icawinv: []
+icasphere: []
+icaweights: []
+icachansind: []
+urchanlocs: []
+chaninfo: {}
+event: []
+urevent: []
+eventdescription: {}
+epoch: []
+epochdescription: {}
+reject: {}
+stats: {}
+specdata: []
+specicaact: []
+splinefile: ""
+icasplinefile: ""
+dipfit: {}
+etc: {}

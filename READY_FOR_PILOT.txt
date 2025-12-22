@@ -1,0 +1,145 @@
+✅ PIPELINE SETUP COMPLETE — YOU'RE READY FOR PILOT TEST
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 WHAT YOU HAVE NOW:
+
+✓ Master Orchestrator
+  └─ scripts/run_pipeline_master.py
+     Runs all 6 pipeline stages with logging, error handling, and resumability
+
+✓ Health Check Tool
+  └─ scripts/check_pipeline_health.py
+     Validates Python, R, MATLAB, EEGLAB, and raw data before running
+
+✓ Results Comparison Tool
+  └─ scripts/validation/compare_pipelines.py
+     Compares new pipeline vs. old results (correlation, RMSE, % change)
+
+✓ Individual Stage Runners (1–6)
+  └─ scripts/stages/run_stage_*.py, run_stage_*.ps1
+     Debug individual stages without running full pipeline
+
+✓ Complete Documentation
+  ├─ INDEX.md                          (Start here — master guide)
+  ├─ PILOT_TEST_GUIDE.md               (Quick commands)
+  ├─ TOOLS_REFERENCE.md                (All commands & workflows)
+  ├─ VALIDATION_TOOLS.md               (Detailed validation process)
+  └─ NEW_PC_SETUP.md                   (Original setup guide)
+
+✓ Git Integration
+  └─ 4 commits with full change history
+     Latest: "Add master index: complete setup reference"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 QUICK START (3 STEPS):
+
+1. PRE-FLIGHT CHECK (5 min)
+   python scripts/check_pipeline_health.py
+
+2. RUN PILOT (3–4 hours)
+   venv\Scripts\Activate.ps1
+   python scripts/run_pipeline_master.py
+
+3. VALIDATE (5 min)
+   python scripts/validation/compare_pipelines.py
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 WHAT YOU NEED TO DO NOW:
+
+PRIORITY 1: Install MATLAB/EEGLAB/AMICA (if not already done)
+   └─ AMICA automatic installer: install_amica.ps1
+      Command: powershell -ExecutionPolicy Bypass install_amica.ps1
+   └─ See: AMICA_INSTALL.md for full guide
+   └─ Time: 10 minutes (automated) or 1–2 hours (manual)
+
+PRIORITY 2: Run health check
+   python scripts/check_pipeline_health.py
+   └─ Time: 5 minutes
+   └─ This tells you if you're ready
+
+PRIORITY 3: Run P01–P03 pilot (when MATLAB is ready)
+   python scripts/run_pipeline_master.py
+   └─ Time: 3–4 hours
+   └─ Runs stages 1–6 for first 3 participants
+
+PRIORITY 4: Validate results
+   python scripts/validation/compare_pipelines.py
+   └─ Time: 5 minutes
+   └─ Tells you if pipeline is correct
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION GUIDE:
+
+For quick start:
+   → PILOT_TEST_GUIDE.md (copy-paste commands)
+
+For understanding the workflow:
+   → VALIDATION_TOOLS.md (detailed phases)
+
+For all available commands:
+   → TOOLS_REFERENCE.md (comprehensive reference)
+
+For troubleshooting:
+   → TOOLS_REFERENCE.md → Troubleshooting section
+
+For complete setup reference:
+   → INDEX.md (master guide)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 EXPECTED OUTCOMES:
+
+After running the pilot:
+   ✓ output/logs/pipeline_*.log        (execution log)
+   ✓ output/final_data.csv             (3 participants × 250+ features)
+   ✓ output/aggregated/eeg_features.csv
+   ✓ output/qc/summary/qc_failures_summary.csv
+   ✓ output/comparison_report.json     (validation results)
+
+Expected validation result:
+   ✓ Correlation > 95% with old pipeline = SUCCESS
+   ⚠ Correlation 80–95% = investigate divergences
+   ✗ Correlation < 80% = debug pipeline
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💾 WHAT'S READY RIGHT NOW:
+
+   ✓ Python 3.9+ with venv + all packages (pyxdf, mne, neurokit2, etc.)
+   ✓ R 4.5.2 with all packages (tidyverse, caret, rstatix, etc.)
+   ✓ Raw data staged: 48 × EEG, 48 × metadata, 48 × subjective
+   ✓ Git repository with 4 commits and clean history
+   ⏳ MATLAB + EEGLAB + AMICA (manual install pending)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚡ FIRST COMMAND TO RUN:
+
+   cd c:\vr_tsst_2025
+   python scripts/check_pipeline_health.py
+
+This takes 5 minutes and tells you exactly what's ready and what's missing.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 SUPPORT:
+
+Questions? Check these in order:
+   1. TOOLS_REFERENCE.md (most commands + troubleshooting)
+   2. VALIDATION_TOOLS.md (detailed workflow)
+   3. output/logs/pipeline_*.log (execution log)
+   4. git diff config/ (config changes)
+
+Contact: Joe Hartley <jh3968@bath.ac.uk>
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ YOU'RE READY. START WITH:
+
+   python scripts/check_pipeline_health.py
+
+═══════════════════════════════════════════════════════════════════════════════
