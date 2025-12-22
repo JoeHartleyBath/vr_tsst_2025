@@ -23,29 +23,42 @@ config <- yaml::read_yaml("scripts/utils/config.yaml")
 out_dir_classic <- file.path(config$paths$results, "classic_analyses")
 dir.create(out_dir_classic, showWarnings = FALSE, recursive = TRUE)
 
-df <- readRDS(
+df_full <- readRDS(
   file.path(config$paths$output, "anova_features_precond.rds")
 )
 
-df <- df %>%
+df_full <- df_full %>%
   mutate(
     participant_id = factor(participant_id),
     stress_level   = factor(stress_level, levels = c("Low", "High")),
     workload_level = factor(workload_level, levels = c("Low", "High"))
   )
 
-
-stopifnot(all(c("participant_id", "stress_level", "workload_level") %in% names(df)))
+stopifnot(all(c("participant_id", "stress_level", "workload_level") %in% names(df_full)))
 
 # ------------------------------------------------------------
-# Feature list 
+# Feature list & categorization
 # ------------------------------------------------------------
 
 canonical_feats <- config$canonical_features
 suffix <- "_precond"  # baseline adjusted using precondition relaxation scene
 features <- paste0(canonical_feats, suffix)
 
+# Identify EEG vs Physiological features
+eeg_features <- features[str_detect(features, "^eeg_")]
+phys_features <- setdiff(features, eeg_features)
+
 cat(sprintf("Using %d canonical features from config\n", length(features)))
+cat(sprintf("  - %d EEG features (will use N=44 QC-valid)\n", length(eeg_features)))
+cat(sprintf("  - %d Physiological features (will use N=47 full)\n", length(phys_features)))
+
+# Check QC column
+has_qc_flag <- "qc_failed" %in% names(df_full)
+if (has_qc_flag) {
+  n_full <- n_distinct(df_full$participant_id)
+  n_qc_valid <- n_distinct(df_full %>% filter(!qc_failed) %>% pull(participant_id))
+  message(sprintf("[ANOVA Setup] Full dataset N=%d, EEG QC-valid N=%d", n_full, n_qc_valid))
+}
 
 feat_labels <- config$pretty_features
 # ------------------------------------------------------------
@@ -65,6 +78,13 @@ sig_marks <- function(p) {
 
 normality_results <- map_dfr(features, function(feat) {
   
+  # Selective filtering: EEG features use QC-valid subset, phys features use full dataset
+  df <- if (has_qc_flag && feat %in% eeg_features) {
+    df_full %>% filter(!qc_failed)
+  } else {
+    df_full
+  }
+  
   # Filter for participants with all 4 conditions
   complete_participants <- df %>%
     select(participant_id, stress_level, workload_level, all_of(feat)) %>%
@@ -83,8 +103,9 @@ normality_results <- map_dfr(features, function(feat) {
   dat_feat <- df %>%
     filter(participant_id %in% complete_participants)
   
-  cat(sprintf("Analyzing %s: %d participants with complete data\n", 
-              feat, length(complete_participants)))
+  feat_type <- if (feat %in% eeg_features) "EEG" else "Phys"
+  cat(sprintf("Analyzing %s [%s]: %d participants with complete data\n", 
+              feat, feat_type, length(complete_participants)))
   
   m <- afex::aov_car(
     as.formula(paste0(feat, " ~ stress_level * workload_level + Error(participant_id/(stress_level * workload_level))")),
@@ -130,6 +151,13 @@ term_labels <- c("Stress", "Workload", "Stress × Workload")
 
 art_results <- map_dfr(features, function(feat) {
   
+  # Selective filtering: EEG features use QC-valid subset, phys features use full dataset
+  df <- if (has_qc_flag && feat %in% eeg_features) {
+    df_full %>% filter(!qc_failed)
+  } else {
+    df_full
+  }
+  
   # Filter for participants with all 4 conditions
   complete_participants <- df %>%
     select(participant_id, stress_level, workload_level, all_of(feat)) %>%
@@ -152,8 +180,9 @@ art_results <- map_dfr(features, function(feat) {
   
   if (nrow(dat) == 0) return(NULL)
   
-  cat(sprintf("Running ART ANOVA for %s: %d participants\n", 
-              feat, length(complete_participants)))
+  feat_type <- if (feat %in% eeg_features) "EEG" else "Phys"
+  cat(sprintf("Running ART ANOVA for %s [%s]: %d participants\n", 
+              feat, feat_type, length(complete_participants)))
   
   m_art <- art(
     as.formula(
@@ -192,9 +221,9 @@ art_results <- map_dfr(features, function(feat) {
 # Re-fit only for the significant feature for clarity
 feat <- "eda_tonic_mean_precond"
 
-dat_feat <- df %>%
-  select(participant_id, stress_level, workload_level, !!sym(feat)) %>%
-  drop_na()
+dat_feat <- df_full %>%
+  dplyr::select(participant_id, stress_level, workload_level, !!sym(feat)) %>%
+  tidyr::drop_na()
 
 # Fit ART model
 m_art <- art(as.formula(paste0(
@@ -212,11 +241,11 @@ print(ph_stress)
 
 
 # Summary data
-summary_df <- df %>%
-  select(participant_id, stress_level, workload_level, !!sym(feat)) %>%
-  drop_na() %>%
-  group_by(stress_level, workload_level) %>%
-  summarise(
+summary_df <- df_full %>%
+  dplyr::select(participant_id, stress_level, workload_level, !!sym(feat)) %>%
+  tidyr::drop_na() %>%
+  dplyr::group_by(stress_level, workload_level) %>%
+  dplyr::summarise(
     mean_val = mean(.data[[feat]], na.rm = TRUE),
     se_val = sd(.data[[feat]], na.rm = TRUE) / sqrt(n()),
     .groups = "drop"

@@ -52,19 +52,28 @@ signif_star <- function(p) {
 
 final_data <- load_obj("final_data")
 
-# Keep only rows with subjective ratings (the 4 task conditions)
-df <- final_data %>%
+# Mixed correlation filtering: Use full N=47 for subjective-only,
+# filter to EEG-valid for correlations involving EEG features
+df_full <- final_data %>%
   filter(!is.na(stress), !is.na(workload))
 
+# Check if qc_failed column exists
+has_qc_flag <- "qc_failed" %in% names(df_full)
 
 # Derive binary stress/workload factors from condition
-df <- df %>%
+df_full <- df_full %>%
   mutate(
     stress_level   = if_else(condition %in% c("High Stress - High Cog", "High Stress - Low Cog"),
                              "High", "Low"),
     workload_level = if_else(condition %in% c("High Stress - High Cog", "Low Stress - High Cog"),
                              "High", "Low")
   )
+
+message(sprintf("[RM Correlations] Full dataset N=%d participants", n_distinct(df_full$participant_id)))
+if (has_qc_flag) {
+  n_eeg_valid <- n_distinct(df_full %>% filter(!qc_failed) %>% pull(participant_id))
+  message(sprintf("[RM Correlations] EEG-valid subset N=%d participants", n_eeg_valid))
+}
 
 
 
@@ -79,22 +88,22 @@ subset_defs <- list(
   list(
     label  = "Low workload",
     rating = "stress",
-    df     = df %>% filter(workload_level == "Low")
+    df     = df_full %>% filter(workload_level == "Low")
   ),
   list(
     label  = "High workload",
     rating = "stress",
-    df     = df %>% filter(workload_level == "High")
+    df     = df_full %>% filter(workload_level == "High")
   ),
   list(
     label  = "Low stress",
     rating = "workload",
-    df     = df %>% filter(stress_level == "Low")
+    df     = df_full %>% filter(stress_level == "Low")
   ),
   list(
     label  = "High stress",
     rating = "workload",
-    df     = df %>% filter(stress_level == "High")
+    df     = df_full %>% filter(stress_level == "High")
   )
 )
 
@@ -116,11 +125,20 @@ feature_order <- config$feature_order
 # 4. RM-CORR FUNCTION
 # =====================================================================
 
+# Identify EEG features
+eeg_features <- features[str_detect(features, regex("^eeg_", ignore_case = TRUE))]
+
 run_rmcorr <- function(df, subset_label, rating_var) {
   
   map_dfr(features, function(feature) {
     
-    tmp <- df %>%
+    # Selective filtering: use EEG-valid subset only for EEG features
+    df_for_corr <- df
+    if (has_qc_flag && feature %in% eeg_features) {
+      df_for_corr <- df_for_corr %>% filter(!qc_failed)
+    }
+    
+    tmp <- df_for_corr %>%
       select(participant_id, !!rating_var := !!sym(rating_var), !!feature) %>%
       drop_na()
     

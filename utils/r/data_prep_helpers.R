@@ -3,13 +3,34 @@
 source("utils/r/feature_selection.R")
 
 load_and_prepare_data <- function(config) {
-  # 1. Load raw data
-  raw_data <- readr::read_csv(
-    file.path(config$paths$output, "aggregated", "all_data_aggregated.csv"),
-    show_col_types = FALSE
+  # 1. Load raw data using data.table::fread() for reliable wide CSV parsing
+  # NOTE: readr::read_csv() and base::read.csv() have known bugs with wide CSVs (>100 columns)
+  # that cause participant_id to be corrupted as nested data.frame
+  library(data.table)
+  raw_data_dt <- data.table::fread(
+    file.path(config$paths$output, "aggregated", "all_data_aggregated.csv")
   )
   
-  # 2. Drop QC failures
+  # Convert to tibble for dplyr compatibility
+  raw_data <- dplyr::as_tibble(raw_data_dt)
+  
+  # Verify participant_id loaded correctly
+  if (!is.numeric(raw_data$Participant_ID)) {
+    stop(sprintf(
+      "CRITICAL: Participant_ID corrupted after loading! Type: %s",
+      paste(class(raw_data$Participant_ID), collapse=", ")
+    ))
+  }
+  message(sprintf(
+    "[DEBUG] Loaded CSV: %d rows, Participant_ID type=%s, n_distinct=%d",
+    nrow(raw_data),
+    class(raw_data$Participant_ID)[1],
+    n_distinct(raw_data$Participant_ID)
+  ))
+  
+  # 2. Load QC failures and add flag (DO NOT DROP participants)
+  # Rationale: QC exclusions should only apply to EEG-dependent analyses.
+  # Subjective/behavioral analyses retain all 47 participants for maximum power.
   failed_ids <- readr::read_csv(
     file.path(config$paths$failed_qc, "qc_failures_summary.csv"),
     show_col_types = FALSE
@@ -20,8 +41,18 @@ load_and_prepare_data <- function(config) {
   # Convert "P02" format to numeric 2 for matching
   failed_ids_numeric <- as.numeric(gsub("P", "", failed_ids))
   
+  # Add QC flag column instead of filtering
   data <- raw_data %>%
-    dplyr::filter(!Participant_ID %in% failed_ids_numeric)
+    dplyr::mutate(
+      qc_failed = Participant_ID %in% failed_ids_numeric
+    )
+  
+  message(sprintf(
+    "[QC] Loaded %d participants: %d passed EEG QC, %d failed (flagged but retained)",
+    n_distinct(data$Participant_ID),
+    n_distinct(data$Participant_ID[!data$qc_failed]),
+    n_distinct(data$Participant_ID[data$qc_failed])
+  ))
   
   # 3. Load and map counterbalance
   cb_long <- readxl::read_excel(
@@ -102,13 +133,17 @@ prepare_full_window_data <- function(data) {
   # Drop baseline remnants
   data <- data %>% select(-matches("baseline", ignore.case = TRUE))
   
+  # Preserve qc_failed column through processing
+  has_qc_flag <- "qc_failed" %in% names(data)
+  
   # Get canonical features from config to preserve their names
   canonical_feats <- config$canonical_features
   
-  # Rename all columns except canonical features
+  # Rename all columns except canonical features and qc_failed
   col_names <- names(data)
+  preserve_cols <- c(canonical_feats, "qc_failed")
   for (i in seq_along(col_names)) {
-    if (!col_names[i] %in% canonical_feats) {
+    if (!col_names[i] %in% preserve_cols) {
       col_names[i] <- rename_feature(col_names[i])
     }
   }
@@ -116,6 +151,8 @@ prepare_full_window_data <- function(data) {
   
   # Define sets
   id_cols   <- c("participant_id", "round", "condition", "condition_type", "relaxation_level")
+  if (has_qc_flag) id_cols <- c(id_cols, "qc_failed")
+  
   subjective_cols <- intersect(
     c("stress", "workload", "calm", "happy", "sad", "pleasure", "arousal"),
     names(data)
@@ -126,11 +163,30 @@ prepare_full_window_data <- function(data) {
   feature_cols <- names(data %>% select(where(is.numeric), -any_of(c(id_cols, subjective_cols))))
   
   # Extract full window values
+  # CRITICAL: Do NOT summarize grouping columns (participant_id, condition) 
+  # or dplyr will nest them as data.frames. Only summarize non-grouping columns.
+  summarize_cols <- c(feature_cols, subjective_cols, "round", "condition_type", "relaxation_level")
+  if (has_qc_flag) summarize_cols <- c(summarize_cols, "qc_failed")
+  
   full_data <- data %>%
     select(any_of(c(id_cols, feature_cols, subjective_cols))) %>%
     arrange(participant_id, condition) %>%
     group_by(participant_id, condition) %>%
-    summarise(across(everything(), first), .groups = "drop")
+    summarise(across(all_of(summarize_cols), first), .groups = "drop")
+  
+  # Verify participant_id integrity after summarise
+  if (!is.numeric(full_data$participant_id)) {
+    stop(sprintf(
+      "CRITICAL BUG: participant_id corrupted during summarise! Type: %s. This is a dplyr bug with group_by/summarise.",
+      paste(class(full_data$participant_id), collapse=", ")
+    ))
+  }
+  message(sprintf(
+    "[DEBUG] After summarise: %d rows, participant_id type=%s, n_distinct=%d",
+    nrow(full_data),
+    class(full_data$participant_id)[1],
+    n_distinct(full_data$participant_id)
+  ))
   
   # Compute baselines
   glob_bl_full <- full_data %>%
@@ -179,15 +235,43 @@ wide_transform_full_changes <- function(full_data, full_change_long, subjective_
     select(participant_id, round, feature, value) %>%
     pivot_wider(names_from = feature, values_from = value)
   
-  # add condition + subjective ratings
+  # Verify participant_id integrity after pivot_wider
+  if (!is.numeric(change_wide$participant_id)) {
+    stop(sprintf(
+      "CRITICAL BUG: participant_id corrupted during pivot_wider! Type: %s",
+      paste(class(change_wide$participant_id), collapse=", ")
+    ))
+  }
+  message(sprintf(
+    "[DEBUG] After pivot_wider: %d rows, participant_id type=%s, n_distinct=%d",
+    nrow(change_wide),
+    class(change_wide$participant_id)[1],
+    n_distinct(change_wide$participant_id)
+  ))
+  
+  # add condition + subjective ratings + qc_failed flag
   condition_info <- full_data %>%
-    select(participant_id, round, condition, any_of(subjective_cols)) %>%
+    select(participant_id, round, condition, any_of(c(subjective_cols, "qc_failed"))) %>%
     mutate(round = as.character(round))
   
   final_data <- change_wide %>%
     mutate(round = as.character(round)) %>%
     left_join(condition_info, by = c("participant_id", "round")) %>%
     relocate(condition, any_of(subjective_cols), .after = round)
+  
+  # Final verification before returning
+  if (!is.numeric(final_data$participant_id)) {
+    stop(sprintf(
+      "CRITICAL BUG: participant_id corrupted during left_join! Type: %s",
+      paste(class(final_data$participant_id), collapse=", ")
+    ))
+  }
+  message(sprintf(
+    "[DEBUG] Final output from wide_transform: %d rows, participant_id type=%s, n_distinct=%d",
+    nrow(final_data),
+    class(final_data$participant_id)[1],
+    n_distinct(final_data$participant_id)
+  ))
   
   return(final_data)
 }
@@ -217,7 +301,7 @@ make_anova_dataset <- function(final_data, subjective_cols, config) {
       condition,
       stress_level,
       workload_level,
-      any_of(subjective_cols),
+      any_of(c(subjective_cols, "qc_failed")),
       all_of(anova_features)
     ) %>%
     relocate(condition, .after = round)

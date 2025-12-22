@@ -102,23 +102,27 @@ categorise_feature <- function(x) {
 
 final_data <- load_obj("final_data") %>% apply_cond_map()
 
-# Task-only rows (exclude baselines etc.)
-df <- final_data %>%
+# Mixed correlation filtering: Use full N=47 for subjective-only,
+# filter to EEG-valid for correlations involving EEG features
+df_full <- final_data %>%
   filter(!is.na(stress_level), !is.na(workload_level))
+
+# Check if qc_failed column exists
+has_qc_flag <- "qc_failed" %in% names(df_full)
 
 rating_cols <- c("stress", "workload")
 
-conditions <- df$condition %>%
+conditions <- df_full$condition %>%
   unique() %>%
   discard(is.na)
 
-features <- names(df)[str_detect(names(df), "_precond_Z$")]
+features <- names(df_full)[str_detect(names(df_full), "_precond_Z$")]
 features <- features[!str_detect(features, drop_pattern)]
 
 # Ensure typical features exist in the data
-features <- intersect(features, names(df))
+features <- intersect(features, names(df_full))
 if (length(features) == 0L) {
-  stop("No features found in df. Check column names.")
+  stop("No features found in df_full. Check column names.")
 }
 
 feature_meta <- tibble(
@@ -126,19 +130,35 @@ feature_meta <- tibble(
   group = categorise_feature(features)
 )
 
+# Identify EEG features
+eeg_features <- features[str_detect(features, regex("^eeg_", ignore_case = TRUE))]
+
+message(sprintf("[Correlations] Full dataset N=%d participants", n_distinct(df_full$participant_id)))
+if (has_qc_flag) {
+  n_eeg_valid <- n_distinct(df_full %>% filter(!qc_failed) %>% pull(participant_id))
+  message(sprintf("[Correlations] EEG-valid subset N=%d participants", n_eeg_valid))
+  message(sprintf("[Correlations] Will use full N for subjective-only, EEG-valid N for EEG features"))
+}
+
 # =====================================================================
 # 3. ANALYSIS FUNCTION: PER-CONDITION SPEARMAN CORRELATIONS
 # =====================================================================
 
-cor_one_condition <- function(df, cond_name) {
-  df_cond <- df %>% filter(condition == cond_name)
+cor_one_condition <- function(df_input, cond_name) {
+  df_cond <- df_input %>% filter(condition == cond_name)
   
   expand_grid(
     feature = features,
     rating  = rating_cols
   ) %>%
     pmap_dfr(function(feature, rating) {
-      tmp <- df_cond %>%
+      # Selective filtering: use EEG-valid subset only for EEG features
+      df_for_corr <- df_cond
+      if (has_qc_flag && feature %in% eeg_features) {
+        df_for_corr <- df_for_corr %>% filter(!qc_failed)
+      }
+      
+      tmp <- df_for_corr %>%
         select(participant_id, !!rating, !!feature) %>%
         drop_na()
       
@@ -173,7 +193,7 @@ cor_one_condition <- function(df, cond_name) {
 # =====================================================================
 
 # 1. Run correlations
-all_cor <- map_dfr(conditions, ~ cor_one_condition(df, .x))
+all_cor <- map_dfr(conditions, ~ cor_one_condition(df_full, .x))
 
 # 3. Add short condition labels
 all_cor <- all_cor %>%

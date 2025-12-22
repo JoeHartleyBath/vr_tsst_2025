@@ -1,9 +1,9 @@
 feature,p_value
-hrv_rmssd_precond,1.426915873822081e-24
-hr_med_precond,1.5719106909712423e-4
-eda_tonic_mean_precond,5.0085364739813815e-08
+hrv_rmssd_precond,1.5485346798986623e-25
+hr_med_precond,9.421075082435238e-5
+eda_tonic_mean_precond,1.792197710737301e-8
 eda_pkht_med_precond,NA
-eeg_fm_theta_power_precond,8.858620196197618e-8
-eeg_f_beta_power_precond,3.9721143950565537e-16
-eeg_p_alpha_power_precond,1.052921631511081e-16
-pupil_full_pupil_med_precond,2.7648111736530987e-18
+eeg_fm_theta_power_precond,6.007364873640226e-8
+eeg_f_beta_power_precond,5.24664093059814e-16
+eeg_p_alpha_power_precond,3.328014403917159e-16
+pupil_full_pupil_med_precond,1.6457570925863476e-18
