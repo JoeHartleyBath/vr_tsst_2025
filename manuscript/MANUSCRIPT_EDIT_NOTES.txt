@@ -20,9 +20,9 @@ If scripts disagree with manuscript, manuscript must be updated to match scripts
 1. Scope & Metadata Checks
 1.1 Author & Affiliation Cleanup
 
- Remove submission-inappropriate identifiers (e.g. “University of Bath”)
+ [x] Remove submission-inappropriate identifiers (e.g. “University of Bath”)
 
- Confirm compliance with anonymous / blinded submission rules
+ [x] Confirm compliance with anonymous / blinded submission rules
 
 2. Methods: Conceptual Accuracy & Alignment
 2.1 Intro / Contributions (Line ~70)
@@ -114,13 +114,13 @@ Zero-phase vs causal
 3. Machine Learning Methods
 3.1 SVM Evaluation Metrics
 
- Inspect SVM.R
+ [x] Inspect SVM.R
 
- Verify:
+ [x] Verify:
 
 Primary evaluation metric (AUC vs accuracy)
 
- Update manuscript to:
+ [x] Update manuscript to:
 
 Clearly state primary metric
 
@@ -128,42 +128,42 @@ Avoid redundancy / repetition in SVM section
 
 3.2 Permutation Testing
 
- Verify whether permutation tests were based on:
+ [x] Verify whether permutation tests were based on:
 
 Accuracy
 
 AUC
 
- Ensure this is explicitly stated in the manuscript
+ [x] Ensure this is explicitly stated in the manuscript
 
- If not stated, add a concise clarification
+ [x] If not stated, add a concise clarification
 
 4. Results: Statistical Reporting Consistency
 4.1 Significance Reporting Policy (Global)
 
 Change in policy due to sparse significance
 
- Remove “Significance” column from all tables
+ [x] Remove “Significance” column from all tables
 
- Mark statistically significant results in bold
+ [x] Mark statistically significant results in bold
 
- Explicitly explain this convention in every relevant table caption
+ [x] Explicitly explain this convention in every relevant table caption
 
 4.2 ART-ANOVA Results
 
  New ART-ANOVA tables show no significant effects
 
- Decide and implement:
+ [x] Decide and implement:
 
-Drop post-hoc tables entirely?
+[x] Drop post-hoc tables entirely? (Dropped tab:eda_posthoc)
 
 Keep but remove significance framing?
 
- Decide how to handle near-significance (do not over-interpret)
+ [x] Decide how to handle near-significance (do not over-interpret)
 
 4.3 Response-Rate-Controlled Features
 
- Check whether any features become significant after controlling for response rate
+ [x] Check whether any features become significant after controlling for response rate (Checked: No significant effects found)
 
  If yes:
 
@@ -177,13 +177,13 @@ Main result
 
 4.4 Subjective Metrics: Factorial Analysis
 
- Verify updated factorial stats:
+ [x] Verify updated factorial stats:
 
 MWL × Stress interaction now non-significant
 
 Correlation differences between congruent / incongruent conditions reduced
 
- Ensure results text reflects new statistics only
+ [x] Ensure results text reflects new statistics only
 
 4.5 Abstract Consistency
 
@@ -199,43 +199,43 @@ p ≈ 0.053
 
 partial η² ≈ 0.03 (same as HR)
 
- Update abstract to avoid overstating univariate significance
+ [x] Update abstract to avoid overstating univariate significance
 
 5. Discussion–Results Alignment
 5.1 Subjective Interaction Interpretation
 
- If stress × MWL interaction is non-significant:
+ [x] If stress × MWL interaction is non-significant:
 
-Re-evaluate discussion claims about stress increasing perceived workload
+[x] Re-evaluate discussion claims about stress increasing perceived workload
 
-Either soften language or remove paragraph
+[x] Either soften language or remove paragraph (Removed/Rewritten)
 
 5.2 Condition-Wise Correlations (Line ~456)
 
  Currently discussed but not reported in Results
 
- Decide:
+ [x] Decide:
 
 Add to Results section
 
-Or remove from Discussion entirely
+[x] Or remove from Discussion entirely (Removed)
 
 6. Missing or Optional Analyses
 6.1 Covariates, ICC, Domain Ablations
 
- Check repo for:
+ [x] Check repo for:
 
-Covariate analysis scripts
+Covariate analysis scripts (Found: results/manuscript_verification/covariate_analysis.txt)
 
-ICC computation
+ICC computation (Found: results/manuscript_verification/icc_results.txt)
 
-Domain / sensor ablation results
+Domain / sensor ablation results (Found: results/svm_ablation_runs/full_run_20251219_123204)
 
-top k robustness check
+top k robustness check (Not found, but k=5 is standard)
 
- Decide whether to:
+ [x] Decide whether to:
 
-Include in main manuscript
+Include in main manuscript (Included: Covariates/ICC in 4.4, Ablations in 4.3)
 
 Move to supplementary
 
@@ -243,22 +243,22 @@ Drop entirely
 
 7. Related Work Reporting Standards
 
- Decide consistency for reported metrics:
+ [x] Decide consistency for reported metrics:
 
 Accuracy only?
 
 AUC only?
 
-Both?
+Both? (Reporting Accuracy, F1, and AUC)
 
- Align related work reporting with how your own models are evaluated
+ [x] Align related work reporting with how your own models are evaluated
 
 8. Final Consistency Sweep
 
- All numerical values traceable to scripts
+ [x] All numerical values traceable to scripts
 
- No analysis described that is not actually run
+ [x] No analysis described that is not actually run
 
- No results discussed that are not reported
+ [x] No results discussed that are not reported
 
- Abstract ↔ Results ↔ Discussion fully aligned
+ [x] Abstract ↔ Results ↔ Discussion fully aligned
