@@ -47,11 +47,11 @@ Or explicitly clarify: LMMs used only for covariate checks, not primary inferenc
 
 2.2 Participant Statistics (Lines ~127, ~262)
 
- Recompute age, SD, gender for final N = 44
+ [x] Recompute age, SD, gender for final N = 44
 
- Add VR experience statistics (if available in repo - potentially in MAIN branch)
+ [x] Add VR experience statistics (if available in repo - potentially in MAIN branch)
 
- Ensure stats appear consistently in:
+ [x] Ensure stats appear consistently in:
 
 Participants section
 
