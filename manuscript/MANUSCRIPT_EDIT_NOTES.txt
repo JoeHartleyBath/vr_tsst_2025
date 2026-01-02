@@ -1,0 +1,264 @@
+Manuscript Edit & Verification Brief
+
+Reference file: manuscript_MAIN.tex
+Workflow: Apply changes to a copy of the final manuscript (Manuscript_DRAFT.tex)
+
+0. Global Instructions for Copilot
+
+Make no stylistic edits unless explicitly requested
+
+Prefer verification + alignment with scripts over rewriting text
+
+Always write in British English
+
+Flag uncertainty with // CHECK: comments rather than guessing
+
+Do not invent statistics or thresholds
+
+If scripts disagree with manuscript, manuscript must be updated to match scripts
+
+1. Scope & Metadata Checks
+1.1 Author & Affiliation Cleanup
+
+ Remove submission-inappropriate identifiers (e.g. “University of Bath”)
+
+ Confirm compliance with anonymous / blinded submission rules
+
+2. Methods: Conceptual Accuracy & Alignment
+2.1 Intro / Contributions (Line ~70)
+
+Issue: Regression is mentioned but not used as a main analysis
+
+ Verify analyses actually used:
+
+ANOVA / ART-ANOVA
+
+Correlations
+
+SVM
+
+LMM (covariate checks only)
+
+ Update text to:
+
+Either remove “regression”
+
+Or explicitly clarify: LMMs used only for covariate checks, not primary inference
+
+2.2 Participant Statistics (Lines ~127, ~262)
+
+ Recompute age, SD, gender for final N = 44
+
+ Add VR experience statistics (if available in repo - potentially in MAIN branch)
+
+ Ensure stats appear consistently in:
+
+Participants section
+
+Results section
+
+Any tables referencing demographics
+
+2.3 EEG Cleaning & Preprocessing (Line ~160)
+
+ Check clean_eeg.py:
+
+Bad channel thresholds
+
+Interpolation criteria
+
+ Ensure manuscript thresholds exactly match script
+
+If unclear, inspect clean_eeg.py and document explicitly
+
+2.4 EDA / GSR Cleaning (Line ~164)
+
+ Inspect clean_eda.py / clean_gsr.py
+
+ Verify:
+
+Interpolation rules
+
+Gap duration thresholds
+
+ Clarify manuscript text if interpolation is conditional (e.g. ≤5 s only)
+
+2.5 Filters
+
+ Double-check all references to Butterworth filters
+
+ Ensure:
+
+Filter order
+
+Cutoff frequencies
+
+Zero-phase vs causal
+
+ Manuscript must reflect actual scripts used for reported results
+
+2.6 QC Thresholds (Line ~196)
+
+ Verify QC thresholds against scripts
+
+ Update manuscript to ensure exact numerical alignment
+
+2.7 EEG Entropy Methods
+
+ Only one EEG entropy metric is now included
+
+ Merge spectral entropy text into EEG methods section
+
+ Remove redundant or obsolete entropy method descriptions
+
+3. Machine Learning Methods
+3.1 SVM Evaluation Metrics
+
+ Inspect SVM.R
+
+ Verify:
+
+Primary evaluation metric (AUC vs accuracy)
+
+ Update manuscript to:
+
+Clearly state primary metric
+
+Avoid redundancy / repetition in SVM section
+
+3.2 Permutation Testing
+
+ Verify whether permutation tests were based on:
+
+Accuracy
+
+AUC
+
+ Ensure this is explicitly stated in the manuscript
+
+ If not stated, add a concise clarification
+
+4. Results: Statistical Reporting Consistency
+4.1 Significance Reporting Policy (Global)
+
+Change in policy due to sparse significance
+
+ Remove “Significance” column from all tables
+
+ Mark statistically significant results in bold
+
+ Explicitly explain this convention in every relevant table caption
+
+4.2 ART-ANOVA Results
+
+ New ART-ANOVA tables show no significant effects
+
+ Decide and implement:
+
+Drop post-hoc tables entirely?
+
+Keep but remove significance framing?
+
+ Decide how to handle near-significance (do not over-interpret)
+
+4.3 Response-Rate-Controlled Features
+
+ Check whether any features become significant after controlling for response rate
+
+ If yes:
+
+Decide whether to report as:
+
+Supplementary analysis
+
+Main result
+
+ Note: these features were not used in SVM, so be cautious
+
+4.4 Subjective Metrics: Factorial Analysis
+
+ Verify updated factorial stats:
+
+MWL × Stress interaction now non-significant
+
+Correlation differences between congruent / incongruent conditions reduced
+
+ Ensure results text reflects new statistics only
+
+4.5 Abstract Consistency
+
+EDA–Stress Relationship
+
+ Abstract currently claims:
+
+“despite modest univariate sensitivity of tonic EDA…”
+
+ New stats:
+
+p ≈ 0.053
+
+partial η² ≈ 0.03 (same as HR)
+
+ Update abstract to avoid overstating univariate significance
+
+5. Discussion–Results Alignment
+5.1 Subjective Interaction Interpretation
+
+ If stress × MWL interaction is non-significant:
+
+Re-evaluate discussion claims about stress increasing perceived workload
+
+Either soften language or remove paragraph
+
+5.2 Condition-Wise Correlations (Line ~456)
+
+ Currently discussed but not reported in Results
+
+ Decide:
+
+Add to Results section
+
+Or remove from Discussion entirely
+
+6. Missing or Optional Analyses
+6.1 Covariates, ICC, Domain Ablations
+
+ Check repo for:
+
+Covariate analysis scripts
+
+ICC computation
+
+Domain / sensor ablation results
+
+top k robustness check
+
+ Decide whether to:
+
+Include in main manuscript
+
+Move to supplementary
+
+Drop entirely
+
+7. Related Work Reporting Standards
+
+ Decide consistency for reported metrics:
+
+Accuracy only?
+
+AUC only?
+
+Both?
+
+ Align related work reporting with how your own models are evaluated
+
+8. Final Consistency Sweep
+
+ All numerical values traceable to scripts
+
+ No analysis described that is not actually run
+
+ No results discussed that are not reported
+
+ Abstract ↔ Results ↔ Discussion fully aligned
