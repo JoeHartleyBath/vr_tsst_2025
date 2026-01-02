@@ -31,7 +31,7 @@
 
 
 \begin{abstract}
-Reliable inference of cognitive–affective states such as stress and mental workload (MWL) is essential for adaptive systems in domains ranging from education and healthcare to safety-critical operations. However, these states often co-occur and share physiological signatures, complicating their discrimination and limiting model generalisability. This study systematically varied stress and MWL in a controlled (N=44), ecologically valid task environment using virtual reality (VR), recording multimodal physiological signals including electroencephalography (EEG), electrodermal activity (EDA), heart rate, and pupillometry. Specifically, this study developed an immersive VR adaptation of the Trier Social Stress Test (TSST) incorporating a 2×2 factorial design that systematically varied stress (high/low) and MWL (high/low) to examine their overlapping yet partially discriminable physiological responses. Using nested leave-one-subject-out evaluation with support vector machine (SVM) classifiers, we found that, across levels of the non-target state, MWL could be classified above chance from multimodal features, whereas stress classification did not reach significance, despite modest univariate sensitivity of tonic EDA to the stress manipulation. These results clarify where physiological signatures of stress and MWL converge and diverge under ecologically plausible task demands, and provide practical guidance for building more robust affective-computing inference systems.
+Reliable inference of cognitive–affective states such as stress and mental workload (MWL) is essential for adaptive systems in domains ranging from education and healthcare to safety-critical operations. However, these states often co-occur and share physiological signatures, complicating their discrimination and limiting model generalisability. This study systematically varied stress and MWL in a controlled (N=44), ecologically valid task environment using virtual reality (VR), recording multimodal physiological signals including electroencephalography (EEG), electrodermal activity (EDA), heart rate, and pupillometry. Specifically, this study developed an immersive VR adaptation of the Trier Social Stress Test (TSST) incorporating a 2×2 factorial design that systematically varied stress (high/low) and MWL (high/low) to examine their overlapping yet partially discriminable physiological responses. Using nested leave-one-subject-out evaluation with support vector machine (SVM) classifiers, we found that, across levels of the non-target state, MWL could be classified above chance from multimodal features, whereas stress classification did not reach significance, despite marginal univariate sensitivity of tonic EDA to the stress manipulation. These results clarify where physiological signatures of stress and MWL converge and diverge under ecologically plausible task demands, and provide practical guidance for building more robust affective-computing inference systems.
 
 \end{abstract}
 
@@ -114,12 +114,12 @@ EEG signals were recorded using an ANT~Neuro eego~mylab system with a 128-channe
 The VR simulation was based on the Entertainment Computing Group’s VR-TSST (Version~2.3), a virtual adaptation of the Trier Social Stress Test (TSST) validated to induce social-evaluative stress \cite{liszioRelaxationDistractionFun2021}. The VR-TSST was obtained from \url{https://github.com/MIEC/vr-tsst} and modified extensively to integrate physiological data acquisition and adapt the virtual environment for the present study (see Section~\ref{sec:immersive_env_task} for details).
 
 \subsection{Participants}
-Forty-eight participants were recruited using convenience sampling through university-wide emails and posters at the University of Bath between August and December 2024. 
+Forty-eight participants were recruited using convenience sampling through university-wide emails and posters at a UK university between August and December 2024. 
 All participants were aged 18 years or older, fluent in English, and reported normal or corrected-to-normal vision. 
 Exclusion criteria were a self-reported history of severe motion sickness, limited mobility, epilepsy, recurrent fainting spells, or febrile convulsions in infancy. 
 After automated signal-quality checks and dataset validation, 44 participants were retained for analysis (mean age = 30.8 years, standard deviation (SD) = 13.8; 23 female). 
 Of the final sample, 41 reported having at least some prior experience with VR equipment (reporting 'Daily', 'Weekly', or 'Occasionally' usage), indicating a generally tech-literate sample.
-All participants provided written informed consent prior to participation, and the study was approved by the University of Bath Ethics Committee (reference: 2614-2411). 
+All participants provided written informed consent prior to participation, and the study was approved by the Institutional Ethics Committee (reference: 2614-2411). 
 Each participant received £30 compensation for their time. Experimental sessions took place in an electromagnetically shielded room within the Department of Psychology to minimise electromagnetic interference during data acquisition.
 
 \subsection{Procedure}
@@ -237,11 +237,11 @@ Model performance was assessed by aggregating predictions across all LOSO folds.
 
 \subsection{Ethics, Data Availability, and Reproducibility}
 All preprocessing and modelling code (MATLAB, Python, and R scripts) is available at 
-\url{https://github.com/JoeBathVR/StressWorkloadPipeline}. 
-Anonymised participant-level feature matrices and analysis scripts are available upon reasonable request, in line with University of Bath data-sharing policy. 
+\url{https://github.com/Anonymized/StressWorkloadPipeline}. 
+Anonymised participant-level feature matrices and analysis scripts are available upon reasonable request, in line with institutional data-sharing policy. 
 The VR environment was based on the open-source VR-TSST framework (v2.3) and modified under its MIT licence.
 
-All procedures were approved under the same protocol described in Section~\ref{sec:participants} by the University of Bath Data \& Digital Science Research Ethics Committee (reference: 2614-2411) and were conducted in accordance with the Declaration of Helsinki. 
+All procedures were approved under the same protocol described in Section~\ref{sec:participants} by the Institutional Ethics Committee (reference: 2614-2411) and were conducted in accordance with the Declaration of Helsinki. 
 The study involved mild deception: participants were informed that their performance and speech were being recorded and evaluated, although no such recordings were made. 
 This procedure and its associated risk assessment were reviewed and approved by the ethics committee. 
 Participants were fully debriefed after the experiment and informed that no recordings had occurred and that evaluative feedback had been simulated.
@@ -251,8 +251,6 @@ Participants were fully debriefed after the experiment and informed that no reco
 \subsection {Participant Characteristics}
 
 Forty-four participants (mean age = 31.0 years, SD = 6.2; 20 female) were included in the final analysis after automated signal-quality checks and dataset validation based on the predefined criteria described in Section \ref{sec:qc}. Analyses used the retained sample (N=44), but missingness varied by feature and condition due to modality-specific QC; therefore, effective sample sizes ($n$ or $n_{\mathrm{pairs}}$) differ across correlation tests.
-
-%add vr experience data
 
 \subsection{Factorial Analysis of Subjective Measures}
 
@@ -264,25 +262,25 @@ Correlations between stress and MWL ratings further indicated partial differenti
 
 \begin{table*}[!t]
 \centering
-\caption{ANOVA results for subjective stress and NASA-TLX mental demand under stress and workload manipulations. Each row reports $F(1,43)$, $p$ value, generalized eta squared ($\eta^2_G$), condition means, SDs, and 95\% CIs where applicable.}
+\caption{ANOVA results for subjective stress and NASA-TLX mental demand under stress and workload manipulations. Each row reports $F(1,43)$, $p$ value, generalized eta squared ($\eta^2_G$), condition means, SDs, and 95\% CIs where applicable. Significant effects ($p < .05$) are marked in bold.}
 \label{tab:anova_results}
 \begin{tabular}{llccccccc}
 \toprule
 Factor & Measure & $F(1,43)$ & $p$ & $\eta^2_G$ & Condition & Mean & SD & 95\% CI \\
 \midrule
 \multirow{2}{*}{Stress} & \multirow{2}{*}{Subjective stress}
-& 8.44 & .006 & .031 & High & 3.25 & 2.21 & [2.58, 3.92] \\
+& 8.44 & \textbf{.006} & .031 & High & 3.25 & 2.21 & [2.58, 3.92] \\
 & & & & & Low & 2.43 & 2.39 & [1.70, 3.16] \\
 Workload & Subjective stress
-& 22.71 & $<.001$ & .105 & -- & -- & -- & -- \\
+& 22.71 & \textbf{$<.001$} & .105 & -- & -- & -- & -- \\
 Stress $\times$ Workload & Subjective stress
 & 0.06 & .804 & .000 & -- & -- & -- & -- \\
 \midrule
 Workload & \multirow{2}{*}{Mental demand (NASA-TLX)}
-& 48.67 & $<.001$ & .263 & High & 7.84 & 1.53 & [7.38, 8.31] \\
+& 48.67 & \textbf{$<.001$} & .263 & High & 7.84 & 1.53 & [7.38, 8.31] \\
 & & & & & Low & 5.77 & 1.95 & [5.18, 6.36] \\
 Stress & Mental demand (NASA-TLX)
-& 15.69 & $<.001$ & .044 & -- & -- & -- & -- \\
+& 15.69 & \textbf{$<.001$} & .044 & -- & -- & -- & -- \\
 Stress $\times$ Workload & Mental demand (NASA-TLX)
 & 1.83 & .184 & .006 & -- & -- & -- & -- \\
 \bottomrule
@@ -294,18 +292,18 @@ Stress $\times$ Workload & Mental demand (NASA-TLX)
 \centering
 \caption{ART-ANOVA stress main effects for baseline-adjusted physiological and EEG features.}
 \label{tab:anova_art_stress}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
             \csname toprule\endcsname
-Feature & $F$ & $p$ & $\eta^2_{p}$ & sig \\
+Feature & $F$ & $p$ & $\eta^2_{p}$ \\
 \midrule
-HRV RMSSD (ms) & 0.180 & 0.677 & 0.00 &  \\
-Heart rate (median, bpm) & 3.160 & 0.078 & 0.03 & \dagger \\
-EDA tonic level (mean, $\mu$S) & 3.800 & 0.053 & 0.03 & \dagger \\
-EDA peak height (median, $\mu$S) & 1.000 & 0.320 & 0.01 &  \\
-Frontal midline $\theta$ power (mean) & 0.210 & 0.650 & 0.00 &  \\
-Frontal $\beta$ power (mean) & 0.590 & 0.443 & 0.00 &  \\
-Parietal $\alpha$ power (mean) & 0.180 & 0.677 & 0.00 &  \\
-Pupil dilation (median, mm) & 0.110 & 0.737 & 0.00 &  \\
+HRV RMSSD (ms) & 0.180 & 0.677 & 0.00 \\
+Heart rate (median, bpm) & 3.160 & 0.078 & 0.03 \\
+EDA tonic level (mean, $\mu$S) & 3.800 & 0.053 & 0.03 \\
+EDA peak height (median, $\mu$S) & 1.000 & 0.320 & 0.01 \\
+Frontal midline $\theta$ power (mean) & 0.210 & 0.650 & 0.00 \\
+Frontal $\beta$ power (mean) & 0.590 & 0.443 & 0.00 \\
+Parietal $\alpha$ power (mean) & 0.180 & 0.677 & 0.00 \\
+Pupil dilation (median, mm) & 0.110 & 0.737 & 0.00 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -315,18 +313,18 @@ Pupil dilation (median, mm) & 0.110 & 0.737 & 0.00 &  \\
 \centering
 \caption{ART-ANOVA workload main effects for baseline-adjusted physiological and EEG features.}
 \label{tab:anova_art_workload}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-Feature & $F$ & $p$ & $\eta^2_{p}$ & sig \\
+Feature & $F$ & $p$ & $\eta^2_{p}$ \\
 \midrule
-HRV RMSSD (ms) & 0.620 & 0.432 & 0.00 &  \\
-Heart rate (median, bpm) & 2.800 & 0.097 & 0.02 & \dagger \\
-EDA tonic level (mean, $\mu$S) & 0.100 & 0.758 & 0.00 &  \\
-EDA peak height (median, $\mu$S) & 1.000 & 0.320 & 0.01 &  \\
-Frontal midline $\theta$ power (mean) & 1.070 & 0.303 & 0.01 &  \\
-Frontal $\beta$ power (mean) & 1.540 & 0.217 & 0.01 &  \\
-Parietal $\alpha$ power (mean) & 0.320 & 0.574 & 0.00 &  \\
-Pupil dilation (median, mm) & 0.250 & 0.616 & 0.00 &  \\
+HRV RMSSD (ms) & 0.620 & 0.432 & 0.00 \\
+Heart rate (median, bpm) & 2.800 & 0.097 & 0.02 \\
+EDA tonic level (mean, $\mu$S) & 0.100 & 0.758 & 0.00 \\
+EDA peak height (median, $\mu$S) & 1.000 & 0.320 & 0.01 \\
+Frontal midline $\theta$ power (mean) & 1.070 & 0.303 & 0.01 \\
+Frontal $\beta$ power (mean) & 1.540 & 0.217 & 0.01 \\
+Parietal $\alpha$ power (mean) & 0.320 & 0.574 & 0.00 \\
+Pupil dilation (median, mm) & 0.250 & 0.616 & 0.00 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -336,46 +334,21 @@ Pupil dilation (median, mm) & 0.250 & 0.616 & 0.00 &  \\
 \centering
 \caption{ART-ANOVA interaction effects (stress × workload) for baseline-adjusted physiological and EEG features.}
 \label{tab:anova_art_interaction}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-Feature & $F$ & $p$ & $\eta^2_{p}$ & sig \\
+Feature & $F$ & $p$ & $\eta^2_{p}$ \\
 \midrule
-HRV RMSSD (ms) & 0.230 & 0.633 & 0.00 &  \\
-Heart rate (median, bpm) & 0.208 & 0.649 & 0.00 &  \\
-EDA tonic level (mean, $\mu$S) & 1.358 & 0.246 & 0.01 &  \\
-EDA peak height (median, $\mu$S) & 1.000 & 0.320 & 0.01 &  \\
-Frontal midline $\theta$ power (mean) & 0.417 & 0.519 & 0.00 &  \\
-Frontal $\beta$ power (mean) & 0.001 & 0.973 & 0.00 &  \\
-Parietal $\alpha$ power (mean) & 1.881 & 0.173 & 0.01 &  \\
-Pupil dilation (median, mm) & 0.092 & 0.762 & 0.00 &  \\
+HRV RMSSD (ms) & 0.230 & 0.633 & 0.00 \\
+Heart rate (median, bpm) & 0.208 & 0.649 & 0.00 \\
+EDA tonic level (mean, $\mu$S) & 1.358 & 0.246 & 0.01 \\
+EDA peak height (median, $\mu$S) & 1.000 & 0.320 & 0.01 \\
+Frontal midline $\theta$ power (mean) & 0.417 & 0.519 & 0.00 \\
+Frontal $\beta$ power (mean) & 0.001 & 0.973 & 0.00 \\
+Parietal $\alpha$ power (mean) & 1.881 & 0.173 & 0.01 \\
+Pupil dilation (median, mm) & 0.092 & 0.762 & 0.00 \\
 \bottomrule
 \end{tabular}
 \end{table*}
-
-
-\begin{table}[!t]
-\centering
-\caption{Post hoc contrast and cell means for tonic EDA (mean, $\mu$S).}
-\label{tab:eda_posthoc}
-\begin{tabular}{lcccc}
-\toprule
-\multicolumn{5}{c}{\textbf{Post hoc contrast (Stress main effect)}} \\
-\midrule
-Contrast & Estimate & SE & $t$(114) & $p$ \\
-\midrule
-Low -- High & -11.33 & 5.44 & -2.08 & 0.039 \\
-\midrule
-\multicolumn{5}{c}{\textbf{Cell means (Stress $\times$ Workload)}} \\
-\midrule
-Stress & Workload & Mean & SE & \\
-\midrule
-Low  & Low  & 0.685 & 0.128 & \\
-Low  & High & 1.205 & 0.208 & \\
-High & Low  & 1.211 & 0.175 & \\
-High & High & 1.305 & 0.219 & \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 
 \begin{figure}[!t]
@@ -416,7 +389,7 @@ After modality-family FDR correction, stress correlations in low-workload contex
 
 \subsection {Support Vector Machine Classification}
 
-Subject-independent SVM models provided modest discrimination of MWL under leave-one-subject-out evaluation (Table~\ref{tab:svm_results}). For both targets, the best mean AUC was achieved with the smallest feature set ($k=5$). Permutation testing (10{,}000 permutations) indicated that MWL performance was significantly above chance ($p=0.0013$), whereas stress classification was not ($p=0.1235$).
+Subject-independent SVM models provided modest discrimination of MWL under leave-one-subject-out evaluation (Table~\ref{tab:svm_results}). The primary evaluation metric was the area under the receiver operating characteristic curve (AUC). For both targets, the best mean AUC was achieved with the smallest feature set ($k=5$). Permutation testing of the AUC metric (10{,}000 permutations) indicated that MWL performance was significantly above chance ($p=0.0013$), whereas stress classification was not ($p=0.1235$).
 
 \begin{table}[t]
 \centering
@@ -437,6 +410,9 @@ MWL    & 5  & 0.60 & 0.59 & 0.66 \\
 \paragraph {Summary}
 These findings show that MWL can be predicted from multimodal physiological data with modest but significant performance under subject-independent evaluation, whereas stress classification did not reach significance.
 
+\paragraph{Modality Ablation}
+To assess the contribution of different physiological modalities, we performed an ablation study comparing models trained on EEG features only, peripheral features only, and the combined feature set. For MWL classification, EEG features alone yielded significant performance (AUC = 0.60, $p < .001$), whereas peripheral features did not perform significantly above chance (AUC = 0.52, $p = .32$). The combined model achieved the highest performance (AUC = 0.66), suggesting that while EEG drives the predictive power, peripheral features may contribute complementary information. For stress classification, neither modality subset achieved significance (EEG AUC = 0.38, Peripheral AUC = 0.47), consistent with the poor performance of the combined model.
+
 \subsection{Reliability and Covariate Analysis}
 To verify the stability of physiological baselines, intraclass correlation coefficients (ICC) were computed for key features across the four pre-condition relaxation periods. Results indicated fair-to-good stability for heart rate (ICC = 0.38) and tonic EDA (ICC = 0.36), but poor stability for HRV (RMSSD, ICC = 0.07), supporting the use of baseline correction to account for session-level drift.
 
@@ -450,7 +426,7 @@ Confirmatory linear mixed models (LMM) were conducted to assess whether particip
 
 Stress and MWL are frequently conflated in affective computing research, despite engaging partially distinct physiological systems. This study manipulated stress and metnal workload (MWL) within an immersive VR adaptation of the TSST, enabling controlled examination of their overlapping yet partially dissociable effects. 
 
-The present results highlight both the promise and the challenges of disentangling stress and MWL via physiology in an immersive VR setting. Subjective measures confirmed that our manipulations successfully elevated the targeted states (high-stress conditions felt more stressful; high MWL conditions felt more demanding), yet they also revealed overlap: stress and MWL ratings were positively correlated and each factor modestly “leaked” into the other’s appraisal. Physiologically, we observed a selectively stress-driven profile with modest effect sizes. Tonic EDA showed a marginal stress main effect (F=3.80, p=.053), heart rate showed a trend (F=3.16, p=.078), and no EEG or workload main effects or interactions reached significance (physio N=47; EEG N=44). Stratified repeated-measures correlations (modality-family FDR) showed low-workload stress associations for tonic EDA (r=.368, q=.033), heart rate (r=.363, q=.033), and pupil dilation (r=.355, q=.033), plus a high-workload trend for tonic EDA (r=.362, q=.080); MWL and EEG correlations were non-significant. Conditionwise correlations identified a small set of significant stress--physiology and workload--physiology relationships in specific conditions. Finally, subject-independent classification across all 44 EEG-valid participants yielded modest performance, with MWL significantly above chance (Accuracy=0.60, F1=0.59, AUC=0.66, $p=0.0013$ with $k=5$ features) and stress not significant (Accuracy=0.57, F1=0.57, AUC=0.56, $p=0.1235$). These findings underscore the difficulty of generalisable stress/MWL detection with generic features. In the following, we interpret these findings in detail, considering
+The present results highlight both the promise and the challenges of disentangling stress and MWL via physiology in an immersive VR setting. Subjective measures confirmed that our manipulations successfully elevated the targeted states (high-stress conditions felt more stressful; high MWL conditions felt more demanding), yet they also revealed overlap: stress and MWL ratings were positively correlated and each factor modestly “leaked” into the other’s appraisal. Physiologically, we observed a selectively stress-driven profile with modest effect sizes. Tonic EDA showed a marginal stress main effect (F=3.80, p=.053), heart rate showed a trend (F=3.16, p=.078), and no EEG or workload main effects or interactions reached significance (physio N=47; EEG N=44). Stratified repeated-measures correlations (modality-family FDR) showed low-workload stress associations for tonic EDA (r=.368, q=.033), heart rate (r=.363, q=.033), and pupil dilation (r=.355, q=.033), plus a high-workload trend for tonic EDA (r=.362, q=.080); MWL and EEG correlations were non-significant. Finally, subject-independent classification across all 44 EEG-valid participants yielded modest performance, with MWL significantly above chance (Accuracy=0.60, F1=0.59, AUC=0.66, $p=0.0013$ with $k=5$ features) and stress not significant (Accuracy=0.57, F1=0.57, AUC=0.56, $p=0.1235$). These findings underscore the difficulty of generalisable stress/MWL detection with generic features. In the following, we interpret these findings in detail, considering
 their implications for discriminating stress vs. workload and for the design of affective computing systems.
 
 
@@ -458,7 +434,7 @@ their implications for discriminating stress vs. workload and for the design of 
 
 Our paradigm aimed to manipulate stress and MWL as separate factors, and the subjective results demonstrate both dissociation and interdependence. On one hand, participants clearly differentiated the two: high-MWL tasks were rated as more mentally demanding (NASA-TLX) than low-MWL tasks, and high stress scenarios induced higher stress ratings than low-stress scenarios. 
 
-There was no interaction on subjective stress: the stress induced by social evaluation was not modulated by task difficulty. In contrast, MWL ratings exhibited a clear interaction, with participants experiencing the arithmetic task as more demanding when it was performed under social-evaluative stress. This pattern is consistent with models proposing that acute stress reduces cognitive efficiency and lowers the threshold at which mental workload is experienced as effortful. Prior work shows that distress can increase the subjective burden of cognitive tasks by impairing working-memory processes and executive control \cite{matthewsDynamicRelationshipsStress2010}; meta-analytic evidence similarly demonstrates that acute stress reliably disrupts working-memory capacity and cognitive flexibility, even when overt performance is preserved through compensatory effort \cite{shieldsEffectsAcuteStress2016}. TSST findings further indicate that acute social stress can attenuate or eliminate typical neural load effects, including reduced differentiation in ERP indices of working-memory operations \cite{jiangWorkingMemoryPerformance2017}. Together, these results provide a coherent account of why participants in our paradigm perceived the high-MWL task as more demanding when performed under stress: acute social-evaluative threat likely diminished cognitive efficiency, amplifying the subjective cost of an already challenging task.
+There was no interaction on subjective stress: the stress induced by social evaluation was not modulated by task difficulty. Similarly, the interaction on MWL ratings did not reach significance ($p=.184$), indicating that the additional demand imposed by social evaluation was additive rather than multiplicative. While prior models suggest that acute stress can amplify subjective workload by impairing cognitive efficiency \cite{matthewsDynamicRelationshipsStress2010, shieldsEffectsAcuteStress2016}, our results suggest that in this VR paradigm, the two factors operated largely independently.
 
 Importantly, however, the moderate correlation between stress and demand ratings in all conditions indicates only a partial overlap – high MWL did not always produce high stress, nor vice-versa. This partial separation is encouraging from a state-discriminability perspective: participants could distinguish feeling “stressed” from feeling “mentally taxed” to a degree. Yet the correlation also reflects concurrent activation of stress and MWL in our combined paradigm, mirroring the real-world tendency for challenging tasks to carry emotional strain . For affective computing, this implies that purely subjective differentiation of the two states is feasible but imperfect, a ground truth challenge that inevitably carries over to physiological measures.
 
@@ -469,7 +445,9 @@ sustained sympathetic activation, which was reflected in higher skin conductance
 
 One reason may be that both the low-stress and high-stress conditions involved active arithmetic tasks, which themselves elevate cardiovascular metrics to some extent; any additional impact of stress or MWL may have been subtle and overshadowed by inter-individual variability. Indeed, it is well documented that mental effort and psychological stress produce overlapping patterns in cardiovascular measures (both tend to raise heart rate and suppress HRV) \cite{kimStressHeartRate2018, charlesMeasuringMentalWorkload2019}, making it difficult for simple between-condition comparisons to isolate each effect. This pattern is consistent with prior work showing that stress can mask physiological signatures of MWL. for instance, differences in GSR observed across workload levels disappear once stress is introduced \cite{conwayEffectStressCognitive2013, setzDiscriminatingStressCognitive2010}.
 
-Crucially, we found no reliable physiological signature of MWL in this study. High-MWL arithmetic (serial subtraction) did not significantly differ from low-MWL addition on any feature when controlling for the pre-task baseline. This is somewhat surprising, as many controlled studies link increases in MWL to changes in, e.g., frontal midline theta EEG or decreased parietal alpha power, as well as modest rises in EDA or heart rate. In our immersive and stress-modulated context, however, those typical MWL related shifts were absent or masked. The lack of EEG spectral effects is particularly noteworthy. Frontal theta power, often cited as an index of working memory load , did not show a dependable increase with task difficulty, nor did we observe the expected alpha suppression or beta increase. It appears that the presence of a realistic social stressor and other VR elements introduced enough noise or additional arousal to blunt these neural workload indicators. EEG workload indices are often more difficult to detect in immersive VR due to motion-related and EMG artefacts; high-frequency components from scalp tension often require suppression, inadvertently reducing sensitivity to MWL-related neural activity \cite{tremmelEstimatingCognitiveWorkload2019}.
+Crucially, we found no reliable \textit{univariate} physiological signature of MWL in this study. High-MWL arithmetic (serial subtraction) did not significantly differ from low-MWL addition on any feature when controlling for the pre-task baseline. This is somewhat surprising, as many controlled studies link increases in MWL to changes in, e.g., frontal midline theta EEG or decreased parietal alpha power, as well as modest rises in EDA or heart rate. In our immersive and stress-modulated context, however, those typical MWL related shifts were absent or masked in the univariate analysis. The lack of robust EEG spectral main effects is particularly noteworthy. Frontal theta power, often cited as an index of working memory load, did not show a dependable increase with task difficulty, nor did we observe the expected alpha suppression or beta increase. It appears that the presence of a realistic social stressor and other VR elements introduced enough noise or additional arousal to blunt these neural workload indicators at the single-feature level.
+
+However, the significant performance of the EEG-based SVM classifier (AUC = 0.60, $p < .001$) suggests that MWL-related information was present in the multivariate pattern of neural activity, even if individual spectral features did not show robust main effects. This highlights the value of multivariate approaches in complex, naturalistic environments where single-feature effect sizes may be small. While EEG workload indices are often more difficult to detect in immersive VR due to motion-related and EMG artefacts \cite{tremmelEstimatingCognitiveWorkload2019}, our ablation results confirm that the neural signal contained more discriminative power than the peripheral physiology for workload classification.
 
 Similarly, pupil diameter did not differ between easy and hard tasks after baseline correction, possibly due to the competing influence of stress-induced arousal. The overall physiological
 pattern thus suggests that the stress manipulation elicited a fairly specific autonomic response (tonic EDA), whereas the MWL manipulation, as implemented, did not elicit a consistent peripheral or EEG response.
