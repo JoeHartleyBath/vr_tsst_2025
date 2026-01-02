@@ -29,7 +29,7 @@ If scripts disagree with manuscript, manuscript must be updated to match scripts
 
 Issue: Regression is mentioned but not used as a main analysis
 
- Verify analyses actually used:
+ [x] Verify analyses actually used:
 
 ANOVA / ART-ANOVA
 
@@ -39,7 +39,7 @@ SVM
 
 LMM (covariate checks only)
 
- Update text to:
+ [x] Update text to:
 
 Either remove “regression”
 
@@ -61,19 +61,19 @@ Any tables referencing demographics
 
 2.3 EEG Cleaning & Preprocessing (Line ~160)
 
- Check clean_eeg.py:
+ [x] Check clean_eeg.py:
 
 Bad channel thresholds
 
 Interpolation criteria
 
- Ensure manuscript thresholds exactly match script
+ [x] Ensure manuscript thresholds exactly match script
 
 If unclear, inspect clean_eeg.py and document explicitly
 
 2.4 EDA / GSR Cleaning (Line ~164)
 
- Inspect clean_eda.py / clean_gsr.py
+ [x] Inspect clean_eda.py / clean_gsr.py
 
  Verify:
 
@@ -81,11 +81,11 @@ Interpolation rules
 
 Gap duration thresholds
 
- Clarify manuscript text if interpolation is conditional (e.g. ≤5 s only)
+ [x] Clarify manuscript text if interpolation is conditional (e.g. ≤5 s only)
 
 2.5 Filters
 
- Double-check all references to Butterworth filters
+ [x] Double-check all references to Butterworth filters
 
  Ensure:
 
@@ -95,21 +95,21 @@ Cutoff frequencies
 
 Zero-phase vs causal
 
- Manuscript must reflect actual scripts used for reported results
+ [x] Manuscript must reflect actual scripts used for reported results
 
 2.6 QC Thresholds (Line ~196)
 
- Verify QC thresholds against scripts
+ [x] Verify QC thresholds against scripts
 
- Update manuscript to ensure exact numerical alignment
+ [x] Update manuscript to ensure exact numerical alignment
 
 2.7 EEG Entropy Methods
 
- Only one EEG entropy metric is now included
+ [x] Only one EEG entropy metric is now included
 
- Merge spectral entropy text into EEG methods section
+ [x] Merge spectral entropy text into EEG methods section
 
- Remove redundant or obsolete entropy method descriptions
+ [x] Remove redundant or obsolete entropy method descriptions
 
 3. Machine Learning Methods
 3.1 SVM Evaluation Metrics
