@@ -12,9 +12,16 @@ df <- read.csv("output/final_data.csv")
 
 # Features that showed some promise in ANOVA (from manuscript)
 features <- c(
-  "eda_tonic_mean_precond",  # Marginal stress effect
-  "hr_med_precond",          # Trend stress effect
-  "pupil_full_pupil_mean_precond" # Correlated with stress
+  "hrv_rmssd_precond",
+  "hr_med_precond",
+  "eda_tonic_mean_precond",
+  "eda_pkht_med_precond",
+  "eeg_fm_theta_power_precond",
+  "eeg_f_beta_power_precond",
+  "eeg_p_alpha_power_precond",
+  "eeg_ab_ratio_precond",
+  "eeg_tb_ratio_precond",
+  "pupil_full_pupil_med_precond"
 )
 
 cat("--- ICC Analysis of Baseline-Corrected Features ---\n")
