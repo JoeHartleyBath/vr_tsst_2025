@@ -30,6 +30,8 @@ canonical_features:
   - eeg_fm_theta_power
   - eeg_f_beta_power
   - eeg_p_alpha_power
+  - eeg_ab_ratio
+  - eeg_tb_ratio
   - pupil_full_pupil_med
 
 pretty_features:
@@ -40,6 +42,8 @@ pretty_features:
   eeg_fm_theta_power_precond: "EEG FM Theta"
   eeg_f_beta_power_precond: "EEG Beta"
   eeg_p_alpha_power_precond: "EEG Parietal Alpha"
+  eeg_ab_ratio_precond: "Alpha/Beta Ratio"
+  eeg_tb_ratio_precond: "Theta/Beta Ratio"
   pupil_full_pupil_med_precond: "Pupil Dilation"
 
 feature_order:
@@ -51,3 +55,5 @@ feature_order:
   - EEG FM Theta
   - EEG Beta
   - EEG Parietal Alpha
+  - Alpha/Beta Ratio
+  - Theta/Beta Ratio

@@ -17,7 +17,7 @@ source("utils/r/feature_selection.R")
 # =====================================================================
 
 # ---- Load config and set output dir ----
-config  <- yaml::read_yaml("scripts/config.yaml")
+config  <- yaml::read_yaml("scripts/utils/config.yaml")
 out_dir <- config$paths$output
 
 # Generic loader: tries .rds then .csv
@@ -241,16 +241,12 @@ all_cor <- all_cor %>%
 # 5. SAVE CORRELATION RESULTS
 # =====================================================================
 
-out_dir_corr <- file.path(
-  "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/results/classic_analyses",
-  "conditionwise_correlations"
-)
+out_dir_corr <- file.path(config$paths$results, "classic_analyses", "conditionwise_correlations")
 dir.create(out_dir_corr, recursive = TRUE, showWarnings = FALSE)
 
 all_cor_export <- all_cor %>%
   select(condition, cond_short, rating,
-         feature, feature,
-         group, rho, p_raw, p_fdr, n)
+         feature, group, rho, p_raw, p_fdr, n)
 
 write_csv(
   all_cor_export,
