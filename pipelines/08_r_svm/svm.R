@@ -8,7 +8,7 @@ library(yardstick)  # Added for F1 and AUC
 
 set.seed(42)
 
-source("scripts/prune_feats.R")
+source("utils/r/prune_feats.R")
 source("utils/r/feature_selection.R")
 
 # =====================================================================

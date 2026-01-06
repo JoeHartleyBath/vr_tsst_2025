@@ -6,12 +6,11 @@ library(broom)
 config <- yaml::read_yaml("scripts/utils/config.yaml")
 
 ### Load data
-df <- readRDS("D:/phd_projects/vr_tsst_2025/output/full_data_for_reference.rds")
+df <- readRDS(file.path(config$paths$output, "full_data_for_reference.rds"))
 
 ### Canonical features
 canonical_feats <- config$canonical_features
-suffix <- "_full"  #baseline adjusted using precondition relaxation scene
-features <- paste0(canonical_feats, suffix)
+features <- canonical_feats
 
 ### Extract baseline and task data
 baseline_df <- df %>%

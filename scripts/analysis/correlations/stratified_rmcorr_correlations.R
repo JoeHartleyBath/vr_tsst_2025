@@ -18,6 +18,9 @@ suppressPackageStartupMessages({
 # Load config
 config  <- yaml::read_yaml("scripts/utils/config.yaml")
 out_dir <- config$paths$output
+out_dir_strat <- file.path(config$paths$results, "classic_analyses", "stratified_rmcorr")
+dir.create(out_dir_strat, recursive = TRUE, showWarnings = FALSE)
+
 heat_path <- file.path(out_dir_strat, "stratified_rmcorr_heatmap.png")
 
 # Loader
@@ -202,11 +205,7 @@ all_rmcorr <- all_rmcorr %>%
 # 6. SAVE RESULTS
 # =====================================================================
 
-out_dir_strat <- file.path(
-  "D:/PhD_Projects/TSST_Stress_Workload_Pipeline/results/classic_analyses",
-  "stratified_rmcorr"
-)
-dir.create(out_dir_strat, recursive = TRUE, showWarnings = FALSE)
+# out_dir_strat already defined at top
 
 write_csv(all_rmcorr, file.path(out_dir_strat, "stratified_rmcorr_results.csv"))
 saveRDS(all_rmcorr, file.path(out_dir_strat, "stratified_rmcorr_results.rds"))
