@@ -36,14 +36,13 @@ load_obj <- function(stem, dir_path = out_dir) {
   }
 }
 
-# Stars
+# Stars with better formatting
 signif_star <- function(p) {
   dplyr::case_when(
     is.na(p)  ~ "",
     p < 0.001 ~ "***",
     p < 0.01  ~ "**",
     p < 0.05  ~ "*",
-    p < 0.06  ~ "·",
     TRUE      ~ ""
   )
 }
@@ -115,13 +114,24 @@ subset_defs <- list(
 # ------------------------------------------------------------
 
 canonical_feats <- config$canonical_features
-suffix <- "_precond_Z"  # normalized baseline-adjusted features
+suffix <- "_precond"  # baseline-adjusted features (scaled within-script)
 features <- paste0(canonical_feats, suffix)
 
 feat_labels <- config$pretty_features
 feature_order <- config$feature_order
 
-# Features already normalized with _Z suffix, no need to scale again
+# Apply simple within-subject z-score to match SVM preprocessing
+zscore_safe <- function(x) {
+  m <- mean(x, na.rm = TRUE)
+  s <- stats::sd(x, na.rm = TRUE)
+  if (!is.finite(s) || s <= 1e-8) return(rep(0, length(x)))
+  (x - m) / s
+}
+
+df_full <- df_full %>%
+  group_by(participant_id) %>%
+  mutate(across(all_of(features), zscore_safe)) %>%
+  ungroup()
 
 
 # =====================================================================
@@ -193,8 +203,21 @@ all_rmcorr <- purrr::map_dfr(
   ~ run_rmcorr(df = .x$df, subset_label = .x$label, rating_var = .x$rating)
 )
 
+# Assign modality family for FDR correction
 all_rmcorr <- all_rmcorr %>%
-  group_by(subset, rating) %>%
+  mutate(
+    modality = case_when(
+      str_detect(feature, "^eeg_") ~ "EEG",
+      str_detect(feature, "^(hrv|hr)_") ~ "Physiological",
+      str_detect(feature, "^eda_") ~ "Physiological",
+      str_detect(feature, "^pupil_") ~ "Physiological",
+      TRUE ~ "Other"
+    )
+  )
+
+# Apply FDR correction within subset, rating, AND modality family
+all_rmcorr <- all_rmcorr %>%
+  group_by(subset, rating, modality) %>%
   mutate(p_fdr = p.adjust(p_raw, method = "BH")) %>%
   ungroup() %>%
   mutate(sig = signif_star(p_fdr))
@@ -257,6 +280,10 @@ plot_strat_heatmap <- function(df, out_path, feat_labels, suffix, feature_order)
       aes(x = subset, y = feature_display, fill = rmcorr_r)
     ) +
       geom_tile(colour = "grey20", linewidth = 0.25) +
+      # Add darker, thicker border for significant results (p_fdr < 0.05)
+      geom_tile(data = data %>% filter(p_fdr < 0.05),
+                aes(x = subset, y = feature_display),
+                colour = "black", linewidth = 1.2, fill = NA, inherit.aes = FALSE) +
       geom_text(aes(label = sprintf("%.2f", rmcorr_r)),
                 colour = "black", size = 3.1) +
       geom_text(aes(label = sig),

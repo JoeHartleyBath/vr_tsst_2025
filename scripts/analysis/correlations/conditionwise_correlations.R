@@ -116,8 +116,21 @@ conditions <- df_full$condition %>%
   unique() %>%
   discard(is.na)
 
-features <- names(df_full)[str_detect(names(df_full), "_precond_Z$")]
+features <- names(df_full)[str_detect(names(df_full), "_precond$")]
 features <- features[!str_detect(features, drop_pattern)]
+
+# Apply simple within-subject z-score to match SVM preprocessing
+zscore_safe <- function(x) {
+  m <- mean(x, na.rm = TRUE)
+  s <- stats::sd(x, na.rm = TRUE)
+  if (!is.finite(s) || s <= 1e-8) return(rep(0, length(x)))
+  (x - m) / s
+}
+
+df_full <- df_full %>%
+  group_by(participant_id) %>%
+  mutate(across(all_of(features), zscore_safe)) %>%
+  ungroup()
 
 # Ensure typical features exist in the data
 features <- intersect(features, names(df_full))
@@ -270,8 +283,8 @@ plot_conditionwise_heatmap <- function(df, out_path) {
       rating     = factor(rating, levels = c("stress", "workload")),
       cond_short = factor(cond_short, levels = c("LS–LW","LS–HW","HS–LW","HS–HW")),
       feature_display = factor(
-        sub("_precond_Z$", "", feature),
-        levels = unique(sub("_precond_Z$", "", feature))
+        sub("_precond$", "", feature),
+        levels = unique(sub("_precond$", "", feature))
       )
     )
   
@@ -315,8 +328,8 @@ for (g in groups) {
     arrange(feature) %>%
     mutate(
       feature_display = factor(
-        sub("_precond_Z$", "", feature),
-        levels = unique(sub("_precond_Z$", "", feature))
+        sub("_precond$", "", feature),
+        levels = unique(sub("_precond$", "", feature))
       )
     )
   

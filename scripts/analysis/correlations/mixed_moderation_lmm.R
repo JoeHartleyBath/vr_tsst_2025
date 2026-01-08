@@ -81,7 +81,7 @@ df <- final_data %>%
   )
 
 canonical_feats <- config$canonical_features
-suffix <- "_precond_Z"
+suffix <- "_precond"
 features <- paste0(canonical_feats, suffix)
 
 # Pretty label mapping (normalize config keys: *_precond[_Z] -> base)
@@ -104,6 +104,19 @@ missing_cols <- setdiff(required_cols, names(df))
 if (length(missing_cols) > 0) {
   stop("Missing required columns in final_data: ", paste(missing_cols, collapse = ", "))
 }
+
+# Apply simple within-subject z-score to match SVM preprocessing
+zscore_safe <- function(x) {
+  m <- mean(x, na.rm = TRUE)
+  s <- stats::sd(x, na.rm = TRUE)
+  if (!is.finite(s) || s <= 1e-8) return(rep(0, length(x)))
+  (x - m) / s
+}
+
+df <- df %>%
+  group_by(participant_id) %>%
+  mutate(across(all_of(features), zscore_safe)) %>%
+  ungroup()
 
 out_dir <- file.path(config$paths$results, "classic_analyses", "mixed_moderation")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)

@@ -30,7 +30,7 @@ for (target in targets) {
   cat("============================================\n")
   
   # Select features: Z-scored features
-  feature_cols <- names(df)[grep("_precond_Z$", names(df))]
+  feature_cols <- names(df)[grep("_precond$", names(df))]
   
   # CRITICAL: Manually exclude subjective ratings (Leakage Fix)
   feature_cols <- feature_cols[!grepl("nasa|imi|mps", feature_cols, ignore.case = TRUE)]
@@ -44,6 +44,21 @@ for (target in targets) {
   }
 
   cat("Selected", ncol(X), "features.\n")
+
+  # Apply within-participant mean/SD z-score (matches SVM preprocessing)
+  zscore_safe <- function(x) {
+    m <- mean(x, na.rm = TRUE)
+    s <- sd(x, na.rm = TRUE)
+    if (!is.finite(s) || s <= 1e-8) return(rep(0, length(x)))
+    (x - m) / s
+  }
+  X <- df %>%
+    select(participant_id) %>%
+    bind_cols(as_tibble(X)) %>%
+    group_by(participant_id) %>%
+    mutate(across(-participant_id, zscore_safe)) %>%
+    ungroup() %>%
+    select(-participant_id)
   
   # Remove near-zero variance
   nzv <- nearZeroVar(X)
