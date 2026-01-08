@@ -114,11 +114,14 @@ subset_defs <- list(
 # ------------------------------------------------------------
 
 canonical_feats <- config$canonical_features
+if (!"eeg_faa" %in% canonical_feats) canonical_feats <- c(canonical_feats, "eeg_faa") # Add FAA
 suffix <- "_precond"  # baseline-adjusted features (scaled within-script)
 features <- paste0(canonical_feats, suffix)
 
 feat_labels <- config$pretty_features
+feat_labels[["eeg_faa_precond"]] <- "Frontal Alpha Asymmetry"
 feature_order <- config$feature_order
+if (!"Frontal Alpha Asymmetry" %in% feature_order) feature_order <- c(feature_order, "Frontal Alpha Asymmetry")
 
 # Apply simple within-subject z-score to match SVM preprocessing
 zscore_safe <- function(x) {
@@ -252,7 +255,7 @@ plot_strat_heatmap <- function(df, out_path, feat_labels, suffix, feature_order)
       ),
       rating = factor(rating, levels = c("stress","workload")),
       feature_base = sub(paste0(suffix, "$"), "", feature),
-      feature_display = feat_labels[feature_base],
+      feature_display = feat_labels[feature],
       feature_display = ifelse(is.na(feature_display),
                                feature_base,
                                feature_display)
