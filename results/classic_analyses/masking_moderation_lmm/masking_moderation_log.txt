@@ -1,0 +1,82 @@
+2026-01-08 10:18:48 | [Masking LMM] Loading final_data 
+2026-01-08 10:18:48 | [Masking LMM] Participants (all modalities): N=47 
+2026-01-08 10:18:48 | [Masking LMM] Participants (EEG-valid, qc_failed==FALSE): N=44 
+2026-01-08 10:18:48 | [Masking LMM] Running moderation models 
+2026-01-08 10:18:49 | [Boot] stress_by_workload | hrv_rmssd_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:18:53 | [Boot] stress_by_workload | hr_med_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:18:57 | [Boot] stress_by_workload | eda_tonic_mean_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:01 | [Boot] stress_by_workload | eda_pkht_mean_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:05 | [Boot] stress_by_workload | eeg_fm_theta_power_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:09 | [Boot] stress_by_workload | eeg_f_beta_power_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:13 | [Boot] stress_by_workload | eeg_p_alpha_power_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:17 | [Boot] stress_by_workload | eeg_faa_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:21 | [Boot] stress_by_workload | eeg_ab_ratio_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:25 | [Boot] stress_by_workload | eeg_tb_ratio_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:29 | [Boot] stress_by_workload | pupil_full_pupil_med_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:33 | [Boot] workload_by_stress | hrv_rmssd_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:38 | [Boot] workload_by_stress | hr_med_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:42 | [Boot] workload_by_stress | eda_tonic_mean_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:46 | [Boot] workload_by_stress | eda_pkht_mean_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:50 | [Boot] workload_by_stress | eeg_fm_theta_power_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:54 | [Boot] workload_by_stress | eeg_f_beta_power_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:19:58 | [Boot] workload_by_stress | eeg_p_alpha_power_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:20:02 | [Boot] workload_by_stress | eeg_faa_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:20:06 | [Boot] workload_by_stress | eeg_ab_ratio_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:20:10 | [Boot] workload_by_stress | eeg_tb_ratio_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:20:14 | [Boot] workload_by_stress | pupil_full_pupil_med_precond_Z | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:20:23 | ✓ Saved masking moderation outputs to: results/classic_analyses/masking_moderation_lmm 
+2026-01-08 10:20:23 | [Masking LMM] Top interactions (by raw p) 
+2026-01-08 10:35:18 | [Masking LMM] Loading final_data 
+2026-01-08 10:35:18 | [Masking LMM] Participants (all modalities): N=47 
+2026-01-08 10:35:18 | [Masking LMM] Participants (EEG-valid, qc_failed==FALSE): N=44 
+2026-01-08 10:35:18 | [Masking LMM] Running moderation models 
+2026-01-08 10:35:19 | [Boot] stress_by_workload | hrv_rmssd_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:23 | [Boot] stress_by_workload | hr_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:28 | [Boot] stress_by_workload | eda_tonic_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:32 | [Boot] stress_by_workload | eda_pkht_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:36 | [Boot] stress_by_workload | eeg_fm_theta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:40 | [Boot] stress_by_workload | eeg_f_beta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:44 | [Boot] stress_by_workload | eeg_p_alpha_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:49 | [Boot] stress_by_workload | eeg_faa_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:53 | [Boot] stress_by_workload | eeg_ab_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:35:58 | [Boot] stress_by_workload | eeg_tb_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:02 | [Boot] stress_by_workload | pupil_full_pupil_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:07 | [Boot] workload_by_stress | hrv_rmssd_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:11 | [Boot] workload_by_stress | hr_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:15 | [Boot] workload_by_stress | eda_tonic_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:20 | [Boot] workload_by_stress | eda_pkht_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:24 | [Boot] workload_by_stress | eeg_fm_theta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:28 | [Boot] workload_by_stress | eeg_f_beta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:32 | [Boot] workload_by_stress | eeg_p_alpha_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:36 | [Boot] workload_by_stress | eeg_faa_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:40 | [Boot] workload_by_stress | eeg_ab_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:45 | [Boot] workload_by_stress | eeg_tb_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:49 | [Boot] workload_by_stress | pupil_full_pupil_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 10:36:53 | ✓ Saved masking moderation outputs to: results/classic_analyses/masking_moderation_lmm 
+2026-01-08 10:36:53 | [Masking LMM] Top interactions (by raw p) 
+2026-01-08 11:00:30 | [Masking LMM] Loading final_data 
+2026-01-08 11:00:30 | [Masking LMM] Participants (all modalities): N=47 
+2026-01-08 11:00:30 | [Masking LMM] Participants (EEG-valid, qc_failed==FALSE): N=44 
+2026-01-08 11:00:30 | [Masking LMM] Running moderation models 
+2026-01-08 11:00:30 | [Boot] stress_by_workload | hrv_rmssd_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:00:35 | [Boot] stress_by_workload | hr_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:00:39 | [Boot] stress_by_workload | eda_tonic_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:00:44 | [Boot] stress_by_workload | eda_pkht_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:00:49 | [Boot] stress_by_workload | eeg_fm_theta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:00:54 | [Boot] stress_by_workload | eeg_f_beta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:00:58 | [Boot] stress_by_workload | eeg_p_alpha_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:03 | [Boot] stress_by_workload | eeg_ab_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:07 | [Boot] stress_by_workload | eeg_tb_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:12 | [Boot] stress_by_workload | pupil_full_pupil_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:16 | [Boot] workload_by_stress | hrv_rmssd_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:21 | [Boot] workload_by_stress | hr_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:25 | [Boot] workload_by_stress | eda_tonic_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:29 | [Boot] workload_by_stress | eda_pkht_mean_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:34 | [Boot] workload_by_stress | eeg_fm_theta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:38 | [Boot] workload_by_stress | eeg_f_beta_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:42 | [Boot] workload_by_stress | eeg_p_alpha_power_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:46 | [Boot] workload_by_stress | eeg_ab_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:50 | [Boot] workload_by_stress | eeg_tb_ratio_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:54 | [Boot] workload_by_stress | pupil_full_pupil_med_precond | cluster bootstrap FE-LM (R=1000) 
+2026-01-08 11:01:58 | ✓ Saved masking moderation outputs to: results/classic_analyses/masking_moderation_lmm 
+2026-01-08 11:01:58 | [Masking LMM] Top interactions (by raw p) 

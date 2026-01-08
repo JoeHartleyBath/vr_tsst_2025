@@ -1,0 +1,9 @@
+Subjective ICC (conditional on Stress×MWL fixed effects)
+Model: dv ~ stress_level * mwl_level + (1|participant_id)
+ICC = var(participant intercept) / [var(participant intercept) + var(residual)]
+
+# A tibble: 2 × 6
+  dv           n_participants n_obs var_participant var_residual icc_conditional
+  <chr>                 <int> <int>           <dbl>        <dbl>           <dbl>
+1 stress_rati…             47   188            3.36         3.82           0.468
+2 mental_dema…             47   188            1.59         2.17           0.423

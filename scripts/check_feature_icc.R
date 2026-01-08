@@ -22,7 +22,7 @@ features <- c(
   "eeg_ab_ratio_precond",
   "eeg_tb_ratio_precond",
   "pupil_full_pupil_med_precond"
-)
+   "eda_pkht_mean_precond",
 
 cat("--- ICC Analysis of Baseline-Corrected Features ---\n")
 cat("High ICC indicates that individual differences (Between-Subject) dominate the variance,\n")
