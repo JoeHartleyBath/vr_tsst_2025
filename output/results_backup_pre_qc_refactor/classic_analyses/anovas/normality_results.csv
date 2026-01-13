@@ -1,0 +1,9 @@
+feature,p_value
+hrv_rmssd_precond,1.426915873822081e-24
+hr_med_precond,1.5719106909712423e-4
+eda_tonic_mean_precond,5.0085364739813815e-08
+eda_pkht_med_precond,NA
+eeg_fm_theta_power_precond,8.858620196197618e-8
+eeg_f_beta_power_precond,3.9721143950565537e-16
+eeg_p_alpha_power_precond,1.052921631511081e-16
+pupil_full_pupil_med_precond,2.7648111736530987e-18

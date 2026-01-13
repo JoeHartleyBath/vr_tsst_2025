@@ -1,0 +1,18 @@
+--- Demographics Summary ---
+Total Participants (N): 44
+Excluded: [2, 8, 14, 46]
+
+--- Age ---
+Mean: 30.77
+SD: 13.80
+
+--- Gender ---
+Gender
+Female    23
+Male      21
+
+--- VR Experience ---
+VR_Experience
+Occasionally    40
+Never            3
+Daily            1

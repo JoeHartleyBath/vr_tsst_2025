@@ -1,0 +1,102 @@
+
+Model for: stress 
+Linear mixed model fit by REML. t-tests use Satterthwaite's method [
+lmerModLmerTest]
+Formula: as.formula(formula_str)
+   Data: df_merged
+
+REML criterion at convergence: 428.1
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.2990 -0.4854  0.0710  0.5729  2.9791 
+
+Random effects:
+ Groups         Name        Variance Std.Dev.
+ participant_id (Intercept) 3.351    1.831   
+ Residual                   3.722    1.929   
+Number of obs: 96, groups:  participant_id, 21
+
+Fixed effects:
+                                Estimate Std. Error        df t value Pr(>|t|)
+(Intercept)                     4.521673   1.891193 38.167721   2.391  0.02184
+conditionHigh Stress - Low Cog -1.833333   0.556917 71.255932  -3.292  0.00155
+conditionLow Stress - High Cog -1.000000   0.556917 71.255932  -1.796  0.07680
+conditionLow Stress - Low Cog  -2.708333   0.556917 71.255932  -4.863 6.68e-06
+age                            -0.008808   0.040504 23.599134  -0.217  0.82972
+gender                          0.096266   0.779448 41.114677   0.124  0.90231
+                                  
+(Intercept)                    *  
+conditionHigh Stress - Low Cog ** 
+conditionLow Stress - High Cog .  
+conditionLow Stress - Low Cog  ***
+age                               
+gender                            
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Correlation of Fixed Effects:
+            (Intr) cHS-LC cLS-HC cLS-LC age   
+cndtnHgS-LC -0.147                            
+cndtnLwS-HC -0.147  0.500                     
+cndtnLwS-LC -0.147  0.500  0.500              
+age         -0.739  0.000  0.000  0.000       
+gender      -0.744  0.000  0.000  0.000  0.207
+Type III Analysis of Variance Table with Satterthwaite's method
+          Sum Sq Mean Sq NumDF  DenDF F value   Pr(>F)    
+condition 96.448  32.149     3 71.256  8.6379 5.78e-05 ***
+age        0.176   0.176     1 23.599  0.0473   0.8297    
+gender     0.057   0.057     1 41.115  0.0153   0.9023    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Model for: workload 
+Linear mixed model fit by REML. t-tests use Satterthwaite's method [
+lmerModLmerTest]
+Formula: as.formula(formula_str)
+   Data: df_merged
+
+REML criterion at convergence: 394.1
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-2.61661 -0.44702 -0.00677  0.51992  2.26703 
+
+Random effects:
+ Groups         Name        Variance Std.Dev.
+ participant_id (Intercept) 1.854    1.362   
+ Residual                   2.656    1.630   
+Number of obs: 96, groups:  participant_id, 21
+
+Fixed effects:
+                               Estimate Std. Error       df t value Pr(>|t|)
+(Intercept)                     9.02976    1.49317 36.10086   6.047 5.94e-07
+conditionHigh Stress - Low Cog -2.20833    0.47042 71.70607  -4.694 1.25e-05
+conditionLow Stress - High Cog -0.16667    0.47042 71.70607  -0.354   0.7242
+conditionLow Stress - Low Cog  -2.95833    0.47042 71.70607  -6.289 2.23e-08
+age                             0.02790    0.03137 23.51463   0.890   0.3827
+gender                         -1.14437    0.61682 37.61046  -1.855   0.0714
+                                  
+(Intercept)                    ***
+conditionHigh Stress - Low Cog ***
+conditionLow Stress - High Cog    
+conditionLow Stress - Low Cog  ***
+age                               
+gender                         .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Correlation of Fixed Effects:
+            (Intr) cHS-LC cLS-HC cLS-LC age   
+cndtnHgS-LC -0.158                            
+cndtnLwS-HC -0.158  0.500                     
+cndtnLwS-LC -0.158  0.500  0.500              
+age         -0.739  0.000  0.000  0.000       
+gender      -0.755  0.000  0.000  0.000  0.226
+Type III Analysis of Variance Table with Satterthwaite's method
+           Sum Sq Mean Sq NumDF  DenDF F value    Pr(>F)    
+condition 157.083  52.361     3 71.706 19.7175 2.006e-09 ***
+age         2.101   2.101     1 23.515  0.7912   0.38273    
+gender      9.140   9.140     1 37.610  3.4420   0.07141 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1

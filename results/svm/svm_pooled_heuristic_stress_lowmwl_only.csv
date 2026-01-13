@@ -1,0 +1,6 @@
+"timestamp","fold","target","accuracy","f1","auc","features_used"
+2026-01-07 11:46:00.346903,"Fold1","stress_low_mwl",0.473684210526316,0.444444444444444,0.427777777777778,"eda_tonic_mean_precond;hr_med_precond;pupil_full_pupil_med_precond;eeg_faa_precond"
+2026-01-07 11:46:00.354223,"Fold2","stress_low_mwl",0.555555555555556,0.555555555555556,0.41358024691358,"eda_tonic_mean_precond;hr_med_precond;pupil_full_pupil_med_precond;eeg_faa_precond"
+2026-01-07 11:46:00.361265,"Fold3","stress_low_mwl",0.611111111111111,0.631578947368421,0.308641975308642,"eda_tonic_mean_precond;hr_med_precond;pupil_full_pupil_med_precond;eeg_faa_precond"
+2026-01-07 11:46:00.36802,"Fold4","stress_low_mwl",0.578947368421053,0.666666666666667,0.294444444444444,"eda_tonic_mean_precond;hr_med_precond;pupil_full_pupil_med_precond;eeg_faa_precond"
+2026-01-07 11:46:00.374574,"Fold5","stress_low_mwl",0.421052631578947,0.266666666666667,0.627777777777778,"eda_tonic_mean_precond;hr_med_precond;pupil_full_pupil_med_precond;eeg_faa_precond"

@@ -1,0 +1,34 @@
+
+STRESS CLASSIFICATION FAILURE DIAGNOSTIC
+=========================================
+
+KEY FINDINGS:
+
+1. EFFECT SIZES:
+   - Median |Cohen's d| for stress: 0.109
+   - Median |Cohen's d| for workload: 0.110
+   - Workload shows 1.0x larger effect sizes
+   
+2. PARTICIPANT CONSISTENCY:
+   - Features consistent across participants (stress): 53.0%
+   - Features consistent across participants (workload): 56.9%
+   
+3. TOP DISCRIMINATIVE FEATURES:
+   Stress: eeg_fm_lbeta_power_precond (d=0.309)
+   Workload: eeg_tb_ratio_precond (d=0.339)
+
+4. INTERPRETATION:
+   Stress manipulation in VR-TSST produces WEAK or INCONSISTENT physiological responses.
+   Individual differences in stress reactivity likely overwhelm condition effects.
+   Workload manipulation produces stronger, more consistent effects across participants.
+
+FILES GENERATED:
+  - stress_effect_sizes.csv
+  - workload_effect_sizes.csv  
+  - stress_vs_workload_effect_sizes.csv
+  - participant_consistency.csv
+  - condition_means.csv
+  - fig_effect_size_comparison.png
+  - fig_effect_size_distribution.png
+  - fig_participant_consistency.png
+

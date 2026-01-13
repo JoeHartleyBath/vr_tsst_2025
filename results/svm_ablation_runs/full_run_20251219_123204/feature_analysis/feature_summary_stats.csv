@@ -1,0 +1,7 @@
+domain,target,unique_features,most_common,max_selection_pct,features_above_50pct,features_above_75pct
+all,stress_label,10,eda_med_precond,100,5,5
+all,workload_label,8,eda_sd_precond,100,5,5
+eeg,stress_label,13,eeg_faa_precond,100,6,3
+eeg,workload_label,14,eeg_ab_ratio_precond,100,3,3
+peripheral,stress_label,6,hr_med_precond,100,5,5
+peripheral,workload_label,6,hr_med_precond,100,6,4

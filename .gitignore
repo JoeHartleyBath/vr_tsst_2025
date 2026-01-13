@@ -57,7 +57,7 @@ Thumbs.db
 *.fdt
 
 # Outputs (keep README only)
-/output/
+# /output/
 /output/sets/
 /output/cleaned_eeg/
 /output/cleaned_eeg_fixed/
@@ -71,7 +71,7 @@ Thumbs.db
 *.set
 
 # Results
-/results/
+# /results/
 *.rds
 
 # Logs

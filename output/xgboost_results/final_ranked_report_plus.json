@@ -1,0 +1,676 @@
+{
+  "stress_classification": {
+    "top_by_accuracy": [
+      {
+        "model": "Logistic Regression",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5584536001765037,
+        "auc_mean": 0.5887184675647775,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Logistic Regression",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5488424576410228,
+        "auc_mean": 0.5678455538647977,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5445993294954556,
+        "auc_mean": 0.5690367230107726,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5445159805440788,
+        "auc_mean": 0.5851432187181983,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Logistic Regression",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.531011676045589,
+        "auc_mean": 0.5586931324422075,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5291526562742943,
+        "auc_mean": 0.5570404963915236,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5287618915068082,
+        "auc_mean": 0.5400919956509613,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.524399898282196,
+        "auc_mean": 0.5377633338822809,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5223599886171857,
+        "auc_mean": 0.5274886093563548,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Neural Network (MLP)",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5200064226968224,
+        "auc_mean": 0.5322690038048336,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5192761933983367,
+        "auc_mean": 0.5262901972336617,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5186857782566181,
+        "auc_mean": 0.5351998217409295,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5174544294861432,
+        "auc_mean": 0.5238294109691062,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Neural Network (MLP)",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5076488392018579,
+        "auc_mean": 0.5134963316933593,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5048130483472495,
+        "auc_mean": 0.5195325069516982,
+        "tuned_params": null,
+        "threshold": null
+      }
+    ],
+    "top_by_auc": [
+      {
+        "model": "Logistic Regression",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5887184675647775,
+        "accuracy_mean": 0.5584536001765037,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5851432187181983,
+        "accuracy_mean": 0.5445159805440788,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5690367230107726,
+        "accuracy_mean": 0.5445993294954556,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Logistic Regression",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5678455538647977,
+        "accuracy_mean": 0.5488424576410228,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Logistic Regression",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5586931324422075,
+        "accuracy_mean": 0.531011676045589,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5570404963915236,
+        "accuracy_mean": 0.5291526562742943,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5400919956509613,
+        "accuracy_mean": 0.5287618915068082,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5377633338822809,
+        "accuracy_mean": 0.524399898282196,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5351998217409295,
+        "accuracy_mean": 0.5186857782566181,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Neural Network (MLP)",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5322690038048336,
+        "accuracy_mean": 0.5200064226968224,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5274886093563548,
+        "accuracy_mean": 0.5223599886171857,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5262901972336617,
+        "accuracy_mean": 0.5192761933983367,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5238294109691062,
+        "accuracy_mean": 0.5174544294861432,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5195325069516982,
+        "accuracy_mean": 0.5048130483472495,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Neural Network (MLP)",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5134963316933593,
+        "accuracy_mean": 0.5076488392018579,
+        "tuned_params": null,
+        "threshold": null
+      }
+    ],
+    "rows": 21
+  },
+  "workload_classification": {
+    "top_by_accuracy": [
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6601675918686458,
+        "auc_mean": 0.5812252252979766,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6518440238135342,
+        "auc_mean": 0.6087066467457978,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6465703706490287,
+        "auc_mean": 0.5967389787922248,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "K-Nearest Neighbors",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6370509518759784,
+        "auc_mean": 0.5789235023956656,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "K-Nearest Neighbors",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6327532398449861,
+        "auc_mean": 0.5559274429338641,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6322684271543759,
+        "auc_mean": 0.5840248205842145,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Neural Network (MLP)",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6263830347114454,
+        "auc_mean": 0.5610201213302923,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6214201487937316,
+        "auc_mean": 0.5778588407717835,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "K-Nearest Neighbors",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.6076228915970708,
+        "auc_mean": 0.5376768501665143,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5999466828800599,
+        "auc_mean": 0.5466265429452033,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5992304362022597,
+        "auc_mean": 0.5831847653471127,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5979290026146055,
+        "auc_mean": 0.547155785666153,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Neural Network (MLP)",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5957365072059714,
+        "auc_mean": 0.5392957429822773,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5925529447910539,
+        "auc_mean": 0.5818487000251468,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "accuracy_mean": 0.5896702324006302,
+        "auc_mean": 0.5245369169408247,
+        "tuned_params": null,
+        "threshold": null
+      }
+    ],
+    "top_by_auc": [
+      {
+        "model": "Random Forest",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.6087066467457978,
+        "accuracy_mean": 0.6518440238135342,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5967389787922248,
+        "accuracy_mean": 0.6465703706490287,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Random Forest",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5840248205842145,
+        "accuracy_mean": 0.6322684271543759,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5831847653471127,
+        "accuracy_mean": 0.5992304362022597,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Logistic Regression",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5827041834125075,
+        "accuracy_mean": 0.5858735585035342,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5818487000251468,
+        "accuracy_mean": 0.5925529447910539,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5812252252979766,
+        "accuracy_mean": 0.6601675918686458,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "K-Nearest Neighbors",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5789235023956656,
+        "accuracy_mean": 0.6370509518759784,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5778588407717835,
+        "accuracy_mean": 0.6214201487937316,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "SVM",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5674882795162745,
+        "accuracy_mean": 0.5769982169259074,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "XGBoost",
+        "modality": "eeg",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.564980784498584,
+        "accuracy_mean": 0.5892091478392516,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Logistic Regression",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5620460957933757,
+        "accuracy_mean": 0.5673731836516609,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Neural Network (MLP)",
+        "modality": "physio",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5610201213302923,
+        "accuracy_mean": 0.6263830347114454,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "K-Nearest Neighbors",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.5559274429338641,
+        "accuracy_mean": 0.6327532398449861,
+        "tuned_params": null,
+        "threshold": null
+      },
+      {
+        "model": "Linear Discriminant Analysis",
+        "modality": "all",
+        "baseline_adjustment": "zscore",
+        "normalization": "within_subject",
+        "baseline_duration": "last_90s",
+        "auc_mean": 0.547155785666153,
+        "accuracy_mean": 0.5979290026146055,
+        "tuned_params": null,
+        "threshold": null
+      }
+    ],
+    "rows": 21
+  }
+}

@@ -1,0 +1,2 @@
+contrast,estimate,SE,df,t.ratio,p.value,feature,term
+Low - High,-12.159090909090953,5.737787756735306,129,-2.119125249067987,0.03599654848376399,eda_tonic_mean_precond,stress_level

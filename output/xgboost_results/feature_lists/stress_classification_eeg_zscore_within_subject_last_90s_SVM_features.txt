@@ -1,0 +1,85 @@
+Task: stress_classification
+Model: SVM
+Modality: eeg
+Baseline: zscore
+Normalization: within_subject
+Duration: last_90s
+Feature count: 77
+
+FrontalLeft_Theta
+FrontalLeft_LowAlpha
+FrontalLeft_HighAlpha
+FrontalLeft_LowBeta
+FrontalLeft_HighBeta
+FrontalLeft_Alpha
+FrontalLeft_Beta
+FrontalRight_Theta
+FrontalRight_LowAlpha
+FrontalRight_HighAlpha
+FrontalRight_LowBeta
+FrontalRight_HighBeta
+FrontalRight_Alpha
+FrontalRight_Beta
+OverallFrontal_Theta
+OverallFrontal_LowAlpha
+OverallFrontal_HighAlpha
+OverallFrontal_LowBeta
+OverallFrontal_HighBeta
+OverallFrontal_Alpha
+OverallFrontal_Beta
+TemporalLeft_Theta
+TemporalLeft_LowAlpha
+TemporalLeft_HighAlpha
+TemporalLeft_LowBeta
+TemporalLeft_HighBeta
+TemporalLeft_Alpha
+TemporalLeft_Beta
+TemporalRight_Theta
+TemporalRight_LowAlpha
+TemporalRight_HighAlpha
+TemporalRight_LowBeta
+TemporalRight_HighBeta
+TemporalRight_Alpha
+TemporalRight_Beta
+Temporal_Theta
+Temporal_LowAlpha
+Temporal_HighAlpha
+Temporal_LowBeta
+Temporal_HighBeta
+Temporal_Alpha
+Temporal_Beta
+Central_Theta
+Central_LowAlpha
+Central_HighAlpha
+Central_LowBeta
+Central_HighBeta
+Central_Alpha
+Central_Beta
+ParietalLeft_Theta
+ParietalLeft_LowAlpha
+ParietalLeft_HighAlpha
+ParietalLeft_LowBeta
+ParietalLeft_HighBeta
+ParietalLeft_Alpha
+ParietalLeft_Beta
+ParietalRight_Theta
+ParietalRight_LowAlpha
+ParietalRight_HighAlpha
+ParietalRight_LowBeta
+ParietalRight_HighBeta
+ParietalRight_Alpha
+ParietalRight_Beta
+Parietal_Theta
+Parietal_LowAlpha
+Parietal_HighAlpha
+Parietal_LowBeta
+Parietal_HighBeta
+Parietal_Alpha
+Parietal_Beta
+FrontalMidline_Theta
+FrontalMidline_LowAlpha
+FrontalMidline_HighAlpha
+FrontalMidline_LowBeta
+FrontalMidline_HighBeta
+FrontalMidline_Alpha
+FrontalMidline_Beta

@@ -1,0 +1,58 @@
+Conditions found: High Stress - High Cog, High Stress - Low Cog, Low Stress - High Cog, Low Stress - Low Cog 
+
+ICC for: hr_mean_precond 
+Call: ICC(x = icc_data)
+
+Intraclass correlation coefficients 
+                         type  ICC   F df1 df2       p lower bound upper bound
+Single_raters_absolute   ICC1 0.38 3.4  46 141 1.2e-08        0.23        0.54
+Single_random_raters     ICC2 0.41 5.4  46 138 9.8e-15        0.21        0.59
+Single_fixed_raters      ICC3 0.52 5.4  46 138 9.8e-15        0.38        0.66
+Average_raters_absolute ICC1k 0.71 3.4  46 141 1.2e-08        0.54        0.82
+Average_random_raters   ICC2k 0.74 5.4  46 138 9.8e-15        0.52        0.85
+Average_fixed_raters    ICC3k 0.81 5.4  46 138 9.8e-15        0.71        0.89
+
+ Number of subjects = 47     Number of Judges =  4
+See the help file for a discussion of the other 4 McGraw and Wong estimates,
+ICC for: hrv_rmssd_precond 
+Call: ICC(x = icc_data)
+
+Intraclass correlation coefficients 
+                         type   ICC   F df1 df2    p lower bound upper bound
+Single_raters_absolute   ICC1 0.070 1.3  46 141 0.12      -0.044        0.22
+Single_random_raters     ICC2 0.074 1.3  46 138 0.11      -0.039        0.23
+Single_fixed_raters      ICC3 0.075 1.3  46 138 0.11      -0.040        0.23
+Average_raters_absolute ICC1k 0.231 1.3  46 141 0.12      -0.202        0.54
+Average_random_raters   ICC2k 0.242 1.3  46 138 0.11      -0.174        0.54
+Average_fixed_raters    ICC3k 0.246 1.3  46 138 0.11      -0.180        0.55
+
+ Number of subjects = 47     Number of Judges =  4
+See the help file for a discussion of the other 4 McGraw and Wong estimates,
+ICC for: eda_mean_precond 
+Call: ICC(x = icc_data)
+
+Intraclass correlation coefficients 
+                         type  ICC   F df1 df2       p lower bound upper bound
+Single_raters_absolute   ICC1 0.36 3.2  46 141 5.1e-08        0.21        0.52
+Single_random_raters     ICC2 0.38 3.9  46 138 3.1e-10        0.22        0.54
+Single_fixed_raters      ICC3 0.42 3.9  46 138 3.1e-10        0.27        0.58
+Average_raters_absolute ICC1k 0.69 3.2  46 141 5.1e-08        0.52        0.81
+Average_random_raters   ICC2k 0.71 3.9  46 138 3.1e-10        0.53        0.82
+Average_fixed_raters    ICC3k 0.74 3.9  46 138 3.1e-10        0.60        0.85
+
+ Number of subjects = 47     Number of Judges =  4
+See the help file for a discussion of the other 4 McGraw and Wong estimates,
+ICC for: eeg_fm_theta_power_precond 
+Call: ICC(x = icc_data)
+
+Intraclass correlation coefficients 
+                         type  ICC   F df1 df2       p lower bound upper bound
+Single_raters_absolute   ICC1 0.30 2.7  46 141 5.0e-06        0.15        0.46
+Single_random_raters     ICC2 0.30 2.8  46 138 1.8e-06        0.16        0.47
+Single_fixed_raters      ICC3 0.31 2.8  46 138 1.8e-06        0.17        0.48
+Average_raters_absolute ICC1k 0.63 2.7  46 141 5.0e-06        0.42        0.77
+Average_random_raters   ICC2k 0.63 2.8  46 138 1.8e-06        0.43        0.78
+Average_fixed_raters    ICC3k 0.64 2.8  46 138 1.8e-06        0.44        0.79
+
+ Number of subjects = 47     Number of Judges =  4
+See the help file for a discussion of the other 4 McGraw and Wong estimates,

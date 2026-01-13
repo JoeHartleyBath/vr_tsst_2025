@@ -1,0 +1,10 @@
+timestamp,test_pid,target,k,final_acc,final_f1,final_auc,inner_best_acc,cost,gamma,feature_n,feature_set,features_used
+2025-12-19 15:11:54.245044,1,"workload_label",3,0.5,0.5,0.5,0.593023255813954,4,0.0078125,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_tleft_lbeta_power_precond"
+2025-12-19 15:11:59.479642,3,"workload_label",3,1,1,1,0.616279069767442,2,0.125,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_fm_hbeta_power_precond"
+2025-12-19 15:12:04.834215,4,"workload_label",3,0,0,0,0.604651162790698,128,0.03125,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_fl_beta_power_precond"
+2025-12-19 15:12:10.194984,5,"workload_label",3,0.75,0.666666666666667,1,0.598837209302326,16,0.03125,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_pleft_hbeta_power_precond"
+2025-12-19 15:12:15.621847,6,"workload_label",3,1,1,1,0.581395348837209,8,0.0078125,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_tleft_lbeta_power_precond"
+2025-12-19 15:12:21.132364,7,"workload_label",3,0.5,0.5,0.5,0.581395348837209,2,0.0078125,3,"top3","eeg_ab_ratio_precond;eeg_tb_ratio_precond;eeg_tleft_lbeta_power_precond"
+2025-12-19 15:12:26.749479,9,"workload_label",3,0.5,0.5,0.75,0.598837209302326,32,0.03,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_pleft_hbeta_power_precond"
+2025-12-19 15:12:32.306018,10,"workload_label",3,0.5,0.5,0.5,0.598837209302326,256,0.0078125,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_pleft_hbeta_power_precond"
+2025-12-19 15:12:38.088785,11,"workload_label",3,0.75,0.8,1,0.575581395348837,2,0.0078125,3,"top3","eeg_tb_ratio_precond;eeg_ab_ratio_precond;eeg_tleft_lbeta_power_precond"
