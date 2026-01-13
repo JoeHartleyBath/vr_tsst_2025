@@ -1,0 +1,62 @@
+This is BibTeX, Version 0.99e
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: manuscript_MAIN_verification.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: IEEEtran.bst
+Reallocating 'name_of_file' (item size: 1) to 11 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'wiz_functions' (item size: 4) to 6000 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Database file #1: references.bib
+Warning--I didn't find a database entry for "campbell-sillsPsychometricPropertiesSubjective2006"
+Warning--I didn't find a database entry for "goncharovaEMGContaminationEEG2003"
+Warning--I didn't find a database entry for "klimeschEEGAlphaTheta1999"
+-- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
+-- http://www.michaelshell.org/tex/ieeetran/bibtex/
+-- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+
+Done.
+You've used 56 entries,
+            4087 wiz_defined-function locations,
+            1213 strings with 20118 characters,
+and the built_in function-call counts, 45827 in all, are:
+= -- 4091
+> -- 989
+< -- 419
++ -- 554
+- -- 182
+* -- 2178
+:= -- 6903
+add.period$ -- 112
+call.type$ -- 56
+change.case$ -- 56
+chr.to.int$ -- 840
+cite$ -- 56
+duplicate$ -- 3371
+empty$ -- 3223
+format.name$ -- 218
+if$ -- 10713
+int.to.chr$ -- 0
+int.to.str$ -- 56
+missing$ -- 527
+newline$ -- 193
+num.names$ -- 56
+pop$ -- 1042
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 2
+skip$ -- 3703
+stack$ -- 0
+substring$ -- 2278
+swap$ -- 2928
+text.length$ -- 139
+text.prefix$ -- 0
+top$ -- 5
+type$ -- 56
+warning$ -- 0
+while$ -- 210
+width$ -- 58
+write$ -- 612
+(There were 3 warnings)

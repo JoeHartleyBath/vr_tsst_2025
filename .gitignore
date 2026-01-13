@@ -94,3 +94,6 @@ Thumbs.db
 
 # Intermediate
 /intermediate
+
+output/cache/
+output/sets/

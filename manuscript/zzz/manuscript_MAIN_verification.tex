@@ -1,0 +1,542 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\IfFileExists{stfloats.sty}{\usepackage{stfloats}}{}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% updated with editorial comments 8/9/2021
+
+\begin{document}
+
+\title{Discriminating Stress and Mental Workload Using Multimodal Physiological Signals}
+
+\author{Anonymised for Review}
+
+% The paper headers
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2021}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+\maketitle
+
+
+\begin{abstract}
+Reliable inference of cognitive–affective states such as stress and mental workload (MWL) is essential for adaptive systems in domains ranging from education and healthcare to safety-critical operations. However, these states often co-occur and share physiological signatures, complicating their discrimination and limiting model generalisability. This study systematically varied stress and MWL in a controlled (N=44), ecologically valid task environment using virtual reality (VR), recording multimodal physiological signals including electroencephalography (EEG), electrodermal activity (EDA), heart rate, and pupillometry. Specifically, this study developed an immersive VR adaptation of the Trier Social Stress Test (TSST) incorporating a 2×2 factorial design that systematically varied stress (high/low) and MWL (high/low) to examine their overlapping yet partially discriminable physiological responses. Using nested leave-one-subject-out evaluation with support vector machine (SVM) classifiers, we found that, across levels of the non-target state, MWL could be classified above chance from multimodal features, whereas stress classification did not reach significance, despite marginal univariate sensitivity of tonic EDA to the stress manipulation. These results clarify where physiological signatures of stress and MWL converge and diverge under ecologically plausible task demands, and provide practical guidance for building more robust affective-computing inference systems.
+
+\end{abstract}
+
+
+\begin{IEEEkeywords}
+Affective computing, stress, mental workload, multimodal physiology, machine learning, virtual reality.
+\end{IEEEkeywords}
+
+
+
+\section{Introduction}
+
+Physiological computing systems infer users’ cognitive–affective states (e.g., stress, engagement, fatigue) from neurophysiological and autonomic signals such as electroencephalography (EEG), electrodermal activity (EDA), heart rate and heart rate variability (HR/HRV), and pupillometry \cite{faircloughFundamentalsPhysiologicalComputing2009, dehaisNeuroergonomicsApproachMental2020, alimardaniPassiveBrainComputerInterfaces2020, markMentalWorkloadAssessment2024}. These systems enable continuous, unobtrusive monitoring of the user’s internal states without requiring explicit input \cite{aricoAdaptiveAutomationTriggered2016, dehaisNeuroergonomicsApproachMental2020, meteierClassificationDriversWorkload2021, alimardaniPassiveBrainComputerInterfaces2020}. Physiological computing is particularly relevant to safety-critical, high-demand settings—such as aviation \cite{dehaisDualPassiveReactive2022}, driving \cite{meteierClassificationDriversWorkload2021, masiStressWorkloadAssessment2023}, and defence \cite{liuReviewEmotionRecognition2021, huttunenEffectCognitiveLoad2011}—where awareness of the user’s cognitive–affective state is vital for system performance and safety. Yet, inferring user states through explicit reporting can disrupt task execution and increase risk \cite{zanderPassiveBraincomputerInterfaces2011, dehaisNeuroergonomicsApproachMental2020, dehaisDualPassiveReactive2022}.
+
+These implicit inferences must remain reliable under realistic conditions. Errors in state inference can lead systems to behave erroneously, such as intervening when unnecessary, or failing to act when required \cite{novakEffectsAdaptationAccuracy2024a, aricoAdaptiveAutomationTriggered2016}, thus producing unintended adverse effects on user experience and performance \cite{forbes-rileyUsingPerformanceTrajectories2011, novakEffectsAdaptationAccuracy2024a}. Such events also undermine user trust in the system’s reliability and adaptive capabilities \cite{hossainDifferentAdaptationError2025, hollandCalibratingTrustReliance2024, demirezenReproducibleMachineLearning2024}. However, achieving the level of accuracy required for reliable state inference remains challenging. Models that perform well on training data often experience substantial degradation in accuracy when applied to new users or contexts, reflecting poor cross-participant/user and cross-dataset/session generalisation \cite{demirezenReproducibleMachineLearning2024, vosGeneralizableMachineLearning2023, benchekrounCrossDatasetAnalysis2023}. For instance, a recent cross-dataset stress-detection study reported reductions in classification accuracy of roughly 20–40 \% when models trained on one type of stressor were tested on another, illustrating how contextual changes can markedly degrade model performance \cite{prajodStressorTypeMatters2024}.
+
+A growing body of work suggests that poor cross-participant and cross-context generalisation is partly explained by state discriminability — the extent to which a physiological feature or model output is sensitive to the target mental state rather than concurrent influences such as task structure, general physiological arousal, or environmental artefacts. Low discriminability occurs when features encode either irrelevant patterns spuriously correlated with the task or non-unique responses expressed across multiple mental states. Recent evidence suggests that limited discriminability may be a key contributor to poor generalisability \cite{parentDiagnosticityPsychophysiologicalSignatures2019, bagheriEEGbasedDetectionMental2020, bagheriSimultaneousClassificationBoth2022}. For example, EEG models trained to detect one mental state lost up to approximately 15\% accuracy when the training and test data differed in the other concurrent state dimension, as demonstrated in \cite{bagheriEEGbasedDetectionMental2020}, indicating that even modest variation in co-occurring states can substantially degrade detection reliability. These findings highlight that overlapping physiological responses across mental states can impair state discriminability and, in turn, model performance. However, the phenomenon of overlapping physiological responses, and their impact on state discriminability, remains poorly characterised and relatively underexplored within affective computing, despite its potential to improve the reliability and generalisability of such systems across users and contexts.
+
+Accounting for overlapping physiological responses is especially salient in the context of stress and mental workload (MWL), two foundational yet often conflated constructs in physiological computing. These states represent distinct but interacting dimensions of cognitive–affective function that influence attention, decision-making, and overall task performance \cite{faircloughFundamentalsPhysiologicalComputing2009, dehaisNeuroergonomicsApproachMental2020, alimardaniPassiveBrainComputerInterfaces2020, reimerImpactCognitiveWorkload2011}. Stress reflects an affective–autonomic response to perceived threat or evaluation, whereas MWL reflects the cognitive demands placed on limited attentional resources \cite{faircloughFundamentalsPhysiologicalComputing2009, alimardaniPassiveBrainComputerInterfaces2020, dehaisNeuroergonomicsApproachMental2020, reimerImpactCognitiveWorkload2011}. Because both modulate arousal and engage cognitive control systems via overlapping autonomic and cortical mechanisms \cite{mehlerPhysiologicalReactivityGraded2010, manMultisystemicEvaluationBiological2023, masiStressWorkloadAssessment2023}, their physiological signatures converge across modalities \cite{faircloughFundamentalsPhysiologicalComputing2009}, creating ambiguity for machine-learning models that must distinguish between cognitive and affective sources of physiological activation \cite{parentDiagnosticityPsychophysiologicalSignatures2019, bagheriEEGbasedDetectionMental2020}. Despite these overlaps, converging evidence suggests that stress and MWL are elicited by different kinds of challenges and engage distinct neurophysiological processes. MWL primarily increases activation within the executive-control network as cognitive demands intensify \cite{dehaisNeuroergonomicsApproachMental2020}, whereas stress involves affective–autonomic responses \cite{giannakakisReviewPsychologicalStress2022} that can further recruit these networks under social evaluation or threat \cite{causseFacingSuccessfullyHigh2021}. Understanding the shared and distinct physiological signatures of stress and MWL is crucial for informing the design of systems that can infer and respond appropriately to each state.
+
+Most of the prior research on the physiological discriminability of stress and MWL has relied on conventional computer-based laboratory paradigms that simulate stress or MWL through onscreen tasks \cite{setzDiscriminatingStressCognitive2010, parentDiagnosticityPsychophysiologicalSignatures2019, muhlEEGbasedWorkloadEstimation2014, bagheriEEGbasedDetectionMental2020, bagheriSimultaneousClassificationBoth2022, ehrhardtSeparatingEEGCorrelates2022, vanhollebekeEffectsAcutePsychosocial2023, peiIdentifyingNeurophysiologicalCorrelates2024}. Within these paradigms, stress was typically induced through tightly controlled manipulations, such as aversive auditory stimuli \cite{parentDiagnosticityPsychophysiologicalSignatures2019} or anticipated public speaking \cite{bagheriEEGbasedDetectionMental2020, bagheriSimultaneousClassificationBoth2022}, which, while effective for eliciting acute stress under controlled conditions, offer limited generalisation to more ecologically valid contexts. In addition, many investigations have drawn on a narrow range of physiological measures, often a single modality \cite{setzDiscriminatingStressCognitive2010, ehrhardtSeparatingEEGCorrelates2022, bagheriEEGbasedDetectionMental2020, bagheriSimultaneousClassificationBoth2022,gioiaDiscriminatingStressCognitive2021} or sparse sensor arrays \cite{ehrhardtSeparatingEEGCorrelates2022, parentDiagnosticityPsychophysiologicalSignatures2019}, yielding a limited account of the neural and autonomic processes involved.
+
+To address these limitations, we introduce an interpretable multimodal framework built on a virtual reality adaptation of the Trier Social Stress Test (VR-TSST) to examine how overlapping yet discriminable neural and autonomic responses to stress and MWL contribute to physiological state inference. 
+First, the framework employs a 2×2 factorial design to vary stress (high/low) and MWL (high/low) while maintaining comparable sensory and task settings, balancing ecological realism with experimental control.
+Second, it integrates multimodal physiological sensing—neurological (EEG), autonomic (HR/HRV, EDA), and oculometric (pupillometry)—within a unified analytic pipeline, enabling direct comparison of neural and peripheral indicators of state discriminability.
+Third, it incorporates machine-learning models alongside rigorous inferential statistical analyses to examine the discriminability of physiological responses.
+Together, these components provide a principled and interpretable basis for advancing the discrimination of co-occurring mental states in physiological computing systems.
+
+The contributions are as follows:
+
+\begin{enumerate}
+\item Paradigm – A 2×2 VR adaptation of the TSST that manipulates stress and MWL independently within one interactive loop.
+
+\item Pipeline – A multimodal acquisition and preprocessing framework (EEG, EDA, HR/HRV, pupillometry) designed for subject-independent modelling.
+
+\item Inference – Subject-independent SVM classifiers trained to discriminate binary stress and MWL labels under nested leave-one-subject-out (LOSO) evaluation.
+
+\end{enumerate}
+
+Empirical analysis shows that factorial manipulations elicit the intended subjective changes. Predictive models achieve moderate but non-trivial accuracy gains relative to baselines. These findings indicate that multimodal models can provide partial discrimination of overlapping states in ecologically plausible tasks, thereby advancing the reliability of physiological inference for adaptive systems.
+
+The remainder of the paper is organised as follows. Section II details the paradigm, acquisition pipeline, and modelling framework. Section III reports manipulation checks and predictive analyses. Section IV examines state discriminability and broader implications.
+
+
+\section{Methods}
+
+
+\subsection{Experimental Design}
+The study employed a 2~\(\times\)~2 within-subjects design with factors of Stress (Low vs.\ High) and MWL (Low vs.\ High), resulting in four experimental conditions: \textbf{Low-Stress/Low-MWL}, \textbf{Low-Stress/High-MWL}, 
+\textbf{High-Stress/Low-MWL}, and \textbf{High-Stress/High-MWL}.
+ Participants completed all four conditions in a fully counterbalanced order, with two alternate versions of the \textbf{High-MWL} task used to minimise practice effects. Across participants, the 24 counterbalanced condition orders were doubled to account for these task variants, yielding 48 unique experimental configurations.
+
+\subsection{Immersive Environment and Task Design}
+\label{sec:immersive_env_task}
+The Trier Social Stress Test (TSST) is a widely used and well-validated protocol for eliciting psychosocial stress, reliably inducing increases in subjective, physiological, and hormonal stress markers \cite{goodmanMetaanalyticalAssessmentEffects2017, vanhollebekeNeuralCorrelatesPsychosocial2022a}. This study implemented a virtual adaptation of the TSST to reproduce two of its core components: social evaluation by observers and a cognitively demanding arithmetic task. The immersive VR format preserved these elements while providing enhanced experimental control and ecological validity \cite{helminenStressReactivityTrier2021}.
+
+Stress was manipulated by varying the intensity of social evaluation conveyed through the immersive social environment and accompanying pre-task instructions. In the \textbf{High-stress} condition, participants performed arithmetic tasks before avatars that displayed attentive, evaluative nonverbal behaviour and were formally dressed, simulating a job-interview-like scenario to evoke social-evaluative stress. To reinforce the evaluative context, the experimenter explicitly informed participants that their verbal responses would be recorded and subsequently evaluated by experts, although no actual recordings were made. 
+
+In contrast, in the \textbf{Low-stress} condition, avatars were casually dressed and displayed disengaged behaviour, such as avoiding eye contact and uHsing laptops, while participants were explicitly told that their performance was neither recorded nor evaluated. Previous work has shown that social-evaluative stress is markedly reduced when observers display neutral or inattentive behaviour \cite{yeImpactAudienceDynamics2024}. Participants were encouraged to proceed at their own pace and reassured that mistakes were expected. Such framing has been shown to attenuate stress responses in modified TSST paradigms \cite{wiemersFriendlyVersionTrier2013}.
+
+MWL was manipulated by varying the difficulty of the arithmetic task, consistent with established TSST-based and MWL paradigms. In the \textbf{Low-MWL} condition, participants counted aloud in steps of 15, a task intended to maintain verbal engagement while imposing minimal cognitive demand \cite{guezEffectTrierSocial2016}. In the \textbf{High-MWL} condition, participants performed serial subtractions of 13 or 17 from four-digit numbers, tasks that impose sustained working-memory and arithmetic demands and are widely used in TSST variants to elicit high MWL \cite{giannakakisReviewPsychologicalStress2022}. Task variants were alternated to prevent participants from adopting predictable response patterns, as retrieval-based strategies impose lower cognitive demand than procedural computation \cite{sokolowskiNeuralCorrelatesRetrieval2023}.
+
+To assess subjective experience following each task, participants rated their perceived stress using a single-item Likert scale, a method shown to correlate well with validated stress questionnaires and suitable for capturing acute stress responses \cite{littmanReliabilityValidity22006}. Subjective MWL was assessed after each condition using the mental-demand subscale of the NASA Task Load Index (NASA-TLX), rated on an 11-point scale (0–10 inclusive), which reliably indexes perceived MWL in task-based settings \cite{hartDevelopmentNASATLXTask1988}.
+
+A three-minute relaxation scene was presented after each condition to minimise physiological carryover effects. The scene featured naturalistic forest visuals, ambient nature sounds, and a brief guided breathing instruction. Such short restorative breaks are known to support affective and physiological recovery following stress-inducing tasks \cite{chanNatureVirtualReality2021, albulescuGiveMeBreak2022, kumpulainenAssessingWellbeingBenefits2024}.
+
+To strengthen the perception of social evaluation while avoiding auditory feedback that could introduce EEG artefacts through evoked responses and muscle activity, a visual feedback cue was implemented \cite{ahissarSpeechComprehensionCorrelated2001}. A vertical progress bar was displayed during each task to simulate evaluative feedback, and participants were told it reflected their performance relative to pilot participants. The bar updated after each verbal response, creating the impression of continuous assessment. Its feedback rule was identical across participants and enforced a condition-specific bias: the bar remained entirely below the midpoint in the high-stress condition and entirely above it in the low-stress condition. To enhance credibility, the display responded noticeably to performance fluctuations within these bounds, so trajectories varied slightly between participants while adhering to the condition-specific bias. 
+
+\subsubsection{Randomisation, Counterbalancing, and Blinding}
+The order of the four experimental conditions (2×2 Stress × MWL) was fully counterbalanced across participants, yielding 24 unique condition sequences. Two variants of the high-MWL task were alternated between participants to minimise practice effects, resulting in 48 distinct experimental configurations overall. Condition order and task variant assignment were independently randomised for each participant. The experimenter was aware of the condition but provided no feedback or performance cues during the trials to maintain consistency of instruction and social context across participants. Participants were naïve to the purpose of the manipulations and were only informed that they might complete arithmetic-based tasks during the session, enabling brief pre-task practice without revealing the experimental aims.
+
+\subsection{Apparatus}
+The experiment was conducted within a virtual reality environment using an HTC Vive Pro Eye headset (combined resolution 2880~\(\times\)~1600~pixels, refresh rate 90~Hz) with six-degree-of-freedom (6~DoF) positional tracking using Valve Lighthouse~2.0 base stations (SteamVR Tracking~2.0). Physiological signals were recorded using multiple devices: the headset’s built-in eye tracker for pupillometry, a Shimmer3 GSR+ for electrodermal activity (EDA), and a Polar H10 heart-rate monitor for heart rate and heart rate variability (HR and HRV). Facial motion data were also captured using a Vive Face Tracker but were not included in the final analysis.  
+
+EEG signals were recorded using an ANT~Neuro eego~mylab system with a 128-channel waveguard\textsuperscript{TM} net arranged in an equidistant montage referenced to Cz. Data were sampled at 500~Hz. Electrode impedances were typically kept below 30~\(\mathrm{k}\Omega\) per channel, consistent with manufacturer guidance for the saline-based Waveguard\textsuperscript{TM} system. In line with the study’s focus on stress- and MWL-related activity, greater care was taken to optimise contact over frontal and parietal regions. Ideal impedance levels across all 128 electrodes were not always achievable, as setup efficiency and participant comfort were prioritised over complete optimisation, but slightly higher impedances were acceptable given the system’s tolerance. 
+
+The VR simulation was based on the Entertainment Computing Group’s VR-TSST (Version~2.3), a virtual adaptation of the Trier Social Stress Test (TSST) validated to induce social-evaluative stress \cite{liszioRelaxationDistractionFun2021}. The VR-TSST was obtained from \url{https://github.com/MIEC/vr-tsst} and modified extensively to integrate physiological data acquisition and adapt the virtual environment for the present study (see Section~\ref{sec:immersive_env_task} for details).
+
+\subsection{Participants}
+\label{sec:participants}
+Forty-eight participants were recruited using convenience sampling through university-wide emails and posters at a UK university between August and December 2024. 
+All participants were aged 18 years or older, fluent in English, and reported normal or corrected-to-normal vision. 
+Exclusion criteria were a self-reported history of severe motion sickness, limited mobility, epilepsy, recurrent fainting spells, or febrile convulsions in infancy. 
+After automated signal-quality checks and dataset validation, 44 participants were retained for analysis (mean age = 30.8 years, standard deviation (SD) = 13.8; 23 female). 
+Of the final sample, 41 reported having at least some prior experience with VR equipment (reporting 'Daily', 'Weekly', or 'Occasionally' usage), indicating a generally tech-literate sample.
+All participants provided written informed consent prior to participation, and the study was approved by the Institutional Ethics Committee (reference: 2614-2411). 
+Each participant received £30 compensation for their time. Experimental sessions took place in an electromagnetically shielded room within the Department of Psychology to minimise electromagnetic interference during data acquisition.
+
+\subsection{Procedure}
+Each session lasted approximately two hours and followed a structured sequence of setup, baseline calibration, four experimental conditions, and debriefing. Before calibration, participants were fitted with EEG (ANT~Neuro eego~mylab), EDA (Shimmer3~GSR+), and heart rate (Polar~H10) sensors. EEG signal quality was verified via impedance checks and live monitoring in the acquisition software, while EDA and HR readings were inspected in Unity to confirm realistic streaming values prior to baseline recording. 
+
+A ten-minute calibration and baseline phase was conducted within VR. This included calibration of the eye-tracking system and pupil baseline recording across controlled luminance levels, followed by two one-minute EEG baselines. During the first baseline, participants fixated on a cross presented on a blank background; during the second, they fixated within a neutral virtual room designed as an intermediate environment between the stress and calm scenes used later in the experiment. These baselines provided reference measures for both resting-state and context-specific neural activity.
+
+Each experimental block comprised a 3-minute relaxation scene, a 3-minute arithmetic task, and immediate subjective ratings, with physiological signals recorded continuously throughout. Before each task, the experimenter verbally delivered brief condition-specific instructions and refrained from interaction during the task. This sequence was repeated four times according to the counterbalanced condition order. 
+
+After completing all conditions, participants removed the VR headset and sensors, completed final questionnaires, were fully debriefed, and received compensation for their participation.
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/schematic.png}
+    \caption{Overview of the experimental protocol. The experimental block was repeated four times with counterbalanced TSST conditions (2$\times$2: stress $\times$ MWL). Panels (a)–(c) show the relaxation, high-stress, and low-stress scenes, respectively.}
+    \label{fig:schematic}
+    \vspace{-1.7em}
+\end{figure*}
+
+
+
+\subsection{Data Acquisition and Synchronisation}
+
+
+\label{sec:acquisition}
+Data from the physiological devices were streamed into Unity at an effective rate of approximately 30~Hz (one sample per rendered frame) and synchronised via the Lab Streaming Layer (LSL). EEG was recorded separately at 500~Hz to an Extensible Data Format (XDF) file and later temporally aligned with the Unity-based physiological streams. Data from the wireless devices (Shimmer3~GSR+ and Polar~H10) were transmitted via Bluetooth Low Energy (BLE) to a VR-capable desktop workstation running the Unity-based recording application. All physiological and behavioural data streams were time-synchronised using the Lab Streaming Layer (LSL; \cite{kotheLabStreamingLayer2024}) framework, which provided a unified clock across acquisition systems. All data streams were therefore temporally aligned on the common LSL clock, yielding a unified multimodal dataset for subsequent preprocessing and feature extraction. Although LSL provides convenient software-based synchronisation, minor offsets due to clock drift and network latency typically remain within a few milliseconds. However, this limitation was not considered critical given that all physiological features were computed over relatively long time windows, where sub-millisecond timing differences are negligible.
+
+\subsection{Signal Pre-processing and Feature Extraction}
+Each modality then underwent a modality-specific sequence of resampling, artefact removal or signal cleaning, and segmentation by experimental condition. Features were subsequently extracted from the cleaned segments and baseline-corrected relative to the preceding relaxation period, as detailed in the following subsections.
+
+\subsubsection{EEG}
+EEG data were recorded from 128 electrodes at 500~Hz and processed in MATLAB (EEGLAB~v2024.1) following standard high-density EEG preprocessing procedures. Noisy or flat channels were automatically rejected using the EEGLAB \textit{clean\_rawdata} algorithm to detect channels poorly correlated with neighbouring sensors or exhibiting excessive line noise. Excluded channels were later interpolated after ICA to preserve spatial consistency. Continuous EEG data were band-pass filtered between 1--49~Hz using a zero-phase finite impulse response (FIR) filter and notch filtered at 50~Hz to remove line noise. Participants 1--7 exhibited a stable 25~Hz artefact, which was attenuated using an additional notch filter. The filtered data were then downsampled to 125~Hz prior to artefact rejection. Independent components were estimated using Adaptive Mixture ICA (AMICA), and artefact classification was performed with ICLabel \cite{pion-tonachiniICLabelAutomatedElectroencephalographic2019}. Components labeled with $\geq$90\% probability as ocular or muscle activity were removed using ICFlag, while other classes (e.g., cardiac, line noise) were retained to minimise over-rejection. Following component removal, previously excluded channels were interpolated using spherical splines and data were re-referenced to the common average. Spectral features were derived from the cleaned, re-referenced EEG using Welch’s method with 2~s Hamming windows and 50\% overlap, as implemented in EEGLAB and MATLAB. Power spectral density (PSD) was averaged within canonical frequency bands ($\theta$:~4--8~Hz, $\alpha$:~8--13~Hz, $\beta$:~13--30~Hz) and log$_{10}$-transformed to normalise the distribution. Additionally, three standard ratio-based features were computed to capture relative power distribution and hemispheric asymmetry: Frontal Alpha Asymmetry (right minus left frontal alpha power), Frontal Alpha/Beta Ratio, and Frontal Midline Theta/Beta Ratio. Because power values were log-transformed, these ratios were computed as differences (e.g., $\log \theta - \log \beta$). 
+
+In addition to band power, spectral entropy (\( \mathrm{SpecEn} \)) was computed to quantify the uniformity of the normalised PSD across 1--30~Hz (excluding 8--13~Hz)~\cite{inouyeQuantificationEEGIrregularity1991}:
+\begin{equation}
+\mathrm{SpecEn} = -\sum_i p(f_i)\log_2 p(f_i), \quad 
+p(f_i)=\frac{P(f_i)}{\sum_j P(f_j)} ,
+\end{equation}
+where \(P(f_i)\) is the mean PSD at frequency \(f_i\). Higher values indicate flatter (more irregular) spectra, consistent with the Shannon formulation of informational entropy~\cite{shannonMathematicalTheoryCommunication}. Spectral entropy was averaged across channels within each cortical region to yield a single regional feature per condition.
+
+Spectral features were computed for the full 3-minute duration of each condition.
+
+
+\subsubsection{Electrodermal Activity (EDA)}
+Skin-conductance signals were recorded using a Shimmer3 GSR$+$ sensor and resampled to 10 Hz. Signals outside the physiological range 0.01–30 $\mu$S were considered artefactual. Flat segments longer than 5s were removed, and short gaps ($\leq$5~s) were linearly interpolated. Signals were detrended and low-pass filtered (Butterworth, 3~Hz) before decomposition into tonic and phasic components following standard procedures \cite{makowskiNeuroKit2PythonToolbox2021}. Tonic activity was indexed by the mean and standard deviation of skin-conductance level, and phasic activity by the rate, total area, and total count of skin-conductance responses.
+
+\subsubsection{Heart Rate and Heart Rate Variability (HR/HRV)}
+Heart-rate and interbeat-interval data were recorded using a Polar~H10 sensor. Values outside physiological ranges (40--220~bpm; 100--2000~ms) were treated as artefactual and corrected using linear or cubic interpolation across brief discontinuities. Ectopic beats were corrected using the Kubios method~\cite{lipponenRobustAlgorithmHeart2019} implemented in \textit{NeuroKit2}~\cite{makowskiNeuroKit2PythonToolbox2021}, followed by a rolling median--absolute--deviation filter for residual outlier removal. Root mean square of successive differences (RMSSD) was derived from the cleaned interbeat intervals.
+
+\subsubsection{Pupillometry}
+Binocular pupil diameter was recorded at an effective rate of 30~Hz using the Vive~Pro~Eye tracker. 
+Subject-specific luminance calibration was conducted during the baseline phase to estimate each participant’s resting pupillary response to varying scene luminance levels. During each condition, instantaneous scene luminance at the participant’s gaze point was logged, and pupil diameter was corrected by subtracting the participant’s calibrated resting pupil response to that luminance, obtained during the pre-experiment calibration phase.
+Values outside the range of $\pm$4~mm were discarded, and eye closures were identified from rapid negative velocity and low-magnitude drops in both eyes. 
+Short gaps ($\leq$0.3~s) were linearly interpolated, and the cleaned left and right traces were then averaged and low-pass filtered at 4~Hz (Butterworth).
+Mean pupil diameter and its standard deviation were computed directly.
+
+
+\subsubsection{Covariates and Confounds}
+Participant demographics (age and gender) were included as covariates in confirmatory mixed-effects analyses to account for potential individual differences in subjective ratings. 
+
+
+\subsection{Data Segmentation and Baseline Correction}
+Each participant’s recording was divided into contiguous segments corresponding to the four experimental conditions and their preceding 3-minute baselines. For every physiological measure, feature values from each condition were baseline-corrected by subtraction of the participant’s own preceding relaxation mean. This approach isolates task-related reactivity while controlling for slow physiological drift.
+
+\subsection{Quality Control and Participant Exclusion}
+\label{sec:qc}
+
+Automated quality-control (QC) logs were generated for each participant and modality using modality-specific thresholds applied during preprocessing. For peripheral physiological data, participants were excluded if less than $50\%$ of samples were retained in any condition, sensor, or overall dataset. Specifically, exclusion occurred if data retention for (i) any sensor within a condition, (ii) any condition within a sensor, (iii) across all sensors, or (iv) across all conditions fell below this threshold.
+
+For EEG, participants were excluded if, after preprocessing, less than $75\%$ of data samples were retained, more than $25\%$ of channels were interpolated, or over $40\%$ of independent components were removed. EEG waveform plots were automatically generated and visually inspected by one researcher after each major cleaning step (channel rejection and ICA component removal) to confirm satisfactory data quality.
+
+All QC metrics, exclusion decisions, and per-modality missingness were logged for reproducibility.
+
+\subsection{Exploratory Data Analysis}
+
+Exploratory analyses assessed the effectiveness of the experimental manipulations and examined relationships between subjective ratings and physiological measures.
+
+\subsubsection{Subjective Manipulation Checks}
+Subjective stress and MWL ratings were analysed using $2\times2$ repeated-measures analyses of variance (ANOVAs) with factors \textit{Stress} (High, Low) and \textit{MWL} (High, Low). Effect sizes are reported as partial $\eta^2$ with 95\% confidence intervals (CIs). 
+All tests were two-tailed. 
+
+To assess the independence of subjective dimensions, correlations were computed between stress and MWL ratings within congruent (\textit{High–High}, \textit{Low–Low}) and incongruent (\textit{High–Low}, \textit{Low–High}) condition pairs. 
+A Fisher \(r\)-to-\(z\) comparison tested whether these correlations differed across congruency types.
+
+\subsection{Factorial Analysis of Physiological Measures}
+
+To evaluate how stress and MWL manipulations influenced physiological responses, each canonical feature was analysed using a 2×2 repeated-measures design with Stress (low, high) and MWL (low, high) as within-participant factors. Because residuals from standard repeated-measures ANOVA showed substantial non-normality across features, all inferential tests used the aligned rank transform (ART) procedure to compute aligned rank transform analyses of variance (ART-ANOVA), which preserves factorial interpretability under non-normal distributions. For each feature, we obtained F-statistics, p-values, and partial eta-squared for the main effects and interaction. Significant effects were followed by ART-compatible post-hoc contrasts to characterise effect patterns.
+
+
+\subsubsection{Physiology-Subjective Correlations}
+
+To assess how the level of one factor modulated the association between the other factor and physiological features, we computed within-participant correlations between subjective ratings and the canonical physiological feature set. Stress–feature correlations were estimated separately under low and high MWL, and MWL–feature correlations were estimated separately under low and high stress. This stratified approach allowed us to quantify how physiological–subjective relationships changed as a function of concurrent mental state. For each feature in each subset, repeated-measures correlations ($r_{\mathrm{rm}}$) were estimated with participant as the repeated factor. To control multiple comparisons, Benjamini–Hochberg false discovery rate (FDR) correction was applied within each stratum and modality family (EEG, EDA, HR/HRV, pupillometry).
+
+
+\subsection{Statistical and Machine-Learning Analyses}
+
+\subsubsection{Feature Integration and Dataset Construction}
+Condition-level EEG, EDA, HR/HRV, and pupillometry features were merged by participant and condition using synchronized timestamps. The resulting multimodal dataset comprised one feature vector per participant per condition (4 per participant), used in both statistical and machine-learning analyses.
+
+\subsubsection{Model Training and Cross-Validation}
+
+To assess whether physiological features could discriminate stress and MWL states, we trained support vector machine (SVM) classifiers with radial basis function (RBF) kernels using a fully nested leave-one-subject-out (LOSO) procedure. 
+To explicitly test the complementary value of sensor fusion, we compared models trained on EEG-only, Peripheral-only (EDA, HR, Pupil), and Combined Multimodal feature sets.
+Within each outer fold, features were first pruned within the training set to remove near-zero-variance, missing, and highly collinear predictors, and the remaining features were ranked by their univariate association with the target label. Models were trained using the top k features (k = 20, 10, 5).
+
+Hyperparameters (cost and gamma) were tuned within an inner LOSO loop using the training participants only. For each (cost, gamma, k) combination, inner-loop performance was averaged across folds, and the combination with the highest mean AUC was selected. The final model for that outer fold was then refit on the full training set and evaluated on the held-out participant. Performance was quantified using accuracy, F1 score, and area under the ROC curve (AUC), averaged across outer folds for each target.
+
+SVM models were used to evaluate whether multimodal physiological and EEG features could classify the experimentally defined stress and MWL conditions. Classification was conducted separately for stress (high-stress vs.\ low-stress) and MWL (high-MWL vs.\ low-MWL). To assess subject-independent generalisability, all analyses employed a leave-one-subject-out (LOSO) evaluation framework, in which each participant served once as the held-out test case.
+
+The models used features derived from EEG power spectral density (PSD), electrodermal activity (EDA), heart rate (HR), heart rate variability (HRV), and pupillometry. All features were baseline-corrected using the pre-condition relaxation period by subtracting each participant's aggregated baseline value from their aggregated task value, and were then $z$-scored within participant. To prevent information leakage, all preprocessing and feature pruning were performed independently within each LOSO training fold.
+
+Feature pruning followed a multi-step procedure. First, features with near-zero variance were removed. Second, features with high pairwise correlations were excluded using a threshold of $|r| > 0.75$. The remaining features were then rank-ordered by their absolute Pearson correlation with the target label (stress or MWL) computed on the training set. Three candidate feature-set sizes—the top 5, 10, and 20 ranked features—were evaluated to identify the smallest feature subset achieving the highest classification performance. This procedure was repeated independently within each LOSO fold.
+
+All models were implemented in R using an SVM with an RBF kernel. The SVM hyperparameters $C$ and $\gamma$ were tuned within each fold using a grid search applied only to the training data. Feature scaling was also performed inside each fold using summary statistics computed solely from the training participants. For each target, the tuned model was applied to the held-out participant to obtain unbiased predictions.
+
+Model performance was assessed by aggregating predictions across all LOSO folds. The primary evaluation metric was classification accuracy, computed as the proportion of correctly classified samples across all held-out participants.
+
+\subsection{Ethics and Protocol Details}
+The VR environment was based on the open-source VR-TSST framework (v2.3) and modified under its MIT licence.
+
+All procedures were approved under the same protocol described in Section~\ref{sec:participants} by the Institutional Ethics Committee (reference: 2614-2411) and were conducted in accordance with the Declaration of Helsinki. 
+The study involved mild deception: participants were informed that their performance and speech were being recorded and evaluated, although no such recordings were made. 
+This procedure and its associated risk assessment were reviewed and approved by the ethics committee. 
+Participants were fully debriefed after the experiment and informed that no recordings had occurred and that evaluative feedback had been simulated.
+
+\section{Results}
+
+\subsection {Participant Characteristics}
+
+Forty-four participants (mean age = 31.0 years, SD = 6.2; 20 female) were included in the final analysis after automated signal-quality checks and dataset validation based on the predefined criteria described in Section \ref{sec:qc}. Analyses used the retained sample (N=44), but missingness varied by feature and condition due to modality-specific QC; therefore, effective sample sizes ($n$ or $n_{\mathrm{pairs}}$) differ across correlation tests.
+
+\subsection{Factorial Analysis of Subjective Measures}
+
+As intended, self-reported stress was higher in the high- than low-stress condition (mean difference = 0.82, $t_{43}=2.91$, $p = 0.006$, $d_z = 0.44$; Fig.~1a). MWL also increased stress ratings ($p < .001$), with no stress × MWL interaction ($p = .80$), indicating additive rather than interactive effects. 
+
+MWL manipulations strongly increased NASA-TLX mental demand scores (mean difference = 2.07, $t_{43}=6.98$, $p < 0.001$, $d_z = 1.05$; Fig.~1b). Stress also raised MWL ratings ($p < 0.001$), but the stress × MWL interaction was not significant ($p = .18$). 
+
+Correlations between stress and MWL ratings further indicated partial differentiation: associations were stronger in congruent conditions ($r = .43$, $p < 0.001$) than incongruent conditions ($r = .30$, $p = 0.005$), although this difference was not significant (Fisher’s $z = 0.97$, $p = .33$).
+
+\begin{table*}[!t]
+\centering
+\caption{ANOVA results for subjective stress and NASA-TLX mental demand under stress and MWL manipulations. Each row reports $F(1,43)$, $p$ value, generalized eta squared ($\eta^2_G$), condition means, SDs, and 95\% CIs where applicable. Significant effects ($p < .05$) are marked in bold.}
+\label{tab:anova_results}
+\begin{tabular}{llccccccc}
+\toprule
+Factor & Measure & $F(1,43)$ & $p$ & $\eta^2_G$ & Condition & Mean & SD & 95\% CI \\
+\midrule
+\multirow{2}{*}{Stress} & \multirow{2}{*}{Subjective stress}
+& 8.44 & \textbf{.006} & .031 & High & 3.25 & 2.21 & [2.58, 3.92] \\
+& & & & & Low & 2.43 & 2.39 & [1.70, 3.16] \\
+MWL & Subjective stress
+& 22.71 & \textbf{$<.001$} & .105 & -- & -- & -- & -- \\
+Stress $\times$ MWL & Subjective stress
+& 0.06 & .804 & .000 & -- & -- & -- & -- \\
+\midrule
+MWL & \multirow{2}{*}{Mental demand (NASA-TLX)}
+& 48.67 & \textbf{$<.001$} & .263 & High & 7.84 & 1.53 & [7.38, 8.31] \\
+& & & & & Low & 5.77 & 1.95 & [5.18, 6.36] \\
+Stress & Mental demand (NASA-TLX)
+& 15.69 & \textbf{$<.001$} & .044 & -- & -- & -- & -- \\
+Stress $\times$ MWL & Mental demand (NASA-TLX)
+& 1.83 & .184 & .006 & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+
+\begin{table*}[!t]
+\centering
+\caption{ART-ANOVA stress main effects for baseline-adjusted physiological and EEG features.}
+\label{tab:anova_art_stress}
+\begin{tabular}{lccc}
+            \csname toprule\endcsname
+Feature & $F$ & $p$ & $\eta^2_{p}$ \\
+\midrule
+HRV RMSSD (ms) & 0.180 & 0.677 & 0.00 \\
+Heart rate (median, bpm) & 3.160 & 0.078 & 0.03 \\
+EDA tonic level (mean, $\mu$S) & 3.800 & 0.053 & 0.03 \\
+EDA peak height (mean, $\mu$S) & 0.060 & 0.812 & 0.00 \\
+Frontal midline $\theta$ power (mean) & 0.210 & 0.650 & 0.00 \\
+Frontal $\beta$ power (mean) & 0.590 & 0.443 & 0.00 \\
+Parietal $\alpha$ power (mean) & 0.180 & 0.677 & 0.00 \\
+Pupil dilation (median, mm) & 0.110 & 0.737 & 0.00 \\
+Alpha/Beta ratio ($\alpha/\beta$) & 0.19 & .660 & .00 \\
+Theta/Beta ratio ($\theta/\beta$) & 0.29 & .593 & .00 \\
+Frontal Alpha Asymmetry (FAA) & 0.01 & .920 & .00 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+
+\begin{table*}[!t]
+\centering
+\caption{ART-ANOVA MWL main effects for baseline-adjusted physiological and EEG features.}
+\label{tab:anova_art_workload}
+\begin{tabular}{lccc}
+\toprule
+Feature & $F$ & $p$ & $\eta^2_{p}$ \\
+\midrule
+HRV RMSSD (ms) & 0.620 & 0.432 & 0.00 \\
+Heart rate (median, bpm) & 2.800 & 0.097 & 0.02 \\
+EDA tonic level (mean, $\mu$S) & 0.100 & 0.758 & 0.00 \\
+EDA peak height (mean, $\mu$S) & 0.130 & 0.723 & 0.00 \\
+Frontal midline $\theta$ power (mean) & 1.070 & 0.303 & 0.01 \\
+Frontal $\beta$ power (mean) & 1.540 & 0.217 & 0.01 \\
+Parietal $\alpha$ power (mean) & 0.320 & 0.574 & 0.00 \\
+Pupil dilation (median, mm) & 0.250 & 0.616 & 0.00 \\
+Alpha/Beta ratio ($\alpha/\beta$) & 10.27 & \textbf{.002} & .07 \\
+Theta/Beta ratio ($\theta/\beta$) & 10.35 & \textbf{.002} & .07 \\
+Frontal Alpha Asymmetry (FAA) & 0.52 & .471 & .00 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+
+\begin{table*}[!t]
+\centering
+\caption{ART-ANOVA interaction effects (stress × MWL) for baseline-adjusted physiological and EEG features.}
+\label{tab:anova_art_interaction}
+\begin{tabular}{lccc}
+\toprule
+Feature & $F$ & $p$ & $\eta^2_{p}$ \\
+\midrule
+HRV RMSSD (ms) & 0.230 & 0.633 & 0.00 \\
+Heart rate (median, bpm) & 0.208 & 0.649 & 0.00 \\
+EDA tonic level (mean, $\mu$S) & 1.358 & 0.246 & 0.01 \\
+EDA peak height (mean, $\mu$S) & 0.190 & 0.667 & 0.00 \\
+Alpha/Beta ratio ($\alpha/\beta$) & 1.00 & .320 & .01 \\
+Theta/Beta ratio ($\theta/\beta$) & 0.36 & .550 & .00 \\
+Frontal Alpha Asymmetry (FAA) & 0.15 & .695 & .00 \\
+Frontal midline $\theta$ power (mean) & 0.417 & 0.519 & 0.00 \\
+Frontal $\beta$ power (mean) & 0.001 & 0.973 & 0.00 \\
+Parietal $\alpha$ power (mean) & 1.881 & 0.173 & 0.01 \\
+Pupil dilation (median, mm) & 0.092 & 0.762 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{figures/interaction_plots.png}
+\caption{Subjective stress and MWL ratings under 2$\times$2 manipulations. 
+(a) Stress ratings by stress condition (x-axis), with separate lines for MWL condition. 
+(b) MWL ratings by MWL condition (x-axis), with lines for stress condition. 
+Error bars indicate 95\% confidence intervals. Stress ratings are shown as change scores relative to a pre-experiment baseline ($-10 =$ much less stressed than baseline, $+10 =$ much more stressed), whereas MWL ratings were collected on a 0--10 scale.}
+\label{fig:subj-anova-interaction}
+\end{figure}
+
+
+\subsection {Factorial Analysis of Physiological Measures}
+
+Physiological ANOVAs used N=47 for autonomic/pupil features and N=44 for EEG. Stress showed a marginal main effect on tonic EDA (F=3.80, p=.053, $\eta^2_p\approx.03$) and a trend on heart rate (F=3.16, p=.078). No other autonomic, pupil, or EEG features showed stress effects. MWL effects were non-significant aside from a trend on heart rate (F=2.80, p=.097). No stress×MWL interactions reached significance.
+
+\subsection{Correlations}
+
+Repeated-measures correlations were computed separately within each level of stress and MWL to assess whether associations between subjective states and physiological or EEG features varied across conditions.
+
+After modality-family FDR correction (grouping features by EEG vs.\ physiological modality), stress correlations in low-MWL contexts were positive for heart rate (median; $r_{\mathrm{rm}}=0.363$, $q=0.024$), tonic EDA ($r_{\mathrm{rm}}=0.368$, $q=0.024$), and pupil diameter ($r_{\mathrm{rm}}=0.355$, $q=0.024$). In high-MWL contexts, tonic EDA ($r_{\mathrm{rm}}=0.362$, $q=0.057$) and heart rate ($r_{\mathrm{rm}}=0.310$, $q=0.081$) showed positive trends with stress. For MWL, the alpha/beta ratio exhibited a marginal positive correlation with subjective MWL in the low-stress condition ($r_{\mathrm{rm}}=0.377$, $q=0.064$), though no other MWL--physiology associations survived correction.
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/heatmap_stress_corr.png}
+    \caption{Stratified repeated-measures correlations ($r_{\mathrm{rm}}$) between physiological features and subjective stress, shown separately for low- and high-MWL conditions. Benjamini--Hochberg FDR correction was applied within each stratum and modality family. Cell text shows $r_{\mathrm{rm}}$ with significance markers ($*\,q<0.05$, $\dagger\,0.05\le q<0.10$); borders encode the same thresholds.}
+    \label{fig:heatmap_stress}
+\end{figure}
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/heatmap_workload_corr.png}
+    \caption{Stratified repeated-measures correlations ($r_{\mathrm{rm}}$) between physiological features and subjective MWL, shown separately for low- and high-stress conditions. Benjamini--Hochberg FDR correction was applied within each stratum and modality family. Cell text shows $r_{\mathrm{rm}}$ with significance markers ($*\,q<0.05$, $\dagger\,0.05\le q<0.10$); borders encode the same thresholds.}
+    \label{fig:heatmap_workload}
+\end{figure}
+
+
+\subsection {Support Vector Machine Classification}
+
+Subject-independent SVM models provided modest discrimination of MWL under leave-one-subject-out evaluation (Table~\ref{tab:svm_results}). The primary evaluation metric was the area under the receiver operating characteristic curve (AUC). For both targets, the best mean AUC was achieved with the smallest feature set ($k=5$). Permutation testing of the AUC metric (10{,}000 permutations) indicated that MWL performance was significantly above chance ($p=0.0013$), whereas stress classification was not ($p=0.1235$).
+
+\begin{table}[t]
+\centering
+\caption{Best-performing LOSO SVM models for stress and MWL classification.}
+\label{tab:svm_results}
+\begin{tabular}{lcccc}
+\toprule
+Target & $k$ (features) & Accuracy & F1 & AUC \\
+\midrule
+Stress & 5  & 0.57 & 0.57 & 0.56 \\
+MWL    & 5  & 0.60 & 0.59 & 0.66 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textit{Note.} Metrics are averaged across 44 LOSO folds (one per participant).
+
+\paragraph {Summary}
+These findings show that MWL can be predicted from multimodal physiological data with modest but significant performance under subject-independent evaluation, whereas stress classification did not reach significance.
+
+\paragraph{Modality Ablation}
+To assess the contribution of different physiological modalities, we performed an ablation study comparing models trained on EEG features only, peripheral features only, and the combined feature set. For MWL classification, EEG features alone yielded significant performance (AUC = 0.60, $p < .001$), whereas peripheral features did not perform significantly above chance (AUC = 0.52, $p = .32$). The combined model achieved the highest performance (AUC = 0.66), suggesting that while EEG drives the predictive power, peripheral features may contribute complementary information. For stress classification, neither modality subset achieved significance (EEG AUC = 0.38, Peripheral AUC = 0.47), consistent with the poor performance of the combined model.
+
+\subsection{Reliability and Covariate Analysis}
+To verify the stability of physiological baselines, intraclass correlation coefficients (ICC) were computed for key features across the four pre-condition relaxation periods. Results indicated fair-to-good stability for heart rate (ICC = 0.38) and tonic EDA (ICC = 0.36), but poor stability for HRV (RMSSD, ICC = 0.07), supporting the use of baseline correction to account for session-level drift.
+
+Further analysis of the baseline-corrected task features revealed that a substantial proportion of variance remained attributable to individual differences rather than experimental conditions. Specifically, intraclass correlations for baseline-corrected features were approximately 0.36 for tonic EDA, 0.36 for heart rate, and 0.39 for pupil diameter. This indicates that even after baseline subtraction, over one-third of the variance in physiological reactivity was driven by stable between-subject differences in response magnitude.
+
+Confirmatory linear mixed models (LMM) were conducted to assess whether participant demographics (Age, Gender) confounded the subjective stress and MWL ratings. Results showed that neither Age ($p > .80$) nor Gender ($p > .90$) were significant predictors of subjective stress or MWL, indicating that the observed effects were primarily driven by the experimental manipulations.
+
+\subsection{Sensitivity Analysis: Impact of Verbal Interaction}
+Given the difference in verbal task demands between the counting (Low MWL) and serial subtraction (High MWL) conditions, a sensitivity analysis was conducted to determine if variations in verbal response rate masked physiological effects. We included verbal response rate (utterances per minute) as a covariate in the linear mixed-effects models.
+
+Controlling for verbal response rate revealed a significant main effect of MWL on frontal-midline theta power ($t=2.32$, $p=0.021$), which was effectively masked in the baseline analysis ($p=0.20$). Specifically, after adjusting for verbal output density, High MWL was significantly associated with increased frontal theta activity, bringing the results in line with canonical neuroergonomic findings. 
+
+Additionally, the main effect of stress on tonic EDA was strengthened after controlling for response rate ($p=0.005$ vs baseline $p=0.012$), confirming that the observed sympathetic arousal was driven by the social-evaluative condition rather than speech production efforts.
+
+\section{Discussion}
+
+\subsection{Overview and Key Findings}
+
+This study manipulated stress and mental workload (MWL) to determine if they can be physiologically disentangled in a realistic environment. Subjective, physiological, and machine-learning analyses revealed distinct patterns of sensitivity for each state. While participants reliably reported increases in both stress and MWL, validating the experimental manipulations, the capacity to classify these conditions using physiological signals was asymmetrical. The MWL conditions were successfully distinguished using generic EEG models, indicating that neural markers of MWL generalise well across subjects. Conversely, the stress conditions could not be classified above chance using subject-independent models, despite the strong subjective response. This dissociation suggests distinct modeling implications: neural markers of MWL appear suitable for generic detection, whereas autonomic stress detection is predominantly limited by individual variability.
+
+ 
+
+
+\subsection{Subjective Dissociation}
+
+Our paradigm successfully manipulated stress and MWL as distinct experimental factors. Participants reliably reported higher mental demand in high-MWL conditions and higher subjective stress in high-stress conditions, confirming the validity of the protocol. Crucially, these effects were largely additive rather than interactive; the social-evaluative stressor did not amplify the perceived difficulty of the arithmetic task, nor did the task difficulty disproportionately escalate perceived stress. This suggests that, within this VR paradigm, stress and MWL operated as independent burdens on the user's subjective state, contradicting some models where acute stress exacerbates perceived MWL through cognitive interference \cite{matthewsDynamicRelationshipsStress2010, shieldsEffectsAcuteStress2016}.
+
+Despite this factorial independence, the subjective experiences of stress and MWL were not entirely orthogonal. We observed a moderate positive correlation between stress and demand ratings across all conditions. This relationship likely reflects the natural interdependence of these states: challenging tasks inherently provoke some affective strain, while social evaluative threat consumes attentional resources. This partial overlap presents a challenge for affective computing. Although participants can conceptually distinguish between mental demand and stress, the subjective experiences often occur simultaneously. Consequently, ground-truth labels based on subjective ratings will contain inherent ambiguity, complicating the training of physiological models that seek to separate these states cleanly.
+
+\subsection{Physiological Dissociation}
+
+Despite the robust subjective MWL effect, our physiological features showed limited sensitivity to MWL once baseline differences were removed. Instead, the autonomic nervous system responses were dominated by the stress manipulation. Tonic EDA exhibited a clear elevation under high stress across both levels of task difficulty, consistent with its role as a robust indicator of sympathetic arousal \cite{faircloughFundamentalsPhysiologicalComputing2009, masiStressWorkloadAssessment2023}. In contrast, we found a dissociation in the physiological signature of MWL. Raw univariate features (heart rate, HRV, pupil diameter, and canonical EEG band powers) did not significantly differ between High-MWL arithmetic and Low-MWL counting when controlling for baseline. In our immersive, social-evaluative context, these canonical raw signatures appear to have been attenuated or masked. For cardiovascular and pupillometric measures, the metabolic and arousal demands of the social stressor likely created a "ceiling effect" or noise floor. 
+
+However, univariate analyses of **EEG Ratios** (Theta/Beta and Alpha/Beta) revealed robust MWL effects ($p=.002$) that were absent in the raw power data. This suggests that the "failure" of raw EEG markers was likely due to broadband power shifts (e.g., from speech-related EMG or movement) that affected all bands simultaneously. By rationing the bands, this common-mode noise was cancelled out, revealing the underlying spectral shift associated with cognitive load.
+
+This interpretation is supported by the sensitivity analysis, which showed that when the confounding influence of verbal production was explicitly controlled for, the canonical increase in raw Frontal Theta also emerged ($p=0.021$). Thus, the neurophysiological signature of cognitive load was present but obscured by the motor and cortical demands of speech production unless normalised via ratios or statistical covariates.
+
+\subsection{Stratified Correlations}
+
+By examining within-condition correlations, we further probed whether physiology–state relationships hold regardless of the other factor. These analyses confirmed that subjective stress had consistent autonomic correlates, whereas subjective MWL remained physiologically undetectable. Tonic EDA emerged as the most reliable individual indicator of stress levels: within both low-MWL and high-MWL scenarios, participants with higher self-reported stress tended to have higher skin conductance. This held true under both task difficulties (with correlation coefficients in the moderate range), suggesting that the coupling between EDA and the experience of psychosocial stress was robust to variations in MWL. Specifically, even when participants were performing a demanding task, those who were more stressed showed the expected EDA increases, a promising result for using EDA in naturalistic stress monitoring.
+
+Overall, the stratified correlations suggest that \,stress-related peripheral signatures become harder to interpret as MWL rises, whereas electrodermal activity remains comparatively resilient. When MWL was low, multiple peripheral channels tended to covary with subjective stress in the expected direction. Under high MWL, this coupling appeared less consistent for cardiovascular and pupillary measures, plausibly because cognitive effort elevates these signals even in relatively non-stressed participants, compressing dynamic range and obscuring stress-specific variance. This pattern aligns with prior ``masking'' accounts in which high cognitive load can blunt or conceal stress-related autonomic changes \cite{conwayEffectStressCognitive2013, setzDiscriminatingStressCognitive2010}.
+
+Conversely, we found little evidence that subjective MWL was reliably reflected in any single physiological or EEG feature once accounting for multiple comparisons. The only hint of an MWL-related association was a weak, context-dependent trend in an EEG spectral ratio under low stress, which we interpret cautiously as suggestive rather than conclusive.
+
+
+\subsection{Implications for State Discrimination and Physiological Computing}
+
+A critical implication for affective computing is that stress and MWL require fundamentally different modeling strategies.
+
+First, **stress detection** is heavily reliant on autonomic arousal, which we found to be both idiosyncratic and easily masked by cognitive demand. The high intraclass correlation of autonomic features (ICC $\approx$ 0.36) confirms that individual baseline differences outweigh the task effect. Consequently, the field should deprioritize universal ``stress detectors'' in favor of **personalized calibration** or relative measures that can account for this high trait variability.
+
+Second, **MWL assessment** appears robust to these social-adverse conditions but demands neural specificity. While peripheral signals failed, EEG classifiers achieved subject-independent generalization (AUC = 0.60), suggesting the neural signature of MWL is consistent across individuals even under stress. However, this signal is subtle. To operate in realistic, noisy environments like VR, systems must leverage **multivariate neural features** rather than relying on simple univariate metrics which are prone to being washed out.
+
+This bifurcation suggests a hybrid architecture for future systems: using generic, pre-trained models for cognitive state estimation (via EEG), while reserving autonomic sensors for personalized, longitudinally calibrated stress tracking.
+
+
+
+
+\subsection{Relation to Prior Work}
+
+Our findings align with a growing body of evidence suggesting that subject-independent affective computing models face a "generalisation gap" when applied to complex, interactive tasks. 
+
+\subsubsection{Classification Performance and Stressor Modality}
+In terms of classification accuracy, our best subject-independent model for MWL achieved 60\%, a result consistent with similar factorial benchmarks. For instance, \cite{bagheriSimultaneousClassificationBoth2022} reported mean accuracies of approximately 58\% for both stress and MWL using strictly EEG measures under subject-independent validation. 
+
+However, our inability to classify stress above chance contrasts with studies reporting higher robustness for stress detection than for MWL detection. For example, \cite{parentDiagnosticityPsychophysiologicalSignatures2019} achieved $\approx$62\% accuracy for stress (vs. $\approx$45\% for MWL) in a comparable 2$\times$3 design. This divergence is likely attributable to the \textit{modality} of the stressor. Whereas Parent et al. utilised a physical threat (unpredictable noise blasts) which elicits a primitive, high-magnitude defensive reflex, our study utilised social-evaluative threat. Responses to social evaluation are inherently more idiosyncratic, cognitively mediated, and dependent on individual susceptibility to social stressors than responses to physical threat \cite{campbell-sillsPsychometricPropertiesSubjective2006}. Our results indicate that while physical threat signatures may generalise well across subjects, the subtler physiological correlates of social stress are significantly harder to capture in a LOSO framework without personalisation.
+
+Furthermore, the discrepancy between our EEG results and those of \cite{bagheriSimultaneousClassificationBoth2022}, who successfully classified stress using spectral EEG features, likely stems from task dynamics. Their protocol employed the Montreal Imaging Stress Task (MIST), a sedentary, non-verbal task. In contrast, the VR-TSST requires continuous speech production and visual exploration. Speech entails profound electromyographic (EMG) activity that spectrally overlaps with beta-band stress markers \cite{goncharovaEMGContaminationEEG2003}. Crucially, this contamination affects stress and MWL biomarkers asymmetrically. Cognitive load is primarily indexed by frontal theta (4--8 Hz) and parietal alpha (8--13 Hz) \cite{klimeschEEGAlphaTheta1999}, frequency bands that are relatively distinct from the predominant high-frequency spectrum of muscle activity ($>$20 Hz). Conversely, EEG stress markers typically involve beta and gamma activity, which are effectively masked by EMG. Consequently, our MWL classifiers could leverage preserved low-frequency neural information, attaining superior performance to our stress models despite the challenging recording environment.
+
+\subsubsection{Physiological Divergence and Masking Effects}
+Physiologically, our results contribute to ongoing debates about arousal "masking" when stress and MWL co-occur. Prior work has suggested that high MWL can attenuate or obscure stress-related autonomic signatures, including electrodermal responses, by elevating sympathetic arousal and reducing the available dynamic range for stress-specific variance \cite{conwayEffectStressCognitive2013, setzDiscriminatingStressCognitive2010}. For example, \cite{conwayEffectStressCognitive2013} reported that high cognitive load can blunt autonomic responses to threat.
+
+In our data, we found limited support for \emph{complete} masking in the immersive VR-TSST context. Although cardiovascular and pupillary measures appeared less consistently aligned with subjective stress under high MWL, tonic EDA remained the most \emph{consistently stress-linked} peripheral feature across MWL contexts in the stratified analyses. Importantly, we interpret this as cross-context \emph{diagnostic consistency} rather than superior measurement reliability per se, given that between-subject variability remained substantial even after baseline correction. One plausible explanation for the relative resilience of tonic EDA is that immersive, social-evaluative threat may evoke sympathetic arousal that persists alongside cognitive load, yielding a pattern closer to additive co-activation than to full masking. Under this interpretation, tonic EDA may retain practical utility for stress monitoring during demanding tasks in VR, while acknowledging that other peripheral channels may be more vulnerable to MWL-related confounding.
+
+\subsection{Methodological and Conceptual Limitations}
+
+\textbf{Methodological Limitations}
+
+We acknowledge several methodological constraints that must be considered when interpreting our findings and planning future work. Because we did not record respiratory signals, our HRV metrics may include respiratory influences in addition to autonomic changes, which could reduce the specificity of our inferences about sympathetic/parasympathetic activation. Although independent‐component‐analysis (ICA)‐based artefact rejection substantially reduced ocular and muscular contamination in the EEG signals, residual electromyography (EMG) activity—especially in the frontal \(\beta\)-bands—may still have influenced our neural‐feature estimates; incorporating dedicated EMG channels in subsequent studies would enable more precise isolation of cortical vs. muscular sources. 
+
+Regarding subjective measures, our reliance on single post-condition self-reports limits the temporal resolution at which we capture fluctuations in perceived stress and MWL, weakening our ability to align subjective dynamics with physiological changes and thereby reducing the sensitivity of our models to moment‐to‐moment variation. Moreover, the subtlety of our manipulations resulted in low variance in subjective ratings, and the absence of a genuine neutral baseline condition means even our “low–stress/low MWL” state likely involved mild activation—both factors diminish label contrast and may hamper model learnability, reducing model robustness when applied to more diverse or extreme conditions.  Additionally, each participant contributed only approximately 12 minutes of data, limiting the total training‐data volume, constraining within‐participant variability and feature stability over time, and potentially causing our models to under‐perform once deployed in longer or more varied immersive settings.
+
+Finally, while our sample size (N=44) is comparable to related VR-physiological studies, it remains limited for machine learning, constraining the assessment of feature stability and the precision of generalisation estimates.
+
+
+\textbf{Conceptual Limitations.} 
+
+The present analysis focused on static inference rather than adaptive feedback; model interpretability and generalisation were evaluated offline, without real-time environmental adaptation. 
+Although stress and MWL were both varied, these factors may not capture the full spectrum of cognitive–affective interactions that occur in naturalistic settings, where demands, motivation, and affect fluctuate continuously. 
+Extending this framework to continuous, context-varying, and closed-loop environments will be essential for establishing causal validity, enhancing ecological generalisability, and advancing toward practical adaptive systems.
+
+
+\subsection{Theoretical and Applied Implications}
+
+The present results suggest that stress and MWL may be partially distinguishable using multimodal signals, with EEG features driving MWL prediction and autonomic cues showing univariate sensitivity to stress. While classification performance was modest, the observed divergence between tonic EDA (associated with stress) and multivariate EEG patterns (predictive of MWL) points to a potential complementary utility. For example, future adaptive systems might explore using autonomic arousal metrics to contextualise EEG-based MWL estimation, potentially reducing false positives during high-stress events. Future work should extend validation beyond laboratory stressors and test generalisability across task structures and individuals, using time-resolved labels and added behavioural/respiratory measures where appropriate.
+
+
+\section{Conclusion}
+This study examined stress and MWL in a combined VR-TSST using multimodal sensing and subject-independent modelling. Our results reveal divergent physiological profiles for each state. Social-evaluative stress was most consistently reflected in peripheral arousal, with tonic EDA showing the clearest and most MWL-robust linkage to subjective stress across analyses, whereas cardiovascular and pupillary indices were less consistently informative when MWL was high. In contrast, MWL showed limited expression in single raw physiological features but was evident in EEG-derived markers: ratio-based EEG features (Theta/Beta and Alpha/Beta) showed reliable MWL sensitivity. Taken together, these findings caution against relying on generic peripheral templates for stress inference in high-demand contexts, while highlighting the value of hybrid architectures that combine EEG for MWL estimation with autonomic measures (especially EDA) for stress monitoring. Future research should address the limitations of brief recording durations and static labelling by exploring longitudinal designs and time-resolved annotation, ultimately advancing towards adaptive systems capable of robust operation in real-world environments.
+
+\section*{Data Availability}
+The dataset and code supporting the findings of this study will be made publicly available upon publication.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+
+
+\newpage
+
+
+
+
+
+
+\vfill
+
+\end{document}
+
+

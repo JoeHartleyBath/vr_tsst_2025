@@ -1,0 +1,31 @@
+DOCX: c:\\vr_tsst_2025\\manuscript\\Discriminating_Stress_and_Mental_Workload_Within_Orthogonal_Manipulations_in_Virtual_Reality (1) - dc.docx
+Comment count: 9
+
+--- COMMENTS (in file order) ---
+
+[1] Coyle, Damien (DC) 2026-01-09T15:54:00Z
+Do you have to summarise features used also
+
+[19] Coyle, Damien (DC) 2026-01-09T16:08:00Z
+Contributions should be outcome orientated not methodological
+
+[50] Coyle, Damien (DC) 2026-01-09T16:15:00Z
+Why bother have a number on this single sub section
+
+[58] Coyle, Damien (DC) 2026-01-09T16:22:00Z
+Doe this provide enough information for reproducibility - features types, windows etc should be clear for modality
+
+[59] Coyle, Damien (DC) 2026-01-09T16:23:00Z
+Between/inter class/condition variance?
+
+[60] Coyle, Damien (DC) 2026-01-09T16:24:00Z
+This is k stated earlier so should be clear
+
+[63] Coyle, Damien (DC) 2026-01-09T16:27:00Z
+Bit you only report N=44 in the study??
+
+[65] Coyle, Damien (DC) 2026-01-09T16:28:00Z
+Why is text so small here should be 8 point minimum and the cells and legend have plenty of space
+
+[66] Coyle, Damien (DC) 2026-01-09T16:42:00Z
+I asked chatgpt if this discussion align with the outcome orientated contributions listed in section 1 - here s the answer (please adress all this and I think it will be stronger ): - this discussion aligns well with the outcome-oriented contributions, but it can be made tighter and more explicit in how it maps back to them. Right now, the alignment is conceptually strong but implicit. Reviewers will follow it, but you can make their job easier.Below is a structured alignment check, followed by specific, minimal tweaks to strengthen the connection.1. Alignment Check: Contribution ↔ DiscussionContribution 1Empirical dissociation of stress and MWL under ecologically valid conditionsWhere it appears in the discussion:✔ Sections A (Overview), B (Subjective Dissociation), C (Physiological Dissociation)Clear demonstration that:Stress and MWL are subjectively dissociablePhysiologically partially overlapping but asymmetrically detectableAdditive (not interactive) effects are well arguedVR realism and social stress context are emphasised✅ Strong alignment🔧 Minor strengthening: Explicitly restate “dissociation” once in Section A or B using the same language as the contributions.Suggested micro-edit (Section A):“…revealed that stress and MWL are empirically dissociable at the subjective level, but only partially separable physiologically under realistic task demands.”Contribution 2Identification of complementary and modality-specific physiological markersWhere it appears:✔ Sections C (Physiological Dissociation) and D (Stratified Correlations)Excellent modality-specific insights:EDA → robust stress markerEEG ratios → MWL-sensitiveRaw features masked by VR + speechStrong mechanistic interpretation (noise floor, ceiling effects)✅ Very strong alignment🔧 Minor strengthening: Make the “complementarity” explicit once.Suggested addition (end of Section C):“Together, these findings highlight the complementary roles of neural and autonomic signals, with each modality preferentially encoding different aspects of the user’s affective–cognitive state.”Contribution 3Quantification of the limits of subject-independent affect inferenceWhere it appears:✔ Sections A and EClear asymmetry:MWL → subject-independent EEG worksStress → subject-independent models failStrong linkage to ICC and inter-individual variabilityReviewer-relevant message: “this is why stress models fail”✅ Excellent alignment🔧 Minor strengthening: Use the phrase “limits of subject-independent inference” verbatim once.Suggested edit (Section E):“These findings delineate clear limits on subject-independent affect inference, particularly for stress, where trait variability dominates state-related effects.”Contribution 4Actionable design guidance for affective-computing systemsWhere it appears:✔ Section E (Implications)This section is very strongHybrid architecture recommendation is exactly what AC reviewers wantClear rejection of “one-size-fits-all” stress detection✅ Strong alignment🔧 Optional improvement: Make the guidance more visibly “actionable” by signalling recommendations.Suggested reframe (first sentence of Section E):“From an affective-computing perspective, these results yield several actionable design implications.”2. One Missing (but Easy) Improvement: Explicit Cross-ReferenceWhat’s missing is one sentence that explicitly links the discussion back to the contributions. This is optional but highly effective.Suggested Closing Sentence (end of Discussion or Section E)“Taken together, these results substantiate the paper’s central contributions by empirically dissociating stress and mental workload under realistic conditions, identifying modality-specific physiological markers, defining the limits of subject-independent inference, and providing concrete guidance for the design of robust affective-computing systems.”This single sentence:Signals coherencePre-empts reviewer confusionMakes the contribution–discussion loop explicit3. VerdictDoes the discussion align with the contributions?✅ Yes — stronglyIs it framed at the right level for affective computing?✅ Yes — especially Sections A, C, and EWhat’s needed?🔹 A few explicit signposts using the same language as the contributionsYour discussion already does the work. These tweaks just ensure reviewers see immediately that it does.

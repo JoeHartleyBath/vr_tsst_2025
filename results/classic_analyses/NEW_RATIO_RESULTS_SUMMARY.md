@@ -3,6 +3,7 @@
 **Date:** January 6, 2026
 **Features Analyzed:** `eeg_ab_ratio` (Alpha/Beta Ratio) and `eeg_tb_ratio` (Theta/Beta Ratio)
 **N:** 44 (EEG-valid participants)
+ERROR: This doc says interaction signficnat, but it wasnt
 
 ---
 
