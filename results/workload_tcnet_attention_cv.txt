@@ -1,0 +1,13 @@
+EEG-TCNet with Attention - Workload Classification (N=43 subjects)
+Architecture: EEGNet + SE Attention + TCN + Temporal Attention
+Data: 6020 epochs, 1249 samples @ 125Hz
+Augmentation: noise=0.02, shift=3, ch_drop=0.05
+Training: 50 max epochs, batch=16, lr=0.001
+Class weights: [1. 1.]
+--------------------------------------------------
+Fold 1: Accuracy=0.5910, F1=0.5887
+Fold 2: Accuracy=0.5622, F1=0.5620
+Fold 3: Accuracy=0.6138, F1=0.6110
+--------------------------------------------------
+Mean Accuracy: 0.5890 (+/- 0.0211)
+Mean F1 Score: 0.5872

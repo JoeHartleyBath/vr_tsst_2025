@@ -1,0 +1,10 @@
+Late Fusion Ensemble - Workload Classification
+EEG weight: 0.7, Physio weight: 0.3
+--------------------------------------------------
+Fold 1: EEG=0.5062, Physio=0.5109, Ensemble=0.5076
+Fold 2: EEG=0.6255, Physio=0.5013, Ensemble=0.5882
+Fold 3: EEG=0.5735, Physio=0.5175, Ensemble=0.5567
+--------------------------------------------------
+Mean EEG Accuracy:      0.5684 (+/- 0.0488)
+Mean Physio Accuracy:   0.5099
+Mean Ensemble Accuracy: 0.5508 (+/- 0.0332)

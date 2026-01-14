@@ -1,0 +1,21 @@
+{
+  "best_accuracy": 0.6554648526077097,
+  "best_params": {
+    "F1": 16,
+    "D": 2,
+    "kernLength": 32,
+    "dropout_eeg": 0.30501119888711364,
+    "tcn_filters": 12,
+    "tcn_kernel": 6,
+    "tcn_depth": 3,
+    "dropout_tcn": 0.32628795528019555,
+    "learning_rate": 0.0015904883914840706,
+    "batch_size": 32
+  },
+  "fixed_params": {
+    "use_se_attention": false,
+    "use_temporal_attention": false,
+    "use_augmentation": false
+  },
+  "total_trials": 70
+}

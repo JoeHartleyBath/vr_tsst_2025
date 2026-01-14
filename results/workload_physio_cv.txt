@@ -1,0 +1,10 @@
+Physio-Only Workload Classification (10s windows)
+Features: ['Full_Pupil_Dilation_Mean', 'Full_Pupil_Dilation_Median', 'Full_Pupil_Dilation_SD', 'Full_Pupil_Dilation_Asymmetry', 'Foveal_Corrected_Dilation_Left_CLEANED_ABS_Mean', 'Foveal_Corrected_Dilation_Right_CLEANED_ABS_Mean', 'Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK_EDA_Tonic_Mean', 'Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK_EDA_PeakRate', 'Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK_EDA_PeakHeight_Mean', 'Shimmer_D36A_GSR_Skin_Conductance_uS_CLEANED_ABS_CLEANED_NK_EDA_TotalSCRs', 'Polar_HeartRate_BPM_CLEANED_ABS_Mean', 'Polar_HeartRate_BPM_CLEANED_ABS_SD', 'Inter_Blink_Interval_CLEANED_ABS_Mean', 'Current_Blink_Duration_CLEANED_ABS_Mean']
+Data: 6175 samples, 3-fold GroupKFold
+--------------------------------------------------
+Fold 1: Accuracy=0.5312, F1=0.5284
+Fold 2: Accuracy=0.4801, F1=0.4800
+Fold 3: Accuracy=0.5676, F1=0.5668
+--------------------------------------------------
+Mean Accuracy: 0.5263 (+/- 0.0359)
+Mean F1 Score: 0.5251
