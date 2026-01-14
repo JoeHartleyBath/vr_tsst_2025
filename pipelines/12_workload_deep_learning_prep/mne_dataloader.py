@@ -108,6 +108,8 @@ class MNEEpochsDataset(Dataset):
         all_data = []
         all_labels = []
         all_pids = []
+        all_conditions = []
+        all_window_indices = []
         
         for fpath in epoch_files:
             epochs = mne.read_epochs(fpath, preload=True, verbose=False)
@@ -115,13 +117,17 @@ class MNEEpochsDataset(Dataset):
             # Get data: shape (n_epochs, n_channels, n_times)
             data = epochs.get_data()
             
-            # Get labels from metadata
+            # Get labels and metadata
             labels = (epochs.metadata['workload_class'] == 'HighWorkload').astype(int).values
             pids = epochs.metadata['pid'].values
+            conditions = epochs.metadata['event_label'].values
+            window_indices = epochs.metadata['window_idx'].values
             
             all_data.append(data)
             all_labels.append(labels)
             all_pids.append(pids)
+            all_conditions.append(conditions)
+            all_window_indices.append(window_indices)
         
         # Find minimum time samples across all files (handle 1249 vs 1250 issue)
         min_samples = min(d.shape[2] for d in all_data)
@@ -131,6 +137,8 @@ class MNEEpochsDataset(Dataset):
         self.data = np.concatenate(all_data, axis=0).astype(np.float32)  # (N, C, T)
         self.labels = np.concatenate(all_labels, axis=0)
         self.pids = np.concatenate(all_pids, axis=0)
+        self.conditions = np.concatenate(all_conditions, axis=0)
+        self.window_indices = np.concatenate(all_window_indices, axis=0)
         
         # Normalize per-epoch if requested
         if self.normalize:

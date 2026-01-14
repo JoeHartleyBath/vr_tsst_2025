@@ -1,0 +1,21 @@
+Late Fusion Results - Workload Classification
+============================================================
+Components:
+  - EEG-TCNet on raw epochs (tuned params)
+  - XGBoost on band power features + theta/beta ratios
+  - Fusion weights: TCNet=0.6, XGBoost=0.4
+
+Dataset:
+  - Aligned windows: 6020
+  - Band power features: 115
+
+Results:
+  Fold 1: Acc=0.5476, F1=0.5466
+  Fold 2: Acc=0.6561, F1=0.6541
+  Fold 3: Acc=0.6291, F1=0.6286
+
+Summary:
+  TCNet alone:   0.6350
+  XGBoost alone: 0.5429
+  Late Fusion:   0.6109 (+/- 0.0461)
+  Fusion F1:     0.6098
