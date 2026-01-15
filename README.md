@@ -1,108 +1,47 @@
-# VR-TSST Pipeline: Complete Setup & Validation Index
+# VR-TSST Analysis Pipeline
 
-## 📍 You Are Here
+## 📍 Purpose
+This repository contains the complete end-to-end processing pipeline for the VR-TSST experiment, from raw XDF/EEG data to statistical analysis and deep learning workload classification.
 
-Your pipeline is **fully prepared for P01–P03 pilot testing**. This document shows you what's ready, what to do next, and where to find everything.
+## 🚀 Quick Start (Start Here)
 
----
-
-## ✅ What's Complete
-
-### Infrastructure
-- [x] Python 3.9+ environment (venv) with all packages
-- [x] R 4.5.2 with required packages (tidyverse, caret, etc.)
-- [x] Raw data staged: 48 participants × (EEG + metadata + subjective)
-- [x] Git repository configured with correct authorship
-- [x] MATLAB/EEGLAB paths configured (awaiting final AMICA install)
-
-### Code
-- [x] Master pipeline orchestrator (`scripts/run_pipeline_master.py`)
-- [x] Health check validator (`scripts/check_pipeline_health.py`)
-- [x] Results comparison tool (`scripts/validation/compare_pipelines.py`)
-- [x] Individual stage runners (stages 1–6)
-- [x] Comprehensive logging and error handling
-
-### Documentation
-- [x] Quick-start guide (`PILOT_TEST_GUIDE.md`)
-- [x] Validation workflow (`VALIDATION_TOOLS.md`)
-- [x] Tools reference (`TOOLS_REFERENCE.md`)
-- [x] Data management (`data/raw/README.md`)
-
----
-
-## ⏳ What's Next (Your Action Items)
-
-### 1. **Install MATLAB/EEGLAB/AMICA** (if not done)
-   - **Status**: Manual (user responsibility)
-   - **Documentation**: Check [NEW_PC_SETUP.md](NEW_PC_SETUP.md#matlab-setup)
-   - **Estimated Time**: 1–2 hours
-
-### 2. **Run Pre-Flight Health Check** (5 minutes)
-   ```powershell
-   python scripts/check_pipeline_health.py
-   ```
-   - Validates all dependencies
-   - Must pass before proceeding
-
-### 3. **Run P01–P03 Pilot Test** (3–4 hours)
-   ```powershell
-   venv\Scripts\Activate.ps1
-   python scripts/run_pipeline_master.py
-   ```
-   - Processes 3 participants through all 6 stages
-   - Creates output files in `output/`
-   - Logs everything to `output/logs/pipeline_*.log`
-
-### 4. **Validate Results** (5 minutes)
-   ```powershell
-   python scripts/validation/compare_pipelines.py
-   ```
-   - Compares new results vs. old pipeline
-   - Reports correlations, RMSE, feature-by-feature
-   - Success = r > 0.95 match rate
-
-### 5. **Proceed to Full Run or Debug**
-   - **If validation passes**: Scale to all 48 participants (16–24 hours)
-   - **If validation fails**: Debug using individual stage runners
-
----
-
-## 📚 Documentation Map
-
-### Quick Guides (Start Here)
-- [PILOT_TEST_GUIDE.md](PILOT_TEST_GUIDE.md) — Copy-paste commands for pilot
-- [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md) — All available commands & workflows
-- [VALIDATION_TOOLS.md](VALIDATION_TOOLS.md) — Detailed validation process
-
-### Detailed References
-- [NEW_PC_SETUP.md](NEW_PC_SETUP.md) — Initial setup & dependency installation
-- [scripts/validation/README.md](scripts/validation/README.md) — Validation infrastructure
-- [data/raw/README.md](data/raw/README.md) — Raw data structure & staging
-- [QUICK_START.md](QUICK_START.md) — Original quick-start (legacy, see above)
-
-### Setup Notes
-- [SESSION_NOTES.md](SESSION_NOTES.md) — Setup session log
-- [EEG_CLEANING_STATUS.md](EEG_CLEANING_STATUS.md) — EEG pipeline status
-- [pipeline_quality_report.md](pipeline_quality_report.md) — Legacy quality assessment
-
----
-
-## 🚀 Three Simple Paths
-
-### Path A: I Just Want to Run the Pilot
+### Path A: Run the Pilot (Recommended)
 1. Open [PILOT_TEST_GUIDE.md](PILOT_TEST_GUIDE.md)
-2. Copy the commands
-3. Follow step-by-step
+2. Follow the step-by-step commands to process P01–P03 through **Stages 01–06** (preprocessing).
 
-### Path B: I Want Full Control & Understanding
-1. Read [VALIDATION_TOOLS.md](VALIDATION_TOOLS.md) (detailed workflow)
-2. Use [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md) (all available commands)
-3. Follow the validation phases
+### Path B: Deep Learning Workload Models
+- **Prep**: Run `pipelines/12_workload_deep_learning_prep/export_mne_epochs.py` to create training data.
+- **Train**: Run `pipelines/13_workload_deep_learning_training/train_tcnet.py` to train models.
 
-### Path C: I Need to Debug Something
-1. Check [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md#troubleshooting) (troubleshooting)
-2. Run individual stage: `python scripts/stages/run_stage_X_*.py`
-3. View logs: `Get-Content output/logs/pipeline_*.log | Select-String ERROR`
+### Path C: Full Control
+- Read [VALIDATION_TOOLS.md](VALIDATION_TOOLS.md) for the validation workflow.
+- Use [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md) for individual commands.
+
+---
+
+## 🗺️ Project Map
+
+### Core Pipeline Structure
+The pipeline is divided into distinct stages in `pipelines/`:
+- **Stages 01–06**: Preprocessing (EEG Cleaning, Physio) & Feature Extraction.
+- **Stages 07–11**: Classical Machine Learning (SVM, XGBoost) & Statistics.
+- **Stage 12**: **Deep Learning Prep** ([`pipelines/12_...`](pipelines/12_workload_deep_learning_prep/))
+  - *Contract*: Exports clean `.set` files → `.fif` MNE Epochs.
+  - *Output*: `output/adaptive_workload/mne_epochs/`.
+- **Stage 13**: **Deep Learning Training** ([`pipelines/13_...`](pipelines/13_workload_deep_learning_training/))
+  - *Contract*: Consumes `.fif` files → Trains PyTorch models (TCNet, EEGNet).
+  - *Scripts*: `train_tcnet.py`, `tune_tcnet_focused.py`.
+
+### Support Directories
+- **`scripts/`**: Master orchestrators (`run_pipeline_master.py`) and health checks.
+- **`config/`**: YAML settings for all stages.
+- **`data/`**: Raw input storage.
+- **`output/`**: Generated results (staged by analysis type).
+
+### Key Documentation
+- [PILOT_TEST_GUIDE.md](PILOT_TEST_GUIDE.md) — **Primary entry point**.
+- [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md) — All commands & troubleshooting.
+- [VALIDATION_TOOLS.md](VALIDATION_TOOLS.md) — Quality assurance guide.
 
 ---
 
@@ -271,6 +210,6 @@ This takes 5 minutes and tells you exactly what's ready and what's missing.
 ---
 
 **Created**: January 2025  
-**Last Updated**: January 2025  
-**Status**: Production-ready for P01–P03 pilot test  
+**Last Updated**: January 2026  
+**Status**: Core Pipeline Ready (Stages 1-6) | Deep Learning Active (Stages 12-13)  
 **Contact**: Joe Hartley <jh3968@bath.ac.uk>
