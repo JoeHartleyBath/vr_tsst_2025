@@ -34,7 +34,7 @@ import math
 import torch.nn.functional as F
 
 from mne_dataloader import load_workload_data, create_group_splits
-from train_tcnet import EEGTCNet
+from train_tcnet import EEGTCNet, apply_baseline_adjustment_inplace, BASELINE_CACHE_PATH
 
 # ==============================================================================
 # CONFIGURATION
@@ -48,8 +48,8 @@ DEFAULT_DB_FILE = os.path.join(RESULTS_DIR, 'optuna_tcnet_staged.db')
 # SMOKE mode: set env var SMOKE=1 for a quick execution+logging validation.
 SMOKE = os.getenv('SMOKE', '0').strip() == '1'
 
-# All 43 EEG-valid participants
-ALL_PIDS = [1, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 
+# All 44 EEG-valid participants (P44 excluded - no valid windows)
+ALL_PIDS = [1, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 
             42, 43, 45, 47, 48]
 
@@ -59,6 +59,9 @@ ACTIVE_PIDS = [1, 3] if SMOKE else ALL_PIDS
 CHANS = 128
 TIME_POINTS = 1250
 CLASSES = 2
+
+# Baseline adjustment (match train_tcnet.py baseline sweep winner)
+BASELINE_ADJUST = 'zscore'  # 'none'|'mean'|'divstd'|'zscore'
 
 # Safety / determinism
 SEED = 1337
@@ -101,6 +104,15 @@ def get_dataset():
             augment=False,
             target_chans=CHANS,
             target_time_points=TIME_POINTS,
+        )
+
+        # Apply the same baseline adjustment used by train_tcnet.py (in-place).
+        # This is separate from fold-safe CV normalization.
+        _ = apply_baseline_adjustment_inplace(
+            DATASET,
+            baseline_adjust=str(BASELINE_ADJUST),
+            baseline_cache_path=str(BASELINE_CACHE_PATH),
+            debug_baseline=False,
         )
         # Hard shape assertion: dataset stores (N,1,C,T)
         assert hasattr(DATASET, 'data'), "Dataset must expose .data"
