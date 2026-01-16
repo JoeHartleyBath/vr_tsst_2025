@@ -80,8 +80,18 @@ def get_augmentation_transform(noise_sigma=0.05, time_shift=5, channel_dropout=0
 class MNEEpochsDataset(Dataset):
     """PyTorch Dataset for MNE Epochs files with optional augmentation."""
     
-    def __init__(self, epoch_files, transform=None, normalize=True, augment=False,
-                 noise_sigma=0.05, time_shift=5, channel_dropout=0.1):
+    def __init__(
+        self,
+        epoch_files,
+        transform=None,
+        normalize=False,
+        augment=False,
+        noise_sigma=0.05,
+        time_shift=5,
+        channel_dropout=0.1,
+        target_chans=128,
+        target_time_points=1250,
+    ):
         """
         Args:
             epoch_files: List of paths to .fif epoch files
@@ -95,6 +105,15 @@ class MNEEpochsDataset(Dataset):
         self.transform = transform
         self.normalize = normalize
         self.augment = augment
+        self.target_chans = int(target_chans)
+        self.target_time_points = int(target_time_points)
+
+        self.shape_fixes = {
+            'cropped_time': 0,
+            'padded_time': 0,
+            'fixed_from_time_lengths': {},
+            'nan_found': False,
+        }
         
         if augment:
             self.aug_transform = get_augmentation_transform(
@@ -116,6 +135,26 @@ class MNEEpochsDataset(Dataset):
             
             # Get data: shape (n_epochs, n_channels, n_times)
             data = epochs.get_data()
+
+            if data.shape[1] != self.target_chans:
+                raise ValueError(
+                    f"Unexpected channel count in {fpath}: {data.shape[1]} (expected {self.target_chans})"
+                )
+
+            orig_t = int(data.shape[2])
+            self.shape_fixes['fixed_from_time_lengths'][orig_t] = (
+                self.shape_fixes['fixed_from_time_lengths'].get(orig_t, 0) + int(data.shape[0])
+            )
+
+            # Enforce fixed number of samples deterministically.
+            # Prefer crop: x[..., :target_time_points]. If too short, pad zeros at end.
+            if orig_t > self.target_time_points:
+                data = data[:, :, : self.target_time_points]
+                self.shape_fixes['cropped_time'] += int(data.shape[0])
+            elif orig_t < self.target_time_points:
+                pad = self.target_time_points - orig_t
+                data = np.pad(data, ((0, 0), (0, 0), (0, pad)), mode='constant', constant_values=0.0)
+                self.shape_fixes['padded_time'] += int(data.shape[0])
             
             # Get labels and metadata
             labels = (epochs.metadata['workload_class'] == 'HighWorkload').astype(int).values
@@ -129,10 +168,6 @@ class MNEEpochsDataset(Dataset):
             all_conditions.append(conditions)
             all_window_indices.append(window_indices)
         
-        # Find minimum time samples across all files (handle 1249 vs 1250 issue)
-        min_samples = min(d.shape[2] for d in all_data)
-        all_data = [d[:, :, :min_samples] for d in all_data]
-        
         # Concatenate all subjects - USE FLOAT32 to save memory!
         self.data = np.concatenate(all_data, axis=0).astype(np.float32)  # (N, C, T)
         self.labels = np.concatenate(all_labels, axis=0)
@@ -140,12 +175,15 @@ class MNEEpochsDataset(Dataset):
         self.conditions = np.concatenate(all_conditions, axis=0)
         self.window_indices = np.concatenate(all_window_indices, axis=0)
         
-        # Normalize per-epoch if requested
+        # Normalize per-epoch if requested (NOT recommended for CV; prefer fold-safe train-only normalization).
         if self.normalize:
             # Z-score across time for each channel within each epoch
             mean = self.data.mean(axis=2, keepdims=True)
             std = self.data.std(axis=2, keepdims=True) + 1e-6
             self.data = (self.data - mean) / std
+
+        if np.isnan(self.data).any() or np.isinf(self.data).any():
+            self.shape_fixes['nan_found'] = True
         
         # Add channel dimension for Conv2d: (N, 1, C, T)
         self.data = self.data[:, np.newaxis, :, :]
@@ -156,6 +194,12 @@ class MNEEpochsDataset(Dataset):
     def __getitem__(self, idx):
         x = torch.FloatTensor(self.data[idx])
         y = torch.LongTensor([self.labels[idx]])[0]
+
+        # Hard shape assertion for safety.
+        if x.ndim != 3 or x.shape[0] != 1 or x.shape[1] != self.target_chans or x.shape[2] != self.target_time_points:
+            raise RuntimeError(
+                f"Epoch shape mismatch at idx={idx}: got {tuple(x.shape)}, expected (1,{self.target_chans},{self.target_time_points})"
+            )
         
         # Apply augmentation if enabled (for training)
         if self.aug_transform is not None:
@@ -211,7 +255,7 @@ def load_workload_data(data_dir, subset_pids=None, augment=False, **aug_kwargs):
     return MNEEpochsDataset(epoch_files, augment=augment, **aug_kwargs)
 
 
-def create_group_splits(dataset, n_splits=3):
+def create_group_splits(dataset, n_splits=3, seed=1337):
     """
     Create train/test indices for GroupKFold by participant.
     
@@ -222,15 +266,18 @@ def create_group_splits(dataset, n_splits=3):
     Yields:
         (train_indices, test_indices) for each fold
     """
-    from sklearn.model_selection import GroupKFold
+    try:
+        from sklearn.model_selection import StratifiedGroupKFold
+        splitter = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+    except Exception:
+        from sklearn.model_selection import GroupKFold
+        splitter = GroupKFold(n_splits=n_splits)
     
     pids = dataset.get_pids()
     X = np.zeros(len(pids))  # Dummy X for sklearn API
     y = dataset.labels
     
-    gkf = GroupKFold(n_splits=n_splits)
-    
-    for train_idx, test_idx in gkf.split(X, y, groups=pids):
+    for train_idx, test_idx in splitter.split(X, y, groups=pids):
         yield train_idx, test_idx
 
 
