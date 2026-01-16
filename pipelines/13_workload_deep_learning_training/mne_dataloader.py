@@ -129,9 +129,41 @@ class MNEEpochsDataset(Dataset):
         all_pids = []
         all_conditions = []
         all_window_indices = []
+        all_start_samp = []
+
+        self.ch_names = None
         
         for fpath in epoch_files:
             epochs = mne.read_epochs(fpath, preload=True, verbose=False)
+
+            # Expose channel names (and enforce exact consistency across all files).
+            ch_names = list(epochs.ch_names)
+            if self.ch_names is None:
+                self.ch_names = ch_names
+            else:
+                if ch_names != self.ch_names:
+                    exp = self.ch_names
+                    found = ch_names
+                    # Find first differing index.
+                    first_diff = None
+                    for j in range(min(len(exp), len(found))):
+                        if exp[j] != found[j]:
+                            first_diff = j
+                            break
+                    if first_diff is None:
+                        first_diff = min(len(exp), len(found))
+                    exp_name = exp[first_diff] if first_diff < len(exp) else "<MISSING>"
+                    found_name = found[first_diff] if first_diff < len(found) else "<MISSING>"
+                    exp_set = set(exp)
+                    found_set = set(found)
+                    missing = sorted(exp_set - found_set)
+                    extras = sorted(found_set - exp_set)
+                    raise ValueError(
+                        "Epoch channel names mismatch across files. "
+                        f"file={str(fpath)!r}; first_diff_idx={first_diff}; "
+                        f"expected={exp_name!r}; found={found_name!r}; "
+                        f"missing={missing}; extras={extras}"
+                    )
             
             # Get data: shape (n_epochs, n_channels, n_times)
             data = epochs.get_data()
@@ -161,12 +193,28 @@ class MNEEpochsDataset(Dataset):
             pids = epochs.metadata['pid'].values
             conditions = epochs.metadata['event_label'].values
             window_indices = epochs.metadata['window_idx'].values
+
+            # Prefer start_samp from metadata (added by exporter). Fallback to epochs.events.
+            if epochs.metadata is not None and 'start_samp' in epochs.metadata.columns:
+                start_samp = epochs.metadata['start_samp'].astype('int64').values
+                if epochs.events is not None and epochs.events.shape[0] == len(start_samp):
+                    ev_samp = epochs.events[:, 0].astype('int64')
+                    if not np.array_equal(start_samp, ev_samp):
+                        raise AssertionError(
+                            f"start_samp mismatch vs epochs.events[:,0] in {fpath}: "
+                            f"metadata!=events for at least one epoch"
+                        )
+            else:
+                if epochs.events is None or epochs.events.shape[0] != len(labels):
+                    raise AssertionError(f"Missing epochs.events for start_samp fallback in {fpath}")
+                start_samp = epochs.events[:, 0].astype('int64')
             
             all_data.append(data)
             all_labels.append(labels)
             all_pids.append(pids)
             all_conditions.append(conditions)
             all_window_indices.append(window_indices)
+            all_start_samp.append(start_samp)
         
         # Concatenate all subjects - USE FLOAT32 to save memory!
         self.data = np.concatenate(all_data, axis=0).astype(np.float32)  # (N, C, T)
@@ -174,6 +222,7 @@ class MNEEpochsDataset(Dataset):
         self.pids = np.concatenate(all_pids, axis=0)
         self.conditions = np.concatenate(all_conditions, axis=0)
         self.window_indices = np.concatenate(all_window_indices, axis=0)
+        self.start_samp = np.concatenate(all_start_samp, axis=0).astype(np.int64)
         
         # Normalize per-epoch if requested (NOT recommended for CV; prefer fold-safe train-only normalization).
         if self.normalize:
