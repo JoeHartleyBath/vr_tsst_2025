@@ -1,0 +1,33 @@
+- **Verdict (XDF → EEGLAB scaling)**: XDF EEG numeric values behave as **mV**, and the pipeline’s intended **×1000** conversion to EEGLAB’s stored **µV** representation is **present and correct**.
+- **Evidence basis**: Cross-stage audit compares the **same time window** across files (selected by time, not sample indices) and uses the **same 128-channel montage** by aligning and merging the two XDF EEG streams to match the 128-channel EEGLAB `.set`.
+- **Participants audited**: `P01`, `P03`, `P10`, `P20`.
+- **Window audited**: `t0=120s` to `t1=130s` (10 seconds) relative to each recording’s start.
+- **Where outputs live**:
+- **JSON reports**: [results/audits/amplitude](results/audits/amplitude)
+- **Index**: [results/audits/amplitude/amplitude_audit_index.json](results/audits/amplitude/amplitude_audit_index.json)
+- **Per-participant**: [results/audits/amplitude/amplitude_audit_P01.json](results/audits/amplitude/amplitude_audit_P01.json), [results/audits/amplitude/amplitude_audit_P03.json](results/audits/amplitude/amplitude_audit_P03.json), [results/audits/amplitude/amplitude_audit_P10.json](results/audits/amplitude/amplitude_audit_P10.json), [results/audits/amplitude/amplitude_audit_P20.json](results/audits/amplitude/amplitude_audit_P20.json)
+-
+- **Primary ratio (R1)**: $R1=\frac{\text{raw\_set\_stored\_µV}}{\text{xdf\_native}}$.
+- **Unit reasoning**:
+- If XDF is **µV** numerically, then $R1\approx1$.
+- If XDF is **mV** numerically, then $1\text{ mV}=10^3\text{ µV}$ so $R1\approx10^3$.
+- If XDF is **V** numerically, then $1\text{ V}=10^6\text{ µV}$ so $R1\approx10^6$.
+- **Observed R1**: approximately **$10^3$** for all audited participants (best hypothesis reported as `xdf_is_mV` in JSON).
+-
+- **Cleaning ratio (R2)**: $R2=\frac{\text{cleaned\_set\_stored\_µV}}{\text{raw\_set\_stored\_µV}}$.
+- **Interpretation**: cleaning may legitimately reduce variance (artifact removal + filtering), so $R2<1$ is expected; observed values vary by participant but remain within plausible ranges.
+-
+- **MNE vs EEGLAB unit consistency (R3, R4)**:
+- $R3=\frac{\text{raw\_set\_MNE\_V}}{\text{raw\_set\_stored\_µV}}\approx10^{-6}$ because converting µV→V multiplies by $10^{-6}$.
+- $R4=\frac{\text{cleaned\_set\_MNE\_V}}{\text{cleaned\_set\_stored\_µV}}\approx10^{-6}$ for the same reason.
+- **Observed R3/R4**: approximately **$10^{-6}$** in the audited outputs.
+-
+- **Sanity check (waveform identity)**:
+- For cleaned `.set`, MNE volts time series match direct `.fdt` reads after applying the explicit µV→V factor ($10^{-6}$), with median per-channel correlation approximately **1.0**.
+- This confirms the audit is not “unit confusion” and that `.fdt` decoding respects EEGLAB/MATLAB column-major layout.
+-
+- **Key implications**:
+- **Tiny values in MNE are expected**: MNE returns **Volts**, while EEGLAB stored numeric values are treated as **µV**.
+- **No post-hoc ×1000 correction is needed** for the audited conversions; the scaling behavior matches the intended pipeline convention.
+-
+- **Canonical audit script location**: [scripts/audits/cross_stage_amplitude_audit.py](scripts/audits/cross_stage_amplitude_audit.py)

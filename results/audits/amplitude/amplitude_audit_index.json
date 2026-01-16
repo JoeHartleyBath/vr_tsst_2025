@@ -1,0 +1,14 @@
+{
+  "participants": [
+    "P01",
+    "P03",
+    "P10",
+    "P20"
+  ],
+  "reports": [
+    "C:\\vr_tsst_2025\\tmp\\amplitude_audit\\amplitude_audit_P01.json",
+    "C:\\vr_tsst_2025\\tmp\\amplitude_audit\\amplitude_audit_P03.json",
+    "C:\\vr_tsst_2025\\tmp\\amplitude_audit\\amplitude_audit_P10.json",
+    "C:\\vr_tsst_2025\\tmp\\amplitude_audit\\amplitude_audit_P20.json"
+  ]
+}

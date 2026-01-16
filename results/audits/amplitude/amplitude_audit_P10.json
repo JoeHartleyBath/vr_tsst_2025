@@ -1,0 +1,167 @@
+{
+  "participant": "P10",
+  "t0_s": 120.0,
+  "t1_s": 130.0,
+  "duration_s": 10.0,
+  "channel_mode": "all128",
+  "paths": {
+    "xdf": "C:\\vr_tsst_2025\\data\\RAW\\eeg\\P10.xdf",
+    "raw_set": "C:\\vr_tsst_2025\\output\\sets\\P10.set",
+    "cleaned_set": "C:\\vr_tsst_2025\\output\\cleaned_eeg\\P10_cleaned.set"
+  },
+  "stages": {
+    "xdf": {
+      "stage": "xdf",
+      "unit": "native",
+      "n_channels": 128,
+      "n_samples": 5001,
+      "srate_hz": 500.0,
+      "median_std": 4.289217102857969e-05,
+      "median_mad": 2.8310110792517662e-05,
+      "xdf_mode": "merged_128",
+      "xdf_unit_metadata": "V",
+      "channel_mapping_source": "config_assumed_order",
+      "time_index": {
+        "start": 60000,
+        "stop": 65001
+      },
+      "selected_channels": {
+        "count": 128,
+        "mode": "by_name"
+      },
+      "median_std_selected": 4.289217102857968e-05
+    },
+    "raw_set": {
+      "exists": true,
+      "stored_data_method": "loadmat_EEG_data(mne_error=AttributeError)",
+      "srate_hz": 500.0,
+      "n_channels": 128,
+      "time_index": {
+        "start": 60000,
+        "stop": 65000
+      },
+      "stats": {
+        "matlab_uV": {
+          "stage": "raw_set_matlab",
+          "unit": "uV",
+          "n_channels": 128,
+          "n_samples": 5000,
+          "srate_hz": 500.0,
+          "median_std": 0.042883387834239145,
+          "median_mad": 0.0282975435256958
+        },
+        "mne_V": {
+          "stage": "raw_set_mne",
+          "unit": "V",
+          "n_channels": 128,
+          "n_samples": 5000,
+          "srate_hz": 500.0,
+          "median_std": 4.2883387834239145e-08,
+          "median_mad": 2.8297543525695848e-08
+        },
+        "mne_source": "uV_to_V_assumed",
+        "mne_as_uV_median_std": 0.042883387834239145,
+        "selected_channels": {
+          "count": 128,
+          "example_names": [
+            "Z2",
+            "Z4",
+            "Z6",
+            "Z8",
+            "Z10",
+            "Z12",
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        }
+      }
+    },
+    "cleaned_set": {
+      "exists": true,
+      "stored_data_method": "fdt_float32",
+      "srate_hz": 125.0,
+      "n_channels": 128,
+      "time_index": {
+        "start": 15000,
+        "stop": 16250
+      },
+      "stats": {
+        "mne_V": {
+          "stage": "cleaned_set_mne",
+          "unit": "V",
+          "n_channels": 128,
+          "n_samples": 1250,
+          "srate_hz": 125.0,
+          "median_std": 9.61249917763522e-09,
+          "median_mad": 4.3134601546626076e-09
+        },
+        "mne_source": "mne",
+        "mne_as_uV_median_std": 0.00961249917763522,
+        "selected_channels": {
+          "count": 128,
+          "example_names": [
+            "Z2",
+            "Z4",
+            "Z6",
+            "Z8",
+            "Z10",
+            "Z12",
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        "matlab_uV": {
+          "stage": "cleaned_set_matlab",
+          "unit": "uV",
+          "n_channels": 128,
+          "n_samples": 1250,
+          "srate_hz": 125.0,
+          "median_std": 0.009612498804926872,
+          "median_mad": 0.00431346008554101
+        }
+      }
+    }
+  },
+  "ratios": {
+    "R1_rawset_uV_over_xdf_native": 999.7952261652905,
+    "R1_interpretation": {
+      "r1": 999.7952261652905,
+      "best_hypothesis": "xdf_is_mV",
+      "distance_log10": 8.894125318414936e-05,
+      "close_to_1": false,
+      "close_to_1e3": true,
+      "close_to_1e6": false
+    },
+    "R2_clean_uV_over_raw_uV": 0.22415437050083106,
+    "R3_raw_mne_V_over_raw_uV": 1e-06,
+    "R3_source": "uV_to_V_assumed",
+    "R3_expected": {
+      "value": 1e-06,
+      "reason": "If EEGLAB stored numeric values are \u00b5V, then converting to V multiplies by 1e-6. MNE returns Volts."
+    },
+    "R4_clean_mne_V_over_clean_uV": 1.000000038773305e-06,
+    "R4_source": "mne",
+    "R4_expected": {
+      "value": 1e-06,
+      "reason": "If EEGLAB stored numeric values are \u00b5V, then converting to V multiplies by 1e-6. MNE returns Volts."
+    }
+  },
+  "sanity": {
+    "channel_mapping": {
+      "wanted_names_source": "xdf_metadata",
+      "n_wanted": 128
+    },
+    "cleaned_set_mne_vs_stored_corr_median": 0.9999999999999997
+  },
+  "verdicts": {
+    "cleaned_mne_vs_stored_ok": true,
+    "R3_unit_consistency_ok": true,
+    "R4_unit_consistency_ok": true,
+    "R1_best_hypothesis": "xdf_is_mV",
+    "xdf_to_set_scaling_x1000_likely": true
+  }
+}
