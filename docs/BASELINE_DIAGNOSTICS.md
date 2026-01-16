@@ -15,3 +15,12 @@ When applying std-based normalization (e.g., `divstd`), the epoch scale becomes 
 ## Conclusion
 
 Mean subtraction is effectively a no-op under the current cleaning; std-based normalization (`divstd`/`zscore`) is the lever that materially changes scale.
+
+## Baseline sweep (2026-01-16)
+
+A controlled sweep over `baseline_adjust ∈ {none, divstd, zscore}` (same seed and CV splits) shows:
+
+- Winner: `zscore`
+- Mean Macro-F1: `0.570 ± 0.019`
+
+Results summary is written to `results/workload_tcnet_baseline_sweep.json`.
