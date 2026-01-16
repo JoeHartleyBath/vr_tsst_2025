@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Block pushing from main. Cross-platform (Git Bash on Windows supported).
+
+if command -v python >/dev/null 2>&1; then
+  python -m tools.devtools guard-push
+  exit $?
+elif command -v python3 >/dev/null 2>&1; then
+  python3 -m tools.devtools guard-push
+  exit $?
+elif command -v py >/dev/null 2>&1; then
+  py -3 -m tools.devtools guard-push
+  exit $?
+else
+  echo "Error: Python not found (needed to run push guard)." 1>&2
+  exit 1
+fi
