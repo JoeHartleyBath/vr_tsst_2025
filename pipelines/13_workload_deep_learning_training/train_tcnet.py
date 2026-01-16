@@ -61,8 +61,12 @@ SEED = 1337
 SMOKE_TEST = False
 
 # Baseline adjustment (configured via CLI)
-BASELINE_ADJUST = "none"  # 'none'|'mean'|'divstd'|'zscore'
+BASELINE_ADJUST = "zscore"  # 'none'|'mean'|'divstd'|'zscore'
 BASELINE_CACHE_PATH = r'C:\vr_tsst_2025\results\baseline_stats_cache.pkl'
+
+
+def fmt(x: float, unit: str) -> str:
+    return f"{float(x):.3e} {unit}"
 
 
 def _attention_tag() -> str:
@@ -1005,9 +1009,9 @@ def run_cv_evaluation(
     if baseline_info.get("enabled"):
         print(
             f"Baseline adjustment applied: {baseline_adjust}. "
-            "Baseline stats (raw baseline segment): "
-            f"median |baseline_mean|={baseline_info['baseline_abs_median_v']:.3e} V ({baseline_info['baseline_abs_median_uv']:.6f} µV), "
-            f"median baseline_std={baseline_info['baseline_std_median_v']:.3e} V ({baseline_info['baseline_std_median_uv']:.6f} µV)"
+            "Baseline stats (raw baseline segment; physical units): "
+            f"median |baseline_mean|={fmt(baseline_info['baseline_abs_median_uv'], 'µV')}, "
+            f"median baseline_std={fmt(baseline_info['baseline_std_median_uv'], 'µV')}"
         )
 
     # Post-adjust quick scale check (dataset-wide sample).
@@ -1016,12 +1020,9 @@ def run_cv_evaluation(
         x = dataset.data[:sample_n, 0, :, :]  # (S,C,T)
         med_epoch_std = float(np.median(np.std(x, axis=2)))
         if baseline_adjust in {"divstd", "zscore"}:
-            print(f"Post-adjust median epoch std (sample, unitless): {med_epoch_std:.3e}")
+            print(f"Post-adjust median epoch std (sample): {fmt(med_epoch_std, 'unitless')}")
         else:
-            print(
-                "Post-adjust median epoch std (sample): "
-                f"{med_epoch_std:.3e} V ({med_epoch_std * 1e6:.6f} µV)"
-            )
+            print(f"Post-adjust median epoch std (sample): {fmt(med_epoch_std * 1e6, 'µV')}")
     
     fold_results = []
     
@@ -1074,15 +1075,15 @@ def run_cv_evaluation(
             if baseline_adjust in {"divstd", "zscore"}:
                 print(
                     "Baseline sanity (train fold): "
-                    f"median |baseline_mean|={base_abs_med_v:.3e} V ({base_abs_med_uv:.6f} µV); "
-                    f"median epoch std(after baseline, unitless)={med_epoch_std:.3e}"
+                    f"median |baseline_mean|={fmt(base_abs_med_uv, 'µV')}; "
+                    f"median epoch std(after baseline)={fmt(med_epoch_std, 'unitless')}"
                 )
             else:
                 med_epoch_std_uv = med_epoch_std * 1e6
                 print(
                     "Baseline sanity (train fold): "
-                    f"median |baseline_mean|={base_abs_med_v:.3e} V ({base_abs_med_uv:.6f} µV); "
-                    f"median epoch std(after baseline)={med_epoch_std:.3e} V ({med_epoch_std_uv:.6f} µV)"
+                    f"median |baseline_mean|={fmt(base_abs_med_uv, 'µV')}; "
+                    f"median epoch std(after baseline)={fmt(med_epoch_std_uv, 'µV')}"
                 )
 
         # Fold-safe normalization (train only)
@@ -1091,9 +1092,9 @@ def run_cv_evaluation(
         std_c_d = std_c.to(device)
         med_std_v, med_std_uv = summarize_std(std_c)
         if baseline_adjust in {"divstd", "zscore"}:
-            print(f"Train-only per-channel std (median, unitless): {med_std_v:.6e}")
+            print(f"Train-only per-channel std (median): {fmt(med_std_v, 'unitless')}")
         else:
-            print(f"Train-only per-channel std (median): {med_std_uv:.3f} µV ({med_std_v:.6e} V)")
+            print(f"Train-only per-channel std (median): {fmt(med_std_uv, 'µV')}")
         
         # Create data loaders - use augmented for train, non-augmented for test
         train_subset = Subset(dataset_aug, train_idx)  # Augmented
@@ -1297,6 +1298,64 @@ def run_cv_evaluation(
     return mean_acc, mean_f1
 
 
+def _read_fold_f1_from_log(fold_log_path: str) -> list[float]:
+    vals: list[float] = []
+    try:
+        with open(fold_log_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                obj = json.loads(line)
+                if isinstance(obj, dict) and 'final_macro_f1' in obj:
+                    vals.append(float(obj['final_macro_f1']))
+    except Exception as e:
+        print(f"[WARN] baseline sweep: failed reading fold log {fold_log_path}: {e}")
+    return vals
+
+
+def run_baseline_sweep(*, baseline_cache_path: str | None) -> None:
+    modes = ["none", "divstd", "zscore"]
+    results: list[dict] = []
+
+    out_path = r"C:\vr_tsst_2025\results\workload_tcnet_baseline_sweep.json"
+    ensure_parent_dir(out_path)
+
+    for mode in modes:
+        print("\n" + "=" * 60)
+        print(f"BASELINE SWEEP: running mode={mode}")
+        print("=" * 60)
+
+        mean_acc, mean_f1 = run_cv_evaluation(baseline_adjust=mode, baseline_cache_path=baseline_cache_path, debug_baseline=False)
+        fold_log_path = make_fold_log_path(baseline_adjust=mode)
+        per_fold_f1 = _read_fold_f1_from_log(fold_log_path)
+        std_f1 = float(np.std(per_fold_f1)) if len(per_fold_f1) > 0 else float('nan')
+
+        results.append({
+            "baseline": mode,
+            "mean_acc": float(mean_acc),
+            "mean_f1": float(mean_f1),
+            "std_f1": std_f1,
+            "per_fold_f1": [float(x) for x in per_fold_f1],
+        })
+
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(results, f, indent=2)
+
+    # Winner: highest mean macro-F1; if tie, lowest std of per-fold F1.
+    def key_fn(r: dict) -> tuple[float, float]:
+        return (float(r.get('mean_f1', float('-inf'))), -float(r.get('std_f1', float('inf'))))
+
+    winner = sorted(results, key=key_fn, reverse=True)[0] if results else None
+    print("\nBASELINE SWEEP COMPLETE")
+    if winner is None:
+        print("Winner: <none>")
+        return
+    print(f"Winner: {winner['baseline']}")
+    print(f"Mean Macro-F1: {winner['mean_f1']:.3f} ± {winner['std_f1']:.3f}")
+    print(f"Wrote: {out_path}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train EEG-TCNet on workload epochs with optional baseline adjustment")
     parser.add_argument(
@@ -1312,11 +1371,20 @@ if __name__ == "__main__":
         help="Optional pickle cache for baseline means (default: results/baseline_stats_cache.pkl)",
     )
     parser.add_argument(
+        "--baseline_sweep",
+        action="store_true",
+        help="Run baseline sweep over modes [none, divstd, zscore] and write results JSON",
+    )
+    parser.add_argument(
         "--debug_baseline",
         action="store_true",
         help="If set, print baseline stats for first pid (max 5 epochs) during baseline adjustment",
     )
     args = parser.parse_args()
+
+    if bool(args.baseline_sweep):
+        run_baseline_sweep(baseline_cache_path=str(args.baseline_cache_path))
+        raise SystemExit(0)
 
     run_cv_evaluation(
         baseline_adjust=str(args.baseline_adjust),
