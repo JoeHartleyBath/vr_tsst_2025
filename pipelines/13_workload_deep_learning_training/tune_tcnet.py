@@ -67,14 +67,16 @@ BASELINE_ADJUST = 'zscore'  # 'none'|'mean'|'divstd'|'zscore'
 SEED = 1337
 
 # CLI-controlled toggles (defaults; overridden in main())
-LABEL_SMOOTHING_ENABLED = True
+LABEL_SMOOTHING_ENABLED = False
 LOCK_BATCH_SIZE = False
 
 # Tuning settings
 TIME_LIMIT_HOURS = 12
 TIME_LIMIT_SECONDS = TIME_LIMIT_HOURS * 3600
 MAX_EPOCHS = 60  # Slightly more epochs
-EARLY_STOP_PATIENCE = 12
+# Prefer optimization over early stopping by default.
+# Set via CLI --early_stop_patience; 0 disables early stopping.
+EARLY_STOP_PATIENCE = 0
 N_FOLDS = 3
 
 if SMOKE:
@@ -414,7 +416,7 @@ def train_one_fold(
             patience_counter = 0
         else:
             patience_counter += 1
-            if patience_counter >= EARLY_STOP_PATIENCE:
+            if int(EARLY_STOP_PATIENCE) > 0 and patience_counter >= int(EARLY_STOP_PATIENCE):
                 break
 
         if fold == 0:
@@ -731,18 +733,20 @@ def save_stage_artifacts(
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description='Staged Optuna tuning for EEG-TCNet (safe-CV, macro-F1 objective).')
     p.add_argument('--stage', choices=['1', '2', 'both'], default='both')
-    p.add_argument('--stage1_trials', type=int, default=100)
+    p.add_argument('--stage1_trials', type=int, default=150)
     p.add_argument('--stage2_trials', type=int, default=50)
     p.add_argument('--top_k', type=int, default=10)
     p.add_argument('--seed', type=int, default=1337)
     p.add_argument('--db_path', type=str, default=DEFAULT_DB_FILE)
     p.add_argument('--study_name_prefix', type=str, default=DEFAULT_STUDY_NAME_PREFIX)
-    p.add_argument('--stage1_hours', type=float, default=8.0)
-    p.add_argument('--stage2_hours', type=float, default=4.0)
+    # Prefer completing requested trials over time-based cutoffs (0 disables timeout).
+    p.add_argument('--stage1_hours', type=float, default=0.0)
+    p.add_argument('--stage2_hours', type=float, default=0.0)
     p.add_argument('--disable_label_smoothing', action='store_true')
     p.add_argument('--lock_batch_size', action='store_true')
     p.add_argument('--stage2_arch_k', type=int, default=3)
     p.add_argument('--stage2_trials_per_arch', type=int, default=25)
+    p.add_argument('--early_stop_patience', type=int, default=0, help='0 disables early stopping; otherwise stop after N non-improving epochs.')
     return p.parse_args()
 
 
@@ -759,6 +763,11 @@ def run_stage1(*, storage: str, prefix: str, n_trials: int, top_k: int, seed: in
         pruner=pruner,
         load_if_exists=True,
     )
+
+    # Resume-aware behavior: treat n_trials as the target TOTAL trials for the study.
+    existing_trials = int(len(study.trials))
+    remaining_trials = max(0, int(n_trials) - existing_trials)
+    print(f"Stage1 study '{study_name}': existing_trials={existing_trials} | target_trials={int(n_trials)} | running_additional={remaining_trials}")
 
     trials_jsonl_path = os.path.join(RESULTS_DIR, f"optuna_trials_tcnet_{prefix}_stage1.jsonl")
 
@@ -787,14 +796,17 @@ def run_stage1(*, storage: str, prefix: str, n_trials: int, top_k: int, seed: in
     if stage1_hours is not None and float(stage1_hours) > 0:
         timeout_s = float(stage1_hours) * 3600.0
 
-    study.optimize(
-        objective_stage1,
-        n_trials=int(n_trials),
-        timeout=timeout_s,
-        callbacks=[TrialJSONLLogger(trials_jsonl_path)],
-        show_progress_bar=True,
-        gc_after_trial=True,
-    )
+    if remaining_trials > 0:
+        study.optimize(
+            objective_stage1,
+            n_trials=int(remaining_trials),
+            timeout=timeout_s,
+            callbacks=[TrialJSONLLogger(trials_jsonl_path)],
+            show_progress_bar=True,
+            gc_after_trial=True,
+        )
+    else:
+        print("Stage1: target already met; skipping optimize().")
     elapsed = time.time() - start
 
     top_trials = _select_top_k(study, top_k)
@@ -870,6 +882,11 @@ def run_stage2(
         load_if_exists=True,
     )
 
+    # Resume-aware behavior: treat n_trials as the target TOTAL trials for the study.
+    existing_trials = int(len(study.trials))
+    remaining_trials = max(0, int(n_trials) - existing_trials)
+    print(f"Stage2 study '{study_name}': existing_trials={existing_trials} | target_trials={int(n_trials)} | running_additional={remaining_trials}")
+
     trials_jsonl_path = os.path.join(RESULTS_DIR, f"optuna_trials_tcnet_{prefix}_stage2.jsonl")
 
     class TrialJSONLLogger:
@@ -900,14 +917,17 @@ def run_stage2(
     if stage2_hours is not None and float(stage2_hours) > 0:
         timeout_s = float(stage2_hours) * 3600.0
 
-    study.optimize(
-        obj,
-        n_trials=int(n_trials),
-        timeout=timeout_s,
-        callbacks=[TrialJSONLLogger(trials_jsonl_path)],
-        show_progress_bar=True,
-        gc_after_trial=True,
-    )
+    if remaining_trials > 0:
+        study.optimize(
+            obj,
+            n_trials=int(remaining_trials),
+            timeout=timeout_s,
+            callbacks=[TrialJSONLLogger(trials_jsonl_path)],
+            show_progress_bar=True,
+            gc_after_trial=True,
+        )
+    else:
+        print("Stage2: target already met; skipping optimize().")
     elapsed = time.time() - start
 
     save_stage_artifacts(stage='stage2', study=study, prefix=prefix, elapsed_s=elapsed, top_k=top_k, best_arch=best_arch, center=center)
@@ -920,12 +940,14 @@ def main() -> None:
     global SPLITS
     global LABEL_SMOOTHING_ENABLED
     global LOCK_BATCH_SIZE
+    global EARLY_STOP_PATIENCE
 
     args = parse_args()
     SEED = int(args.seed)
     SPLITS = None  # re-derive folds for this seed
     LABEL_SMOOTHING_ENABLED = not bool(args.disable_label_smoothing)
     LOCK_BATCH_SIZE = bool(args.lock_batch_size)
+    EARLY_STOP_PATIENCE = int(args.early_stop_patience)
 
     storage = _normalize_storage(args.db_path)
     prefix = str(args.study_name_prefix).strip()
@@ -944,6 +966,7 @@ def main() -> None:
     print(f"SMOKE: {SMOKE} | ACTIVE_PIDS={ACTIVE_PIDS}")
     print(f"Label smoothing enabled: {LABEL_SMOOTHING_ENABLED}")
     print(f"Lock batch size (stage2): {LOCK_BATCH_SIZE}")
+    print(f"Early stopping patience: {EARLY_STOP_PATIENCE} (0=disabled)")
 
     print("Loading dataset and precomputing folds (once)...")
     get_dataset()

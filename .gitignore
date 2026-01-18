@@ -71,8 +71,12 @@ Thumbs.db
 *.set
 
 # Results
-# /results/
+/results/
+!/results/README.md
 *.rds
+
+# Manuscript build artifacts
+manuscript/manuscript/overleaf_new_without_comments.sty
 
 # Logs
 /logs/
