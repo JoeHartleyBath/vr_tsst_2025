@@ -33,10 +33,6 @@ TARGET_CONDITIONS = {
                      'HighStress_HighCog1022_Task', 'HighStress_HighCog2043_Task']
 }
 
-# Feature groups to EXCLUDE (Manuscript logic)
-EXCLUDE_BANDS = [] # ['Delta']
-EXCLUDE_REGIONS = [] # ['Occipital']
-
 def get_base_features(df):
     """Filter columns to get only band power features."""
     all_cols = df.columns.tolist()

@@ -19,6 +19,8 @@ import argparse
 import pickle
 import re
 from pathlib import Path
+import hashlib
+import math
 
 import torch
 import torch.nn as nn
@@ -65,6 +67,61 @@ BASELINE_ADJUST = "zscore"  # 'none'|'mean'|'divstd'|'zscore'
 BASELINE_CACHE_PATH = r'C:\vr_tsst_2025\results\baseline_stats_cache.pkl'
 
 
+def _md5_text(s: str) -> str:
+    return hashlib.md5(s.encode("utf-8"), usedforsecurity=False).hexdigest()
+
+
+def _hash_pid_list(pids: np.ndarray | list[int]) -> str:
+    arr = np.asarray(pids, dtype=int).reshape(-1)
+    joined = ",".join(str(int(x)) for x in sorted(arr.tolist()))
+    return _md5_text(joined)
+
+
+def _count_params(model: nn.Module) -> int:
+    return int(sum(p.numel() for p in model.parameters()))
+
+
+def _state_dict_key_md5(model: nn.Module) -> str:
+    keys = sorted(list(model.state_dict().keys()))
+    return _md5_text("\n".join(keys))
+
+
+def _print_parity_block(title: str, lines: list[str]) -> None:
+    bar = "=" * 78
+    print(f"\n{bar}\n[PARITY] {title}\n{bar}")
+    for ln in lines:
+        print(f"[PARITY] {ln}")
+
+
+def _dataset_signature(dataset: MNEEpochsDataset) -> dict:
+    data_shape = tuple(getattr(dataset, "data").shape) if hasattr(dataset, "data") else None
+    labels = np.asarray(getattr(dataset, "labels")) if hasattr(dataset, "labels") else np.asarray([])
+    pids = np.asarray(getattr(dataset, "pids")) if hasattr(dataset, "pids") else np.asarray([])
+    return {
+        "n_samples": int(len(dataset)),
+        "data_shape": data_shape,
+        "n_unique_pids": int(len(np.unique(pids))) if pids.size else 0,
+        "class_counts": class_counts(labels) if labels.size else {},
+    }
+
+
+def build_dataset(*, augment: bool, normalize: bool | None, subset_pids: list[int] | None):
+    """Build the dataset in a way that can match tune_tcnet.py defaults.
+
+    Note: tune_tcnet.py does not pass normalize=... explicitly, relying on the
+    loader default (normalize=False). We support both behaviors via normalize=None.
+    """
+    kwargs: dict = {
+        "subset_pids": subset_pids,
+        "augment": bool(augment),
+        "target_chans": CHANS,
+        "target_time_points": TIME_POINTS,
+    }
+    if normalize is not None:
+        kwargs["normalize"] = bool(normalize)
+    return load_workload_data(DATA_DIR, **kwargs)
+
+
 def fmt(x: float, unit: str) -> str:
     return f"{float(x):.3e} {unit}"
 
@@ -87,6 +144,11 @@ def make_results_path(*, baseline_adjust: str) -> str:
 def make_fold_log_path(*, baseline_adjust: str) -> str:
     tag = _attention_tag()
     return rf"C:\vr_tsst_2025\results\workload_tcnet_baseline_{baseline_adjust}_{tag}_safe_cv_folds.jsonl"
+
+
+def make_window_pred_path(*, baseline_adjust: str) -> str:
+    tag = _attention_tag()
+    return rf"C:\vr_tsst_2025\results\workload_tcnet_baseline_{baseline_adjust}_{tag}_safe_cv_window_preds.jsonl"
 
 
 def normalize_desc(desc: object) -> str:
@@ -576,11 +638,23 @@ CHANS = 128
 TIME_POINTS = 1250
 CLASSES = 2
 
-# Training hyperparameters
+# Model hyperparameters (can be overridden by tuned params)
+F1 = 8
+D = 2
+KERN_LENGTH = 64
+DROPOUT_EEG = 0.2
+TCN_FILTERS = 12
+TCN_KERNEL = 4
+TCN_DEPTH = 2
+DROPOUT_TCN = 0.3
+
+# Training hyperparameters (can be overridden by tuned params)
 BATCH_SIZE = 16
 EPOCHS = 50
 LEARNING_RATE = 1e-3
 EARLY_STOP_PATIENCE = 10
+WEIGHT_DECAY = 0.0
+LABEL_SMOOTHING = 0.0
 
 # Debug limits (used in SMOKE_TEST)
 MAX_BATCHES_PER_EPOCH = None  # e.g., 5
@@ -820,6 +894,15 @@ def set_reproducibility(seed: int):
         print(f"WARNING: torch.use_deterministic_algorithms(True) failed: {e}")
 
 
+def build_criterion(class_weights: torch.Tensor, label_smoothing: float):
+    try:
+        return nn.CrossEntropyLoss(weight=class_weights, label_smoothing=float(label_smoothing))
+    except TypeError:
+        if float(label_smoothing) > 0.0:
+            print("[WARN] label_smoothing not supported by this torch; falling back to 0.0")
+        return nn.CrossEntropyLoss(weight=class_weights)
+
+
 def evaluate_normalized(model, loader, criterion, device, mean_c, std_c, max_batches=None):
     """Evaluate model with fold-safe normalization applied.
 
@@ -922,41 +1005,87 @@ def run_cv_evaluation(
     baseline_adjust: str,
     baseline_cache_path: str | None,
     debug_baseline: bool = False,
+    export_window_preds: bool = False,
+    parity_mode: bool = False,
+    trial_number: int = 0,
+    train_seed: int | None = None,
+    split_seed: int | None = None,
+    save_checkpoints: bool = False,
+    tuned_reference_macro_f1: float | None = None,
 ):
     """Run 3-fold GroupKFold cross-validation with augmentation and class weighting."""
-    set_reproducibility(SEED)
+    effective_split_seed = int(SEED if split_seed is None else split_seed)
+
+    # Parity with tune_tcnet.py Stage2
+    # - Stage2 uses trial_seed = SEED + 100000 + trial.number
+    # - That seed drives model init + DataLoader shuffling order.
+    if parity_mode:
+        trial_seed = int(SEED + 100000 + int(trial_number))
+        effective_train_seed = int(trial_seed)
+    else:
+        trial_seed = None
+        effective_train_seed = int(SEED if train_seed is None else train_seed)
+
+    # Determinism: must match the tuner when parity_mode is enabled.
+    set_reproducibility(effective_train_seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
-    print(f"Augmentation: {USE_AUGMENTATION}")
-    print(f"Seed: {SEED}")
+    print(f"Augmentation: {USE_AUGMENTATION} (parity_mode forces False)")
+    print(f"Seed (train RNG): {effective_train_seed}")
+    print(f"Seed (splits): {effective_split_seed}")
     print(f"Baseline adjust: {baseline_adjust}")
+    print(f"Label smoothing: {LABEL_SMOOTHING}")
+    print(f"Weight decay: {WEIGHT_DECAY}")
+    if parity_mode:
+        print("Parity mode: ENABLED (tuner-aligned)")
     if baseline_cache_path:
         print(f"Baseline cache:  {baseline_cache_path}")
+    else:
+        print("Baseline cache:  <DISABLED>")
 
     n_splits = 2 if SMOKE_TEST else 3
-    max_epochs = 3 if SMOKE_TEST else EPOCHS
+    max_epochs = 3 if SMOKE_TEST else (60 if parity_mode else EPOCHS)
     max_batches = 5 if SMOKE_TEST else MAX_BATCHES_PER_EPOCH
     if SMOKE_TEST:
         print("SMOKE_TEST enabled: n_splits=2, EPOCHS=3, max_batches_per_epoch=5")
     results_path = make_results_path(baseline_adjust=baseline_adjust)
     fold_log_path = make_fold_log_path(baseline_adjust=baseline_adjust)
+    window_pred_path = make_window_pred_path(baseline_adjust=baseline_adjust)
     ensure_parent_dir(results_path)
     ensure_parent_dir(fold_log_path)
+    if export_window_preds:
+        ensure_parent_dir(window_pred_path)
     
     # Load data WITHOUT augmentation first (for class weights and splits)
-    dataset = load_workload_data(
-        DATA_DIR,
-        subset_pids=SUBSET_PIDS,
-        augment=False,
-        normalize=False,
-        target_chans=CHANS,
-        target_time_points=TIME_POINTS,
+    # Use normalize=None in parity_mode to exactly match tune_tcnet.py call signature.
+    dataset = build_dataset(augment=False, normalize=None if parity_mode else False, subset_pids=SUBSET_PIDS)
+    ds_sig = _dataset_signature(dataset)
+    _print_parity_block(
+        "RUN START",
+        [
+            f"dataset: n_samples={ds_sig['n_samples']} shape={ds_sig['data_shape']} unique_pids={ds_sig['n_unique_pids']} class_counts={ds_sig['class_counts']}",
+            # Parity with tune_tcnet.py Stage2
+            f"trial_number={int(trial_number)} trial_seed={effective_train_seed}" if parity_mode else "trial_number=<n/a> trial_seed=<n/a>",
+            f"baseline_adjust={baseline_adjust} baseline_cache={'enabled' if baseline_cache_path else 'disabled'}",
+            f"splits: n_splits={n_splits} seed={effective_split_seed}",
+            f"train: max_epochs={max_epochs} early_stop_patience={int(EARLY_STOP_PATIENCE)} batch_size={int(BATCH_SIZE)} lr={float(LEARNING_RATE):.6g} wd={float(WEIGHT_DECAY):.6g} label_smoothing={float(LABEL_SMOOTHING):.6g}",
+            f"tuned_reference_macro_f1={tuned_reference_macro_f1 if tuned_reference_macro_f1 is not None else 'n/a'}",
+        ],
     )
     print(f"Total samples: {len(dataset)}, Shape: {dataset.data.shape}")
     if hasattr(dataset, 'shape_fixes'):
         print(f"Shape fixes: {dataset.shape_fixes}")
 
     unique_pids = np.unique(dataset.pids)
+    expected_pids = set(map(int, SUBSET_PIDS))
+    present_pids = set(map(int, unique_pids.tolist()))
+    missing_pids = sorted(expected_pids - present_pids)
+    extra_pids = sorted(present_pids - expected_pids)
+    if missing_pids:
+        print(f"[WARN] Missing PIDs in loaded dataset (expected {len(expected_pids)}): {missing_pids}")
+    if extra_pids:
+        print(f"[WARN] Unexpected extra PIDs in loaded dataset: {extra_pids}")
+    print(f"Loaded unique PIDs: {len(present_pids)}")
 
     # If requested, run the debug probe even when baseline_adjust=none.
     if bool(debug_baseline):
@@ -974,14 +1103,17 @@ def run_cv_evaluation(
     class_weights = dataset.get_class_weights().to(device)
     print(f"Class weights: {class_weights.cpu().numpy()}")
     
-    # Load augmented version for training
-    if USE_AUGMENTATION:
+    # Load augmented version for training.
+    # Tuner is always augmentation-free; parity_mode must force augmentation off.
+    use_aug = bool(USE_AUGMENTATION) and (not bool(parity_mode))
+    if use_aug:
         dataset_aug = load_workload_data(
             DATA_DIR,
             subset_pids=SUBSET_PIDS,
             augment=True,
-            noise_sigma=NOISE_SIGMA, time_shift=TIME_SHIFT, channel_dropout=CHANNEL_DROPOUT
-            ,
+            noise_sigma=NOISE_SIGMA,
+            time_shift=TIME_SHIFT,
+            channel_dropout=CHANNEL_DROPOUT,
             normalize=False,
             target_chans=CHANS,
             target_time_points=TIME_POINTS,
@@ -1007,11 +1139,13 @@ def run_cv_evaluation(
             debug_baseline=False,
         )
     if baseline_info.get("enabled"):
-        print(
-            f"Baseline adjustment applied: {baseline_adjust}. "
-            "Baseline stats (raw baseline segment; physical units): "
-            f"median |baseline_mean|={fmt(baseline_info['baseline_abs_median_uv'], 'µV')}, "
-            f"median baseline_std={fmt(baseline_info['baseline_std_median_uv'], 'µV')}"
+        _print_parity_block(
+            "BASELINE",
+            [
+                f"mode={baseline_adjust} cache_path={baseline_info.get('cache_path')}",
+                f"median_abs_baseline_mean_uv={baseline_info.get('baseline_abs_median_uv'):.6g} median_baseline_std_uv={baseline_info.get('baseline_std_median_uv'):.6g}",
+                f"missing_forests={baseline_info.get('missing_forests')} total_epochs={baseline_info.get('total_epochs')}",
+            ],
         )
 
     # Post-adjust quick scale check (dataset-wide sample).
@@ -1030,7 +1164,15 @@ def run_cv_evaluation(
     with open(fold_log_path, 'w', encoding='utf-8') as _:
         pass
 
-    for fold, (train_idx, test_idx) in enumerate(create_group_splits(dataset, n_splits=n_splits, seed=SEED)):
+    if export_window_preds:
+        with open(window_pred_path, 'w', encoding='utf-8') as _:
+            pass
+
+    # Precompute deterministic splits ONCE and reuse across folds (tuner parity).
+    splits = list(create_group_splits(dataset, n_splits=n_splits, seed=effective_split_seed))
+    if len(splits) != int(n_splits):
+        raise RuntimeError(f"Expected {n_splits} splits, got {len(splits)}")
+    for fold, (train_idx, test_idx) in enumerate(splits):
         print(f"\n{'='*50}")
         print(f"Fold {fold + 1}")
         print(f"{'='*50}")
@@ -1038,6 +1180,15 @@ def run_cv_evaluation(
         train_pids = np.unique(dataset.pids[train_idx])
         test_pids = np.unique(dataset.pids[test_idx])
         print(f"Train PIDs: {len(train_pids)} subjects, Test PIDs: {len(test_pids)} subjects")
+
+        test_pid_hash = _hash_pid_list(test_pids)
+        _print_parity_block(
+            f"FOLD {fold + 1} SPLIT",
+            [
+                f"test_pids_sorted={sorted([int(x) for x in test_pids.tolist()])}",
+                f"test_pid_md5={test_pid_hash}",
+            ],
+        )
 
         # Hard subject-level separation assert
         overlap = np.intersect1d(train_pids, test_pids)
@@ -1091,44 +1242,98 @@ def run_cv_evaluation(
         mean_c_d = mean_c.to(device)
         std_c_d = std_c.to(device)
         med_std_v, med_std_uv = summarize_std(std_c)
+        mean_has_bad = bool(torch.isnan(mean_c).any() or torch.isinf(mean_c).any())
+        std_has_bad = bool(torch.isnan(std_c).any() or torch.isinf(std_c).any())
         if baseline_adjust in {"divstd", "zscore"}:
             print(f"Train-only per-channel std (median): {fmt(med_std_v, 'unitless')}")
         else:
             print(f"Train-only per-channel std (median): {fmt(med_std_uv, 'µV')}")
+
+        _print_parity_block(
+            f"FOLD {fold + 1} NORMALIZATION",
+            [
+                f"nan_or_inf_found_in_train_subset={bool(nan_in_train)}",
+                f"mean_has_nan_or_inf={mean_has_bad} std_has_nan_or_inf={std_has_bad}",
+                f"median_per_channel_std={'unitless' if baseline_adjust in {'divstd','zscore'} else 'uV'}={med_std_v if baseline_adjust in {'divstd','zscore'} else med_std_uv:.6g}",
+            ],
+        )
         
         # Create data loaders - use augmented for train, non-augmented for test
         train_subset = Subset(dataset_aug, train_idx)  # Augmented
         test_subset = Subset(dataset, test_idx)        # Not augmented
         
-        train_loader = DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(test_subset, batch_size=BATCH_SIZE, shuffle=False)
+        generator = None
+        if parity_mode:
+            # Parity with tune_tcnet.py Stage2: seed DataLoader shuffling with the Stage2 trial seed.
+            generator = torch.Generator()
+            generator.manual_seed(int(effective_train_seed))
 
-        # Preflight: first batch hard asserts
-        _bx, _by = next(iter(train_loader))
-        assert _bx.shape[1:] == (1, CHANS, TIME_POINTS), f"train batch_x shape={tuple(_bx.shape)}"
-        assert _by.ndim == 1, f"train batch_y shape={tuple(_by.shape)}"
-        assert _by.dtype == torch.long, f"train batch_y dtype={_by.dtype}"
-        _bx2, _by2 = next(iter(test_loader))
-        assert _bx2.shape[1:] == (1, CHANS, TIME_POINTS), f"test batch_x shape={tuple(_bx2.shape)}"
-        assert _by2.ndim == 1, f"test batch_y shape={tuple(_by2.shape)}"
-        assert _by2.dtype == torch.long, f"test batch_y dtype={_by2.dtype}"
+        train_loader = DataLoader(
+            train_subset,
+            batch_size=BATCH_SIZE,
+            shuffle=True,
+            num_workers=0,
+            pin_memory=True,
+            generator=generator,
+        )
+        test_loader = DataLoader(
+            test_subset,
+            batch_size=BATCH_SIZE,
+            shuffle=False,
+            num_workers=0,
+            pin_memory=True,
+        )
+
+        # Preflight asserts (PARITY ONLY): must not consume train_loader iterator.
+        # Calling next(iter(train_loader)) would advance the shuffle generator and change
+        # the training order vs tune_tcnet.py.
+        if parity_mode:
+            _check_train_loader = DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+            _bx, _by = next(iter(_check_train_loader))
+            assert _bx.shape[1:] == (1, CHANS, TIME_POINTS), f"train batch_x shape={tuple(_bx.shape)}"
+            assert _by.ndim == 1, f"train batch_y shape={tuple(_by.shape)}"
+            assert _by.dtype == torch.long, f"train batch_y dtype={_by.dtype}"
+            _bx2, _by2 = next(iter(test_loader))
+            assert _bx2.shape[1:] == (1, CHANS, TIME_POINTS), f"test batch_x shape={tuple(_bx2.shape)}"
+            assert _by2.ndim == 1, f"test batch_y shape={tuple(_by2.shape)}"
+            assert _by2.dtype == torch.long, f"test batch_y dtype={_by2.dtype}"
         
         # Initialize model (attention configurable via Optuna tuning)
         model = EEGTCNet(
             chans=CHANS, classes=CLASSES, time_points=TIME_POINTS,
-            use_se_attention=USE_SE_ATTENTION, use_temporal_attention=USE_TEMPORAL_ATTENTION
+            F1=F1,
+            D=D,
+            kernLength=KERN_LENGTH,
+            dropout_eeg=DROPOUT_EEG,
+            tcn_filters=TCN_FILTERS,
+            tcn_kernel=TCN_KERNEL,
+            tcn_depth=TCN_DEPTH,
+            dropout_tcn=DROPOUT_TCN,
+            use_se_attention=False if parity_mode else USE_SE_ATTENTION,
+            use_temporal_attention=False if parity_mode else USE_TEMPORAL_ATTENTION,
         ).to(device)
+
+        _print_parity_block(
+            f"FOLD {fold + 1} MODEL",
+            [
+                f"param_count={_count_params(model)}",
+                f"state_dict_key_md5={_state_dict_key_md5(model)}",
+                f"arch: F1={int(F1)} D={int(D)} kernLength={int(KERN_LENGTH)} dropout_eeg={float(DROPOUT_EEG):.6g} tcn_filters={int(TCN_FILTERS)} tcn_kernel={int(TCN_KERNEL)} tcn_depth={int(TCN_DEPTH)} dropout_tcn={float(DROPOUT_TCN):.6g}",
+            ],
+        )
         
         # Use weighted loss for class imbalance
-        criterion = nn.CrossEntropyLoss(weight=class_weights)
-        optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        criterion = build_criterion(class_weights, LABEL_SMOOTHING)
+        optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
         
         # Training loop with early stopping
         best_acc = -1.0
         best_f1_macro = -1.0
+        best_test_loss = float("inf")
         best_epoch = -1
         best_state_dict = None
         patience_counter = 0
+        use_early_stop = EARLY_STOP_PATIENCE is not None and int(EARLY_STOP_PATIENCE) > 0
         
         for epoch in range(max_epochs):
             # --- Train ---
@@ -1145,7 +1350,10 @@ def run_cv_evaluation(
                 batch_x = normalize_batch(batch_x, mean_c_d, std_c_d)
                 batch_y = batch_y.to(device)
 
-                optimizer.zero_grad()
+                if parity_mode:
+                    optimizer.zero_grad(set_to_none=True)
+                else:
+                    optimizer.zero_grad()
                 outputs = model(batch_x)
                 loss = criterion(outputs, batch_y)
                 loss.backward()
@@ -1170,31 +1378,89 @@ def run_cv_evaluation(
                 std_c_d,
                 max_batches=None,
             )
-            
-            if (epoch + 1) % 10 == 0 or SMOKE_TEST:
-                print(
-                    f"Epoch {epoch+1:3d}: Train Loss={train_loss:.4f}, Train Acc={train_acc:.3f} | "
-                    f"Test Loss={test_loss:.4f}, Test Acc={test_acc:.3f}, Test Macro-F1={test_f1_macro:.3f}"
+
+            if parity_mode or (epoch + 1) % 10 == 0 or SMOKE_TEST:
+                _print_parity_block(
+                    f"FOLD {fold + 1} EPOCH {epoch + 1}",
+                    [
+                        f"train_loss={train_loss:.6g} train_acc={float(train_acc):.6g}",
+                        f"test_loss={float(test_loss):.6g} test_acc={float(test_acc):.6g} test_macro_f1={float(test_f1_macro):.6g}",
+                    ],
                 )
             
             # Early stopping check
-            # Best checkpoint: macro-F1 primary, accuracy secondary
-            is_better = (test_f1_macro > best_f1_macro) or (test_f1_macro == best_f1_macro and test_acc > best_acc)
+            # Parity with tune_tcnet.py Stage2
+            # Best checkpoint tie-break:
+            #   - prefer higher macro-F1
+            #   - if macro-F1 ties within 1e-10, prefer higher accuracy
+            # Non-parity keeps legacy behavior (uses loss as tie-break).
+            if parity_mode:
+                is_better = (float(test_f1_macro) > float(best_f1_macro)) or (
+                    abs(float(test_f1_macro) - float(best_f1_macro)) < 1e-10
+                    and float(test_acc) > float(best_acc)
+                )
+            else:
+                f1_diff = float(test_f1_macro) - float(best_f1_macro)
+                is_better = False
+                if f1_diff > 1e-10:
+                    is_better = True
+                elif abs(f1_diff) <= 1e-10:
+                    if float(test_loss) < float(best_test_loss) - 1e-12:
+                        is_better = True
+                    elif abs(float(test_loss) - float(best_test_loss)) <= 1e-12 and float(test_acc) > float(best_acc):
+                        is_better = True
             if is_better:
                 best_acc = float(test_acc)
                 best_f1_macro = float(test_f1_macro)
-                best_epoch = int(epoch + 1)
+                best_test_loss = float(test_loss)
+                # Parity with tune_tcnet.py Stage2: store 0-based epoch index.
+                best_epoch = int(epoch) if parity_mode else int(epoch + 1)
                 best_state_dict = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
                 patience_counter = 0
             else:
-                patience_counter += 1
-                if patience_counter >= EARLY_STOP_PATIENCE:
-                    print(f"Early stopping at epoch {epoch+1}")
-                    break
+                if use_early_stop:
+                    patience_counter += 1
+                    if patience_counter >= int(EARLY_STOP_PATIENCE):
+                        print(f"Early stopping at epoch {epoch+1}")
+                        break
 
         # Restore best checkpoint before final fold reporting
         if best_state_dict is not None:
             model.load_state_dict(best_state_dict)
+
+        if parity_mode:
+            _print_parity_block(
+                f"FOLD {fold + 1} BEST",
+                [
+                    f"best_epoch={int(best_epoch)}",
+                    f"best_macro_f1={float(best_f1_macro):.6g}",
+                    f"best_acc={float(best_acc):.6g}",
+                    f"test_pid_md5={str(test_pid_hash)}",
+                ],
+            )
+
+        if save_checkpoints and best_state_dict is not None:
+            ckpt_dir = r"C:\\vr_tsst_2025\\results\\tcnet_checkpoints"
+            os.makedirs(ckpt_dir, exist_ok=True)
+            ckpt_path = os.path.join(
+                ckpt_dir,
+                f"tcnet_fold{fold + 1}_baseline_{baseline_adjust}_seed{effective_train_seed}.pt",
+            )
+            torch.save(
+                {
+                    "fold": int(fold + 1),
+                    "baseline_adjust": str(baseline_adjust),
+                    "train_seed": int(effective_train_seed),
+                    "split_seed": int(effective_split_seed),
+                    "best_epoch": int(best_epoch),
+                    "best_macro_f1": float(best_f1_macro),
+                    "best_accuracy": float(best_acc),
+                    "best_test_loss": float(best_test_loss),
+                    "state_dict": best_state_dict,
+                },
+                ckpt_path,
+            )
+            print(f"Saved best checkpoint: {ckpt_path}")
 
         # Final metrics + confusion matrix (normalized)
         final_loss, final_acc, final_f1_macro, y_true, y_pred, cm = evaluate_normalized(
@@ -1206,7 +1472,29 @@ def run_cv_evaluation(
             std_c_d,
             max_batches=None,
         )
-        print(f"Fold {fold+1} Best Epoch={best_epoch}: Macro-F1={best_f1_macro:.3f}, Acc={best_acc:.3f}")
+        if export_window_preds:
+            test_idx_arr = np.asarray(test_idx, dtype=int)
+            conds = np.asarray(dataset.conditions)[test_idx_arr]
+            win_idx = np.asarray(dataset.window_indices)[test_idx_arr]
+            pids = np.asarray(dataset.pids)[test_idx_arr]
+            if len(y_true) != len(test_idx_arr):
+                raise AssertionError(
+                    f"Prediction length mismatch: y_true={len(y_true)} vs test_idx={len(test_idx_arr)}"
+                )
+            with open(window_pred_path, 'a', encoding='utf-8') as f_pred:
+                for i in range(len(test_idx_arr)):
+                    rec = {
+                        'timestamp': datetime.utcnow().isoformat() + 'Z',
+                        'fold': int(fold + 1),
+                        'pid': int(pids[i]),
+                        'condition': str(conds[i]),
+                        'window_idx': int(win_idx[i]),
+                        'y_true': int(y_true[i]),
+                        'y_pred': int(y_pred[i]),
+                        'baseline_adjust': str(baseline_adjust),
+                    }
+                    f_pred.write(json.dumps(rec) + "\n")
+        print(f"Fold {fold+1} Best Epoch={best_epoch}: Macro-F1={best_f1_macro:.3f}, Acc={best_acc:.3f}, Loss={best_test_loss:.4f}")
         print(f"Fold {fold+1} Final (restored best): Macro-F1={final_f1_macro:.3f}, Acc={final_acc:.3f}")
         print(f"Fold {fold+1} Confusion Matrix [rows=true 0/1, cols=pred 0/1]:\n{cm}")
 
@@ -1224,12 +1512,14 @@ def run_cv_evaluation(
         fold_record = {
             'timestamp': datetime.utcnow().isoformat() + 'Z',
             'fold': int(fold + 1),
-            'seed': int(SEED),
+            'seed_train_rng': int(effective_train_seed),
+            'seed_splits': int(effective_split_seed),
             'smoke_test': bool(SMOKE_TEST),
             'n_splits': int(n_splits),
             'baseline_adjust': str(baseline_adjust),
             'train_subjects': [int(x) for x in train_pids.tolist()],
             'test_subjects': [int(x) for x in test_pids.tolist()],
+            'test_pid_md5': str(test_pid_hash),
             'train_epochs': int(len(train_idx)),
             'test_epochs': int(len(test_idx)),
             'train_class_counts': class_counts(y_train),
@@ -1241,6 +1531,7 @@ def run_cv_evaluation(
             'best_epoch': int(best_epoch),
             'best_macro_f1': float(best_f1_macro),
             'best_accuracy': float(best_acc),
+            'best_test_loss': float(best_test_loss),
             'final_macro_f1': float(final_f1_macro),
             'final_accuracy': float(final_acc),
             'confusion_matrix': cm.tolist(),
@@ -1249,19 +1540,29 @@ def run_cv_evaluation(
         with open(fold_log_path, 'a', encoding='utf-8') as f:
             f.write(json.dumps(fold_record) + "\n")
 
-        fold_results.append({'accuracy': final_acc, 'f1': final_f1_macro})
+        # Parity with tune_tcnet.py Stage2:
+        # The fold score is best-over-epoch macro-F1/accuracy, not recomputed final metrics.
+        if parity_mode:
+            fold_results.append({'accuracy': float(best_acc), 'f1': float(best_f1_macro)})
+        else:
+            fold_results.append({'accuracy': float(final_acc), 'f1': float(final_f1_macro)})
     
     # Aggregate results
-    mean_acc = np.mean([r['accuracy'] for r in fold_results])
-    std_acc = np.std([r['accuracy'] for r in fold_results])
-    mean_f1 = np.mean([r['f1'] for r in fold_results])
+    mean_acc = float(np.mean([r['accuracy'] for r in fold_results])) if fold_results else 0.0
+    std_acc = float(np.std([r['accuracy'] for r in fold_results])) if fold_results else 0.0
+    mean_f1 = float(np.mean([r['f1'] for r in fold_results])) if fold_results else 0.0
+    std_f1 = float(np.std([r['f1'] for r in fold_results])) if fold_results else 0.0
     
     print(f"\n{'='*50}")
-    print("FINAL RESULTS - EEG-TCNet safe-CV")
+    print("FINAL RESULTS - EEG-TCNet safe-CV" + (" (PARITY: best-over-epoch)" if parity_mode else ""))
     print(f"{'='*50}")
     print(f"Per-Fold Accuracy: {[r['accuracy'] for r in fold_results]}")
     print(f"Mean Accuracy: {mean_acc:.3f} (+/- {std_acc:.3f})")
-    print(f"Mean F1 Score: {mean_f1:.3f}")
+    print(f"Per-Fold Macro-F1: {[r['f1'] for r in fold_results]}")
+    if parity_mode:
+        print(f"Mean best Macro-F1: {mean_f1:.3f} (+/- {std_f1:.3f})")
+    else:
+        print(f"Mean Macro-F1: {mean_f1:.3f} (+/- {std_f1:.3f})")
     
     # Save results
     with open(results_path, 'w') as f:
@@ -1279,15 +1580,22 @@ def run_cv_evaluation(
         f.write(f"Data: {len(dataset)} epochs, {TIME_POINTS} samples @ 125Hz\n")
         f.write(f"Augmentation: noise={NOISE_SIGMA}, shift={TIME_SHIFT}, ch_drop={CHANNEL_DROPOUT}\n")
         f.write(f"Training: {max_epochs} max epochs, batch={BATCH_SIZE}, lr={LEARNING_RATE}\n")
-        f.write(f"CV: n_splits={n_splits}, seed={SEED}, smoke_test={SMOKE_TEST}\n")
+        f.write(f"Weight decay: {WEIGHT_DECAY}\n")
+        f.write(f"Label smoothing: {LABEL_SMOOTHING}\n")
+        f.write(f"CV: n_splits={n_splits}, seed_splits={effective_split_seed}, seed_train_rng={effective_train_seed}, smoke_test={SMOKE_TEST}\n")
         f.write(f"Class weights: {class_weights.cpu().numpy()}\n")
         f.write(f"Fold log: {fold_log_path}\n")
+        if export_window_preds:
+            f.write(f"Window preds: {window_pred_path}\n")
         f.write("-" * 50 + "\n")
         for i, r in enumerate(fold_results):
             f.write(f"Fold {i+1}: Accuracy={r['accuracy']:.4f}, F1={r['f1']:.4f}\n")
         f.write("-" * 50 + "\n")
         f.write(f"Mean Accuracy: {mean_acc:.4f} (+/- {std_acc:.4f})\n")
-        f.write(f"Mean F1 Score: {mean_f1:.4f}\n")
+        if parity_mode:
+            f.write(f"Mean best Macro-F1: {mean_f1:.4f} (+/- {std_f1:.4f})\n")
+        else:
+            f.write(f"Mean Macro-F1: {mean_f1:.4f} (+/- {std_f1:.4f})\n")
     
     print(f"\nResults saved to {results_path}")
     
@@ -1361,14 +1669,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--baseline_adjust",
         choices=["none", "mean", "divstd", "zscore"],
-        default="none",
-        help="Baseline adjustment mode applied to each epoch using per-block forest baseline (default: none)",
+        default="zscore",
+        help="Baseline adjustment mode applied to each epoch using per-block forest baseline (default: zscore)",
     )
     parser.add_argument(
         "--baseline_cache_path",
         type=str,
         default=BASELINE_CACHE_PATH,
         help="Optional pickle cache for baseline means (default: results/baseline_stats_cache.pkl)",
+    )
+    parser.add_argument(
+        "--disable_baseline_cache",
+        action="store_true",
+        help="Disable baseline cache reads/writes (debugging; default uses cache)",
     )
     parser.add_argument(
         "--baseline_sweep",
@@ -1380,14 +1693,201 @@ if __name__ == "__main__":
         action="store_true",
         help="If set, print baseline stats for first pid (max 5 epochs) during baseline adjustment",
     )
+    parser.add_argument(
+        "--export_window_preds",
+        action="store_true",
+        help="Write per-window test predictions to JSONL for time-indexed accuracy plots",
+    )
+    parser.add_argument(
+        "--use_tuned_params",
+        action="store_true",
+        help="Load tuned hyperparameters from a JSON file and override defaults",
+    )
+    parser.add_argument(
+        "--tuned_params_path",
+        type=str,
+        default=r"C:\vr_tsst_2025\results\best_tcnet_focused_params.json",
+        help="Path to tuned params JSON (default: results/best_tcnet_focused_params.json)",
+    )
+    parser.add_argument(
+        "--parity_mode",
+        action="store_true",
+        help="Enable tuner-parity mode (deterministic seeding, no aug/attn, epoch-by-epoch parity report)",
+    )
+    parser.add_argument(
+        "--trial_number",
+        type=int,
+        default=0,
+        help="Optuna trial number for Stage2 parity seeding (parity_mode only). Stage2 uses trial_seed = 1337 + 100000 + trial_number.",
+    )
+    parser.add_argument(
+        "--no_parity_mode",
+        action="store_true",
+        help="Force-disable parity mode even when loading a Stage2 summary JSON",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Override training RNG seed (default: derived from Stage2 best trial when available, else 1337)",
+    )
+    parser.add_argument(
+        "--split_seed",
+        type=int,
+        default=None,
+        help="Override split seed for create_group_splits (default: 1337)",
+    )
+    parser.add_argument(
+        "--save_checkpoints",
+        action="store_true",
+        help="Save best checkpoint per fold to results/tcnet_checkpoints (enabled by parity mode)",
+    )
     args = parser.parse_args()
 
     if bool(args.baseline_sweep):
         run_baseline_sweep(baseline_cache_path=str(args.baseline_cache_path))
         raise SystemExit(0)
 
+    tuned_reference_macro_f1: float | None = None
+    inferred_trial_number: int | None = None
+
+    if bool(args.use_tuned_params):
+        with open(str(args.tuned_params_path), "r", encoding="utf-8") as f:
+            tuned = json.load(f)
+        best = tuned.get("best_params", {})
+        fixed = tuned.get("fixed_params", {})
+        arch = tuned.get("best_arch", {})
+
+        # Heuristic: Stage2 overall summary produced by pipelines/13_workload_deep_learning_training/tune_tcnet.py
+        is_stage2_summary = (
+            isinstance(tuned, dict)
+            and "best_value_macro_f1" in tuned
+            and "best_arch" in tuned
+            and "best_params" in tuned
+        )
+
+        if is_stage2_summary:
+            tuned_reference_macro_f1 = float(tuned.get("best_value_macro_f1"))
+            # Prefer the top-1 trial number if present (tune_tcnet uses trial_seed = SEED + trial.number)
+            top = tuned.get("top_k_trials")
+            if isinstance(top, list) and len(top) > 0 and isinstance(top[0], dict) and "trial_number" in top[0]:
+                try:
+                    inferred_trial_number = int(top[0]["trial_number"])
+                except Exception:
+                    inferred_trial_number = None
+
+        if "F1" in arch:
+            globals()["F1"] = int(arch["F1"])
+        if "D" in arch:
+            globals()["D"] = int(arch["D"])
+        if "kernLength" in arch:
+            globals()["KERN_LENGTH"] = int(arch["kernLength"])
+        if "tcn_filters" in arch:
+            globals()["TCN_FILTERS"] = int(arch["tcn_filters"])
+        if "tcn_kernel" in arch:
+            globals()["TCN_KERNEL"] = int(arch["tcn_kernel"])
+        if "tcn_depth" in arch:
+            globals()["TCN_DEPTH"] = int(arch["tcn_depth"])
+
+        if "F1" in best:
+            globals()["F1"] = int(best["F1"])
+        if "D" in best:
+            globals()["D"] = int(best["D"])
+        if "kernLength" in best:
+            globals()["KERN_LENGTH"] = int(best["kernLength"])
+        if "dropout_eeg" in best:
+            globals()["DROPOUT_EEG"] = float(best["dropout_eeg"])
+        if "tcn_filters" in best:
+            globals()["TCN_FILTERS"] = int(best["tcn_filters"])
+        if "tcn_kernel" in best:
+            globals()["TCN_KERNEL"] = int(best["tcn_kernel"])
+        if "tcn_depth" in best:
+            globals()["TCN_DEPTH"] = int(best["tcn_depth"])
+        if "dropout_tcn" in best:
+            globals()["DROPOUT_TCN"] = float(best["dropout_tcn"])
+        if "learning_rate" in best:
+            globals()["LEARNING_RATE"] = float(best["learning_rate"])
+        if "batch_size" in best:
+            globals()["BATCH_SIZE"] = int(best["batch_size"])
+        if "weight_decay" in best:
+            globals()["WEIGHT_DECAY"] = float(best["weight_decay"])
+        if "label_smoothing" in best:
+            globals()["LABEL_SMOOTHING"] = float(best["label_smoothing"])
+
+        if "use_se_attention" in fixed:
+            globals()["USE_SE_ATTENTION"] = bool(fixed["use_se_attention"])
+        if "use_temporal_attention" in fixed:
+            globals()["USE_TEMPORAL_ATTENTION"] = bool(fixed["use_temporal_attention"])
+        if "use_augmentation" in fixed:
+            globals()["USE_AUGMENTATION"] = bool(fixed["use_augmentation"])
+        if "early_stop_patience" in fixed:
+            globals()["EARLY_STOP_PATIENCE"] = int(fixed["early_stop_patience"])
+        elif "best_arch" in tuned:
+            globals()["EARLY_STOP_PATIENCE"] = 0
+
+        # Match the tuner default (MAX_EPOCHS=60) when we are clearly loading Stage2 tuned params.
+        # This matters because the Optuna objective reports best-over-epoch macro-F1.
+        if is_stage2_summary and "max_epochs" not in tuned:
+            globals()["EPOCHS"] = 60
+
+        # Stage2 tuning assumes baseline zscore is applied (separate from fold-safe CV normalization).
+        if is_stage2_summary and str(args.baseline_adjust) != "zscore":
+            print(
+                "[WARN] Stage2 tuned params were optimized with baseline_adjust='zscore', "
+                f"but this run is using baseline_adjust='{args.baseline_adjust}'. "
+                "This mismatch can materially reduce performance."
+            )
+
+        print(f"Loaded tuned params from {args.tuned_params_path}")
+        print(
+            "Tuned model params: "
+            f"F1={F1}, D={D}, kernLength={KERN_LENGTH}, dropout_eeg={DROPOUT_EEG}, "
+            f"tcn_filters={TCN_FILTERS}, tcn_kernel={TCN_KERNEL}, tcn_depth={TCN_DEPTH}, dropout_tcn={DROPOUT_TCN}"
+        )
+        print(
+            "Tuned training params: "
+            f"batch_size={BATCH_SIZE}, learning_rate={LEARNING_RATE}, weight_decay={WEIGHT_DECAY}, "
+            f"label_smoothing={LABEL_SMOOTHING}, early_stop_patience={EARLY_STOP_PATIENCE}, "
+            f"use_se_attention={USE_SE_ATTENTION}, use_temporal_attention={USE_TEMPORAL_ATTENTION}, "
+            f"use_augmentation={USE_AUGMENTATION}"
+        )
+        if is_stage2_summary:
+            print(f"Stage2 parity hints: expected_baseline_adjust=zscore, epochs={EPOCHS}")
+
+    # Baseline cache safety: default matches tuner (enabled). Allow disabling for debugging.
+    baseline_cache_path = None if bool(args.disable_baseline_cache) else str(args.baseline_cache_path)
+
+    # Parity mode: enabled explicitly or auto-enabled for Stage2 summary unless user forces it off.
+    parity_mode = bool(args.parity_mode) or (inferred_trial_number is not None)
+    if bool(args.no_parity_mode):
+        parity_mode = False
+
+    # Training seed selection
+    # - Non-parity mode preserves legacy behavior (train_seed can be overridden).
+    # - Parity mode uses --trial_number (or inferred from a Stage2 summary) to derive the Stage2 trial_seed.
+    if args.seed is not None:
+        train_seed = int(args.seed)
+    else:
+        train_seed = int(SEED)
+
+    trial_number = int(args.trial_number)
+    if trial_number == 0 and inferred_trial_number is not None:
+        trial_number = int(inferred_trial_number)
+
+    if parity_mode:
+        print(f"[PARITY] trial_number={trial_number} -> trial_seed={int(SEED + 100000 + trial_number)}")
+    elif inferred_trial_number is not None:
+        print(f"Inferred Stage2 best trial_number={inferred_trial_number} (parity_mode disabled)")
+
     run_cv_evaluation(
         baseline_adjust=str(args.baseline_adjust),
-        baseline_cache_path=str(args.baseline_cache_path),
+        baseline_cache_path=baseline_cache_path,
         debug_baseline=bool(args.debug_baseline),
+        export_window_preds=bool(args.export_window_preds),
+        parity_mode=bool(parity_mode),
+        trial_number=int(trial_number),
+        train_seed=int(train_seed),
+        split_seed=int(SEED if args.split_seed is None else int(args.split_seed)),
+        save_checkpoints=bool(args.save_checkpoints) or bool(parity_mode),
+        tuned_reference_macro_f1=tuned_reference_macro_f1,
     )
