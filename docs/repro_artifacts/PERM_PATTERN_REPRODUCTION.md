@@ -42,8 +42,32 @@ For each (domain, target):
    - This preserves the repeated-measures structure and each participant’s label composition.
 3. For each permutation, compute the pooled ROC AUC over all rows using the fixed scores.
 
+### What inference this permutation test supports (and what it does not)
+This is a **permutation test on fixed out-of-sample predictions** (LOSO predictions saved by the legacy run). Concretely, it supports the following inference:
+
+- **Supported inference (conditional association test):** Under the null hypothesis that, *within each participant*, the condition labels are exchangeable with respect to the model score (`y_prob`), the observed pooled AUC is unusually large compared to AUCs obtained after shuffling labels within participant. Equivalently: it tests whether the model’s out-of-sample scores contain information about the label beyond what would be expected if labels were randomly reassigned within participant.
+- **Why within-participant shuffling is defensible here:** The data are repeated-measures (multiple rows per participant). Shuffling within `participant_id` respects that dependence structure and preserves each participant’s label composition.
+
+Important limitations (not supported by this test):
+
+- This test is **not** a test of whether the *training procedure* would, on repeated sampling, produce significant results; we are **not retraining per permutation**.
+- This test is **not** a population-level causal claim about stress/workload; it is an association test for this dataset under the exchangeability assumption.
+- This test’s p-values are **conditional on the fixed prediction vector** produced by the legacy LOSO pipeline.
+
+In short: it is a fast, reproducible, and defensible **label-score association test under a within-subject null**, designed specifically to reproduce the paper’s *significance pattern* without rerunning model fitting.
+
 ### Test statistic
 - Pooled ROC AUC computed on the full set of out-of-sample predictions.
+
+### Why pooled AUC is justified for this dataset
+Pooled AUC is justified here because:
+
+- **It matches the scientific question at the row level:** With LOSO predictions, pooled AUC estimates the probability that a randomly chosen positive-labeled row receives a higher score than a randomly chosen negative-labeled row.
+- **It is stable with small per-participant sample sizes:** Each participant has only 4 rows (conditions). A per-participant AUC can be undefined (e.g., if a participant has all one label after filtering) and is very discrete/noisy with so few points. Pooling uses all 176 rows, reducing variance.
+- **It does not meaningfully overweight any participant here:** In this dataset, each participant contributes the same number of rows (4), so pooling does not implicitly give some participants more weight than others.
+- **It is consistent with the legacy summary metric:** The legacy `svm_inference_summary.csv` reports a single AUC per (domain, target), which corresponds naturally to the pooled evaluation of all out-of-sample predictions.
+
+Note: an alternative defensible choice is “mean of per-participant AUCs”, but with 4 rows per participant it is substantially noisier/more discrete and can behave poorly when any participant lacks both classes. For fast pattern reproduction, pooled AUC is the most stable and aligns with the legacy reporting.
 
 ### P-value
 One-sided exceedance with add-one correction:
