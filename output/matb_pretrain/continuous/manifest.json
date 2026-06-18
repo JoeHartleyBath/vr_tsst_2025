@@ -1,0 +1,187 @@
+{
+  "built_at": "2026-03-13T13:22:55.536957+00:00",
+  "source": "vr_tsst_2025",
+  "format": "continuous",
+  "preprocessing_config_hash": "fe827424",
+  "preprocessing_params": {
+    "bp_low_hz": 0.5,
+    "bp_high_hz": 40.0,
+    "bp_order": 4,
+    "notch_freq": 50.0,
+    "notch_quality": 30.0,
+    "apply_car": true,
+    "srate": 128.0
+  },
+  "srate": 128.0,
+  "n_channels": 128,
+  "label_map": {
+    "LOW": 0,
+    "HIGH": 2
+  },
+  "participants": {
+    "P06": {
+      "n_samples": 478464,
+      "duration_s": 3738.0,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P09": {
+      "n_samples": 482414,
+      "duration_s": 3768.9,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P04": {
+      "n_samples": 490662,
+      "duration_s": 3833.3,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P13": {
+      "n_samples": 509478,
+      "duration_s": 3980.3,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P20": {
+      "n_samples": 458655,
+      "duration_s": 3583.2,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P21": {
+      "n_samples": 465806,
+      "duration_s": 3639.1,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P16": {
+      "n_samples": 492871,
+      "duration_s": 3850.6,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 0
+    },
+    "P23": {
+      "n_samples": 557279,
+      "duration_s": 4353.7,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P34": {
+      "n_samples": 439995,
+      "duration_s": 3437.5,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P33": {
+      "n_samples": 435338,
+      "duration_s": 3401.1,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P27": {
+      "n_samples": 461028,
+      "duration_s": 3601.8,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P31": {
+      "n_samples": 474265,
+      "duration_s": 3705.2,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P37": {
+      "n_samples": 471947,
+      "duration_s": 3687.1,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P39": {
+      "n_samples": 481507,
+      "duration_s": 3761.8,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P43": {
+      "n_samples": 513896,
+      "duration_s": 4014.8,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P35": {
+      "n_samples": 526267,
+      "duration_s": 4111.5,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P46": {
+      "n_samples": 464155,
+      "duration_s": 3626.2,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P44": {
+      "n_samples": 521140,
+      "duration_s": 4071.4,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    },
+    "P45": {
+      "n_samples": 530779,
+      "duration_s": 4146.7,
+      "task_blocks": 4,
+      "forest_blocks": 4,
+      "fixation_blocks": 2
+    }
+  },
+  "skipped": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    8,
+    10,
+    11,
+    12,
+    14,
+    15,
+    17,
+    18,
+    19,
+    22,
+    24,
+    25,
+    26,
+    28,
+    29,
+    30,
+    32,
+    36,
+    38,
+    40,
+    41,
+    42,
+    47,
+    48
+  ]
+}

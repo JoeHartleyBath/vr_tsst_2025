@@ -16,8 +16,35 @@ source("utils/r/feature_selection.R")
 # =====================================================================
 config  <- yaml::read_yaml("scripts/utils/config.yaml")
 
-out_dir_svm <- file.path(config$paths$results, "svm")
+# =====================================================================
+# Save code snapshot and session info
+# =====================================================================
+timestamp_str <- format(Sys.time(), "%Y-%m-%d_%H%M%S")
+out_dir_svm <- file.path(config$paths$results, paste0("svm_", timestamp_str))
 dir.create(out_dir_svm, recursive = TRUE, showWarnings = FALSE)
+
+# Copy this script to the results folder for reproducibility
+file.copy(
+  from = "scripts/svm_analysis.R",  # adjust path to match your script location
+  to = file.path(out_dir_svm, "svm_analysis_snapshot.R"),
+  overwrite = TRUE
+)
+
+# Save R session info
+sink(file.path(out_dir_svm, "session_info.txt"))
+print(sessionInfo())
+sink()
+
+# Save the timestamp and command used
+writeLines(
+  c(
+    paste("Run timestamp:", timestamp_str),
+    paste("R version:", R.version$version.string),
+    paste("Working directory:", getwd()),
+    paste("Command: Rscript scripts/svm_analysis.R")
+  ),
+  file.path(out_dir_svm, "run_metadata.txt")
+)
 
 targets <- c("stress_label", "workload_label")
 

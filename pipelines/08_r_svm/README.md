@@ -50,6 +50,15 @@ Sources from `utils/r/`:
 Rscript svm.R
 ```
 
+## Ablation + permutation (domain runs)
+
+The canonical `svm.R` script does not run permutation tests or save out-of-sample probabilities.
+For the paper-style domain ablations + bootstrap CIs + permutation AUC p-values, use the repo-root runner:
+
+`./run_svm_ablation_perm_ci.ps1 -RunTag <tag> -PermP 1000 -K 5`
+
+Outputs are written under `results/svm_ablation_runs/<tag>/<domain>/`.
+
 ## Performance
 - Processing time: 2-4 hours (depends on feature count and parallelization)
 - Nested CV is computationally expensive but provides unbiased estimates

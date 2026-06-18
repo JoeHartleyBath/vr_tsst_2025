@@ -1,0 +1,1033 @@
+{
+  "built_at": "2026-03-11T11:28:51.587744+00:00",
+  "dataset": "C:\\vr_tsst_2025\\output\\matb_pretrain\\dataset.h5",
+  "n_folds": 44,
+  "excluded": [
+    "P02",
+    "P08",
+    "P46"
+  ],
+  "total_elapsed_min": 830.6,
+  "folds": [
+    {
+      "pid": "P01",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.499,
+          "bal_acc": 0.5084
+        },
+        "head_only": {
+          "auc": 0.4967,
+          "bal_acc": 0.5147
+        },
+        "late_layers": {
+          "auc": 0.4977,
+          "bal_acc": 0.5084
+        },
+        "full": {
+          "auc": 0.499,
+          "bal_acc": 0.5063
+        }
+      },
+      "elapsed_s": 835
+    },
+    {
+      "pid": "P03",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5411,
+          "bal_acc": 0.542
+        },
+        "head_only": {
+          "auc": 0.534,
+          "bal_acc": 0.5294
+        },
+        "late_layers": {
+          "auc": 0.5536,
+          "bal_acc": 0.5231
+        },
+        "full": {
+          "auc": 0.57,
+          "bal_acc": 0.5483
+        }
+      },
+      "elapsed_s": 1637
+    },
+    {
+      "pid": "P04",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4977,
+          "bal_acc": 0.5105
+        },
+        "head_only": {
+          "auc": 0.4982,
+          "bal_acc": 0.5126
+        },
+        "late_layers": {
+          "auc": 0.4983,
+          "bal_acc": 0.5105
+        },
+        "full": {
+          "auc": 0.4977,
+          "bal_acc": 0.5105
+        }
+      },
+      "elapsed_s": 1054
+    },
+    {
+      "pid": "P05",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5785,
+          "bal_acc": 0.5609
+        },
+        "head_only": {
+          "auc": 0.5794,
+          "bal_acc": 0.563
+        },
+        "late_layers": {
+          "auc": 0.5796,
+          "bal_acc": 0.5609
+        },
+        "full": {
+          "auc": 0.5801,
+          "bal_acc": 0.5609
+        }
+      },
+      "elapsed_s": 1433
+    },
+    {
+      "pid": "P06",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4293,
+          "bal_acc": 0.4664
+        },
+        "head_only": {
+          "auc": 0.4241,
+          "bal_acc": 0.4265
+        },
+        "late_layers": {
+          "auc": 0.421,
+          "bal_acc": 0.4496
+        },
+        "full": {
+          "auc": 0.4291,
+          "bal_acc": 0.4622
+        }
+      },
+      "elapsed_s": 1291
+    },
+    {
+      "pid": "P07",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.6351,
+          "bal_acc": 0.6029
+        },
+        "head_only": {
+          "auc": 0.6352,
+          "bal_acc": 0.5966
+        },
+        "late_layers": {
+          "auc": 0.6322,
+          "bal_acc": 0.605
+        },
+        "full": {
+          "auc": 0.62,
+          "bal_acc": 0.5756
+        }
+      },
+      "elapsed_s": 1271
+    },
+    {
+      "pid": "P09",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4656,
+          "bal_acc": 0.5084
+        },
+        "head_only": {
+          "auc": 0.4771,
+          "bal_acc": 0.4811
+        },
+        "late_layers": {
+          "auc": 0.5359,
+          "bal_acc": 0.5315
+        },
+        "full": {
+          "auc": 0.5148,
+          "bal_acc": 0.4811
+        }
+      },
+      "elapsed_s": 1313
+    },
+    {
+      "pid": "P10",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5272,
+          "bal_acc": 0.5273
+        },
+        "head_only": {
+          "auc": 0.5268,
+          "bal_acc": 0.5294
+        },
+        "late_layers": {
+          "auc": 0.527,
+          "bal_acc": 0.5294
+        },
+        "full": {
+          "auc": 0.5274,
+          "bal_acc": 0.5294
+        }
+      },
+      "elapsed_s": 934
+    },
+    {
+      "pid": "P11",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5079,
+          "bal_acc": 0.4832
+        },
+        "head_only": {
+          "auc": 0.5027,
+          "bal_acc": 0.4958
+        },
+        "late_layers": {
+          "auc": 0.507,
+          "bal_acc": 0.4895
+        },
+        "full": {
+          "auc": 0.5073,
+          "bal_acc": 0.4832
+        }
+      },
+      "elapsed_s": 1001
+    },
+    {
+      "pid": "P12",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5072,
+          "bal_acc": 0.5231
+        },
+        "head_only": {
+          "auc": 0.513,
+          "bal_acc": 0.5294
+        },
+        "late_layers": {
+          "auc": 0.5124,
+          "bal_acc": 0.5147
+        },
+        "full": {
+          "auc": 0.5088,
+          "bal_acc": 0.5189
+        }
+      },
+      "elapsed_s": 1172
+    },
+    {
+      "pid": "P13",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5532,
+          "bal_acc": 0.5273
+        },
+        "head_only": {
+          "auc": 0.5672,
+          "bal_acc": 0.5378
+        },
+        "late_layers": {
+          "auc": 0.5608,
+          "bal_acc": 0.5294
+        },
+        "full": {
+          "auc": 0.5534,
+          "bal_acc": 0.5252
+        }
+      },
+      "elapsed_s": 1244
+    },
+    {
+      "pid": "P15",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.485,
+          "bal_acc": 0.479
+        },
+        "head_only": {
+          "auc": 0.49,
+          "bal_acc": 0.4874
+        },
+        "late_layers": {
+          "auc": 0.4903,
+          "bal_acc": 0.5042
+        },
+        "full": {
+          "auc": 0.4887,
+          "bal_acc": 0.4685
+        }
+      },
+      "elapsed_s": 1099
+    },
+    {
+      "pid": "P16",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5292,
+          "bal_acc": 0.5273
+        },
+        "head_only": {
+          "auc": 0.5162,
+          "bal_acc": 0.5
+        },
+        "late_layers": {
+          "auc": 0.5242,
+          "bal_acc": 0.5
+        },
+        "full": {
+          "auc": 0.5208,
+          "bal_acc": 0.5
+        }
+      },
+      "elapsed_s": 1408
+    },
+    {
+      "pid": "P17",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5265,
+          "bal_acc": 0.5168
+        },
+        "head_only": {
+          "auc": 0.5344,
+          "bal_acc": 0.5231
+        },
+        "late_layers": {
+          "auc": 0.534,
+          "bal_acc": 0.5252
+        },
+        "full": {
+          "auc": 0.5293,
+          "bal_acc": 0.5231
+        }
+      },
+      "elapsed_s": 993
+    },
+    {
+      "pid": "P18",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5391,
+          "bal_acc": 0.5399
+        },
+        "head_only": {
+          "auc": 0.54,
+          "bal_acc": 0.5315
+        },
+        "late_layers": {
+          "auc": 0.54,
+          "bal_acc": 0.5399
+        },
+        "full": {
+          "auc": 0.539,
+          "bal_acc": 0.5357
+        }
+      },
+      "elapsed_s": 965
+    },
+    {
+      "pid": "P19",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.417,
+          "bal_acc": 0.4412
+        },
+        "head_only": {
+          "auc": 0.4226,
+          "bal_acc": 0.458
+        },
+        "late_layers": {
+          "auc": 0.4244,
+          "bal_acc": 0.4307
+        },
+        "full": {
+          "auc": 0.4206,
+          "bal_acc": 0.4433
+        }
+      },
+      "elapsed_s": 1065
+    },
+    {
+      "pid": "P20",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.3273,
+          "bal_acc": 0.3487
+        },
+        "head_only": {
+          "auc": 0.326,
+          "bal_acc": 0.3571
+        },
+        "late_layers": {
+          "auc": 0.3268,
+          "bal_acc": 0.3571
+        },
+        "full": {
+          "auc": 0.3278,
+          "bal_acc": 0.3655
+        }
+      },
+      "elapsed_s": 1164
+    },
+    {
+      "pid": "P21",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4396,
+          "bal_acc": 0.4748
+        },
+        "head_only": {
+          "auc": 0.435,
+          "bal_acc": 0.4895
+        },
+        "late_layers": {
+          "auc": 0.4058,
+          "bal_acc": 0.4244
+        },
+        "full": {
+          "auc": 0.4291,
+          "bal_acc": 0.4622
+        }
+      },
+      "elapsed_s": 954
+    },
+    {
+      "pid": "P22",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4877,
+          "bal_acc": 0.4979
+        },
+        "head_only": {
+          "auc": 0.4957,
+          "bal_acc": 0.4937
+        },
+        "late_layers": {
+          "auc": 0.4962,
+          "bal_acc": 0.4958
+        },
+        "full": {
+          "auc": 0.4839,
+          "bal_acc": 0.4895
+        }
+      },
+      "elapsed_s": 1490
+    },
+    {
+      "pid": "P23",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.527,
+          "bal_acc": 0.4937
+        },
+        "head_only": {
+          "auc": 0.5282,
+          "bal_acc": 0.5042
+        },
+        "late_layers": {
+          "auc": 0.5762,
+          "bal_acc": 0.5546
+        },
+        "full": {
+          "auc": 0.7172,
+          "bal_acc": 0.666
+        }
+      },
+      "elapsed_s": 1520
+    },
+    {
+      "pid": "P24",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.466,
+          "bal_acc": 0.4727
+        },
+        "head_only": {
+          "auc": 0.4516,
+          "bal_acc": 0.4706
+        },
+        "late_layers": {
+          "auc": 0.4382,
+          "bal_acc": 0.4412
+        },
+        "full": {
+          "auc": 0.4501,
+          "bal_acc": 0.4559
+        }
+      },
+      "elapsed_s": 1067
+    },
+    {
+      "pid": "P25",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5089,
+          "bal_acc": 0.4895
+        },
+        "head_only": {
+          "auc": 0.4968,
+          "bal_acc": 0.4979
+        },
+        "late_layers": {
+          "auc": 0.504,
+          "bal_acc": 0.5147
+        },
+        "full": {
+          "auc": 0.5162,
+          "bal_acc": 0.5084
+        }
+      },
+      "elapsed_s": 1025
+    },
+    {
+      "pid": "P26",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.3433,
+          "bal_acc": 0.3866
+        },
+        "head_only": {
+          "auc": 0.4539,
+          "bal_acc": 0.4727
+        },
+        "late_layers": {
+          "auc": 0.3762,
+          "bal_acc": 0.4412
+        },
+        "full": {
+          "auc": 0.3485,
+          "bal_acc": 0.416
+        }
+      },
+      "elapsed_s": 1054
+    },
+    {
+      "pid": "P27",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4613,
+          "bal_acc": 0.479
+        },
+        "head_only": {
+          "auc": 0.4674,
+          "bal_acc": 0.458
+        },
+        "late_layers": {
+          "auc": 0.4611,
+          "bal_acc": 0.4727
+        },
+        "full": {
+          "auc": 0.4737,
+          "bal_acc": 0.4769
+        }
+      },
+      "elapsed_s": 1291
+    },
+    {
+      "pid": "P28",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.588,
+          "bal_acc": 0.5336
+        },
+        "head_only": {
+          "auc": 0.6077,
+          "bal_acc": 0.5441
+        },
+        "late_layers": {
+          "auc": 0.6004,
+          "bal_acc": 0.5609
+        },
+        "full": {
+          "auc": 0.6382,
+          "bal_acc": 0.6134
+        }
+      },
+      "elapsed_s": 987
+    },
+    {
+      "pid": "P29",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.532,
+          "bal_acc": 0.5231
+        },
+        "head_only": {
+          "auc": 0.5571,
+          "bal_acc": 0.5357
+        },
+        "late_layers": {
+          "auc": 0.5541,
+          "bal_acc": 0.5399
+        },
+        "full": {
+          "auc": 0.5452,
+          "bal_acc": 0.5504
+        }
+      },
+      "elapsed_s": 1071
+    },
+    {
+      "pid": "P30",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4822,
+          "bal_acc": 0.4937
+        },
+        "head_only": {
+          "auc": 0.4804,
+          "bal_acc": 0.4937
+        },
+        "late_layers": {
+          "auc": 0.481,
+          "bal_acc": 0.4916
+        },
+        "full": {
+          "auc": 0.4819,
+          "bal_acc": 0.4937
+        }
+      },
+      "elapsed_s": 1167
+    },
+    {
+      "pid": "P31",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4878,
+          "bal_acc": 0.4874
+        },
+        "head_only": {
+          "auc": 0.5032,
+          "bal_acc": 0.4895
+        },
+        "late_layers": {
+          "auc": 0.5027,
+          "bal_acc": 0.5084
+        },
+        "full": {
+          "auc": 0.5211,
+          "bal_acc": 0.5042
+        }
+      },
+      "elapsed_s": 974
+    },
+    {
+      "pid": "P32",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5038,
+          "bal_acc": 0.4874
+        },
+        "head_only": {
+          "auc": 0.5013,
+          "bal_acc": 0.4748
+        },
+        "late_layers": {
+          "auc": 0.5073,
+          "bal_acc": 0.4853
+        },
+        "full": {
+          "auc": 0.5037,
+          "bal_acc": 0.4874
+        }
+      },
+      "elapsed_s": 962
+    },
+    {
+      "pid": "P33",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5127,
+          "bal_acc": 0.5042
+        },
+        "head_only": {
+          "auc": 0.5132,
+          "bal_acc": 0.5105
+        },
+        "late_layers": {
+          "auc": 0.5125,
+          "bal_acc": 0.5126
+        },
+        "full": {
+          "auc": 0.5133,
+          "bal_acc": 0.5042
+        }
+      },
+      "elapsed_s": 1021
+    },
+    {
+      "pid": "P34",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4909,
+          "bal_acc": 0.5168
+        },
+        "head_only": {
+          "auc": 0.4994,
+          "bal_acc": 0.5084
+        },
+        "late_layers": {
+          "auc": 0.5107,
+          "bal_acc": 0.5084
+        },
+        "full": {
+          "auc": 0.4952,
+          "bal_acc": 0.5105
+        }
+      },
+      "elapsed_s": 960
+    },
+    {
+      "pid": "P35",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5661,
+          "bal_acc": 0.5357
+        },
+        "head_only": {
+          "auc": 0.567,
+          "bal_acc": 0.5399
+        },
+        "late_layers": {
+          "auc": 0.5668,
+          "bal_acc": 0.5378
+        },
+        "full": {
+          "auc": 0.5668,
+          "bal_acc": 0.5441
+        }
+      },
+      "elapsed_s": 1031
+    },
+    {
+      "pid": "P36",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4878,
+          "bal_acc": 0.4979
+        },
+        "head_only": {
+          "auc": 0.4871,
+          "bal_acc": 0.4979
+        },
+        "late_layers": {
+          "auc": 0.4871,
+          "bal_acc": 0.4916
+        },
+        "full": {
+          "auc": 0.4879,
+          "bal_acc": 0.4937
+        }
+      },
+      "elapsed_s": 1101
+    },
+    {
+      "pid": "P37",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.183,
+          "bal_acc": 0.3361
+        },
+        "head_only": {
+          "auc": 0.1879,
+          "bal_acc": 0.2752
+        },
+        "late_layers": {
+          "auc": 0.1783,
+          "bal_acc": 0.2773
+        },
+        "full": {
+          "auc": 0.1624,
+          "bal_acc": 0.2815
+        }
+      },
+      "elapsed_s": 1245
+    },
+    {
+      "pid": "P38",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5183,
+          "bal_acc": 0.521
+        },
+        "head_only": {
+          "auc": 0.5347,
+          "bal_acc": 0.5147
+        },
+        "late_layers": {
+          "auc": 0.5332,
+          "bal_acc": 0.5252
+        },
+        "full": {
+          "auc": 0.5346,
+          "bal_acc": 0.5042
+        }
+      },
+      "elapsed_s": 870
+    },
+    {
+      "pid": "P39",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4906,
+          "bal_acc": 0.5084
+        },
+        "head_only": {
+          "auc": 0.4924,
+          "bal_acc": 0.4958
+        },
+        "late_layers": {
+          "auc": 0.492,
+          "bal_acc": 0.5
+        },
+        "full": {
+          "auc": 0.4914,
+          "bal_acc": 0.5
+        }
+      },
+      "elapsed_s": 987
+    },
+    {
+      "pid": "P40",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5217,
+          "bal_acc": 0.4916
+        },
+        "head_only": {
+          "auc": 0.554,
+          "bal_acc": 0.5462
+        },
+        "late_layers": {
+          "auc": 0.5457,
+          "bal_acc": 0.5483
+        },
+        "full": {
+          "auc": 0.5299,
+          "bal_acc": 0.5105
+        }
+      },
+      "elapsed_s": 985
+    },
+    {
+      "pid": "P41",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4498,
+          "bal_acc": 0.4538
+        },
+        "head_only": {
+          "auc": 0.4513,
+          "bal_acc": 0.4454
+        },
+        "late_layers": {
+          "auc": 0.4511,
+          "bal_acc": 0.458
+        },
+        "full": {
+          "auc": 0.4498,
+          "bal_acc": 0.4538
+        }
+      },
+      "elapsed_s": 1174
+    },
+    {
+      "pid": "P42",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4233,
+          "bal_acc": 0.4412
+        },
+        "head_only": {
+          "auc": 0.4334,
+          "bal_acc": 0.4769
+        },
+        "late_layers": {
+          "auc": 0.4224,
+          "bal_acc": 0.4412
+        },
+        "full": {
+          "auc": 0.4261,
+          "bal_acc": 0.4538
+        }
+      },
+      "elapsed_s": 1311
+    },
+    {
+      "pid": "P43",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4867,
+          "bal_acc": 0.5189
+        },
+        "head_only": {
+          "auc": 0.5078,
+          "bal_acc": 0.5126
+        },
+        "late_layers": {
+          "auc": 0.5189,
+          "bal_acc": 0.5063
+        },
+        "full": {
+          "auc": 0.493,
+          "bal_acc": 0.4937
+        }
+      },
+      "elapsed_s": 1018
+    },
+    {
+      "pid": "P44",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.3866,
+          "bal_acc": 0.5273
+        },
+        "head_only": {
+          "auc": 0.5607,
+          "bal_acc": 0.5315
+        },
+        "late_layers": {
+          "auc": 0.7757,
+          "bal_acc": 0.7038
+        },
+        "full": {
+          "auc": 0.5918,
+          "bal_acc": 0.5714
+        }
+      },
+      "elapsed_s": 1439
+    },
+    {
+      "pid": "P45",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.4923,
+          "bal_acc": 0.4727
+        },
+        "head_only": {
+          "auc": 0.548,
+          "bal_acc": 0.5273
+        },
+        "late_layers": {
+          "auc": 0.5432,
+          "bal_acc": 0.5336
+        },
+        "full": {
+          "auc": 0.5075,
+          "bal_acc": 0.5105
+        }
+      },
+      "elapsed_s": 1023
+    },
+    {
+      "pid": "P47",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.5913,
+          "bal_acc": 0.5693
+        },
+        "head_only": {
+          "auc": 0.5902,
+          "bal_acc": 0.5693
+        },
+        "late_layers": {
+          "auc": 0.5913,
+          "bal_acc": 0.5735
+        },
+        "full": {
+          "auc": 0.657,
+          "bal_acc": 0.6029
+        }
+      },
+      "elapsed_s": 1251
+    },
+    {
+      "pid": "P48",
+      "pretrain_status": "ok",
+      "finetune": {
+        "none": {
+          "auc": 0.461,
+          "bal_acc": 0.4685
+        },
+        "head_only": {
+          "auc": 0.4597,
+          "bal_acc": 0.4643
+        },
+        "late_layers": {
+          "auc": 0.4599,
+          "bal_acc": 0.4622
+        },
+        "full": {
+          "auc": 0.4611,
+          "bal_acc": 0.4685
+        }
+      },
+      "elapsed_s": 980
+    }
+  ],
+  "mean_auc_none": 0.4876,
+  "std_auc_none": 0.075,
+  "mean_auc_head_only": 0.4988,
+  "std_auc_head_only": 0.0726,
+  "mean_auc_late_layers": 0.5036,
+  "std_auc_late_layers": 0.0872,
+  "mean_auc_full": 0.5025,
+  "std_auc_full": 0.0876
+}

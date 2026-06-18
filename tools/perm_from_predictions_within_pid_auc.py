@@ -42,6 +42,7 @@ class PredData:
     target: str
     participant_id: np.ndarray  # shape (n,)
     y_true: np.ndarray  # int 0/1 shape (n,)
+    y_pred: np.ndarray  # int 0/1 shape (n,)
     y_prob: np.ndarray  # float shape (n,)
 
 
@@ -94,6 +95,12 @@ def load_predictions_csv(path: Path) -> PredData:
     y_true = np.array([int(r["y_true"]) for r in rows], dtype=int)
     y_prob = np.array([float(r["y_prob"]) for r in rows], dtype=float)
 
+    if "y_pred" in rows[0] and all((r.get("y_pred") not in (None, "") for r in rows)):
+        y_pred = np.array([int(r["y_pred"]) for r in rows], dtype=int)
+    else:
+        # Reviewer-friendly fallback: threshold at 0.5 if y_pred not provided.
+        y_pred = (y_prob >= 0.5).astype(int)
+
     domain = path.parent.name
     target = path.name.removeprefix("svm_predictions_").removesuffix(".csv")
 
@@ -102,8 +109,28 @@ def load_predictions_csv(path: Path) -> PredData:
         target=target,
         participant_id=participant_id,
         y_true=y_true,
+        y_pred=y_pred,
         y_prob=y_prob,
     )
+
+
+def accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    y_true = y_true.astype(int, copy=False)
+    y_pred = y_pred.astype(int, copy=False)
+    return float(np.mean(y_true == y_pred))
+
+
+def f1_pos1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """F1 score for positive class==1."""
+    y_true = y_true.astype(int, copy=False)
+    y_pred = y_pred.astype(int, copy=False)
+    tp = int(np.sum((y_true == 1) & (y_pred == 1)))
+    fp = int(np.sum((y_true == 0) & (y_pred == 1)))
+    fn = int(np.sum((y_true == 1) & (y_pred == 0)))
+    denom = 2 * tp + fp + fn
+    if denom == 0:
+        return 0.0
+    return float((2 * tp) / denom)
 
 
 def within_pid_index_list(participant_id: np.ndarray) -> list[np.ndarray]:
@@ -231,6 +258,10 @@ def main() -> None:
 
     for pred_path in pred_files:
         data = load_predictions_csv(pred_path)
+
+        obs_acc = accuracy(data.y_true, data.y_pred)
+        obs_f1 = f1_pos1(data.y_true, data.y_pred)
+
         obs_auc, p_value, exceed = perm_test_within_participant_pooled_auc(
             data, P=args.P, seed=args.seed, print_every=args.print_every
         )
@@ -244,6 +275,8 @@ def main() -> None:
                 "P": args.P,
                 "seed": args.seed,
                 "obs_auc": float(obs_auc),
+                "obs_acc": float(obs_acc),
+                "obs_f1": float(obs_f1),
                 "exceed": int(exceed),
                 "perm_p_value": float(p_value),
                 "alpha": float(args.alpha),
@@ -269,6 +302,8 @@ def main() -> None:
         "P",
         "seed",
         "obs_auc",
+        "obs_acc",
+        "obs_f1",
         "exceed",
         "perm_p_value",
         "alpha",

@@ -4,7 +4,7 @@
 
 # Frequency bands (Hz ranges)
 frequency_bands:
-  Delta: [0.5, 4]
+  Delta: [1, 4]
   Theta: [4, 7.5]
   LowAlpha: [7.5, 9.25]
   HighAlpha: [9.25, 12]

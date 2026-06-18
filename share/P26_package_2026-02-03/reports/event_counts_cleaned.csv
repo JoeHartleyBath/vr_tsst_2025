@@ -1,0 +1,15 @@
+code,label,n_events
+10,Pre_Exposure_Blank_Fixation_Cross,1
+11,Pre_Exposure_Room_Fixation_Cross,1
+12,Post_Exposure_Blank_Fixation_Cross,1
+13,Post_Exposure_Room_Fixation_Cross,1
+20,Forest1,1
+21,Forest2,1
+23,Forest3,1
+24,Forest4,1
+101,HighStress_HighCog1022_Task,1
+102,HighStress_LowCog_Task,1
+103,LowStress_HighCog1022_Task,1
+104,LowStress_LowCog_Task,1
+200,Response_Correct,161
+201,Response_Incorrect,15

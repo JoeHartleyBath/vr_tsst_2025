@@ -1,0 +1,17 @@
+label,code
+Pre_Exposure_Blank_Fixation_Cross,10
+Pre_Exposure_Room_Fixation_Cross,11
+Post_Exposure_Blank_Fixation_Cross,12
+Post_Exposure_Room_Fixation_Cross,13
+Forest1,20
+Forest2,21
+Forest3,23
+Forest4,24
+HighStress_HighCog1022_Task,101
+HighStress_HighCog2043_Task,101
+HighStress_LowCog_Task,102
+LowStress_HighCog1022_Task,103
+LowStress_HighCog2043_Task,103
+LowStress_LowCog_Task,104
+Response_Correct,200
+Response_Incorrect,201

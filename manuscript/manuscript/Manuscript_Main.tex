@@ -391,7 +391,7 @@ Subject-independent SVM models provided modest discrimination of MWL under leave
 \midrule
     \multirow{3}{*}{Stress} & \checkmark &  & 0.44 & 0.46 & 0.38 & 1.000 \\
      & & \checkmark & 0.50 & 0.51 & 0.47 & 0.691 \\
-     & \checkmark & \checkmark & 0.57 & 0.57 & 0.56 & 0.124 \\
+        & \checkmark & \checkmark & 0.56 & 0.56 & 0.56 & 0.117 \\
     \midrule
     \multirow{3}{*}{MWL} & \checkmark &  & 0.51 & 0.52 & \textbf{0.60} & \textbf{0.001} \\
      & & \checkmark & 0.54 & 0.55 & 0.52 & 0.321 \\
@@ -400,7 +400,7 @@ Subject-independent SVM models provided modest discrimination of MWL under leave
 \end{tabular}
 \end{table}
 
-\noindent\textit{Note.} Metrics are averaged across 44 LOSO folds (one per participant). P-values reflect permutation testing of the AUC (10,000 permutations).
+\noindent\textit{Note.} Metrics are averaged across 44 LOSO folds (one per participant). P-values reflect permutation testing of the AUC ($P=1000$ permutations).
 
 \paragraph{Modality Ablation}
 As shown in Table \ref{tab:svm_results}, EEG features alone yielded significant detection of MWL, whereas peripheral features did not perform above chance. The combined model achieved the highest performance, suggesting that while EEG drives predictive power, peripheral features may contribute complementary information. For stress classification, neither modality subset achieved significance, consistent with the poor performance of the combined model.

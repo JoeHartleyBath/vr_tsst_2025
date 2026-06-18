@@ -25,6 +25,13 @@ Use the repo-root runner:
 
 `./run_svm_ablation_perm_ci.ps1 -RunTag <tag> -PermP 1000 -K 5`
 
+### Safety (no overwrites by default)
+
+- The runner refuses to write into an existing `results/svm_ablation_runs/<tag>/` directory.
+- Use a fresh `-RunTag` for each run.
+- If you intentionally need to rerun the same tag, pass `-Overwrite` to the runner.
+  - For safety, `-Overwrite` will rename the existing run directory to a timestamped `_backup_...` folder instead of deleting it.
+
 Outputs are written to:
 
 `results/svm_ablation_runs/<tag>/<domain>/`
@@ -37,4 +44,5 @@ Each domain folder includes:
 ## Notes
 - Primary metric: ROC AUC.
 - Permutations are label shuffles **within participant** to respect repeated measures.
+  - Implementation: shuffle `y_true` within each `participant_id` and recompute AUC against the fixed out-of-sample `y_prob` from the observed run (no model retraining during permutations).
 - CI bootstraps resample participants (cluster bootstrap) to avoid pseudo-replication.

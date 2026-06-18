@@ -1,0 +1,24 @@
+=== QC Report for P26 ===
+
+Overall Metrics:
+  Samples retained: 100.0% (471233 / 471233)
+  Percent ASR-repaired: 0.00%
+  Bad channels: 20
+  Bad channel labels: Z4, L1, Z1, R1, LA1, LA2, LA3, LA4, LC1, LC2, RA2, RA3, RC1, RC2, RC3, RC4, RC5, RC6, RC7, RE4
+  ICs removed: 14
+
+Event-wise Retention:
+  event_10: 100.0% (1 / 1)
+  event_101: 100.0% (1 / 1)
+  event_102: 100.0% (1 / 1)
+  event_103: 100.0% (1 / 1)
+  event_104: 100.0% (1 / 1)
+  event_11: 100.0% (1 / 1)
+  event_12: 100.0% (1 / 1)
+  event_13: 100.0% (1 / 1)
+  event_20: 100.0% (1 / 1)
+  event_200: 100.0% (161 / 161)
+  event_201: 100.0% (15 / 15)
+  event_21: 100.0% (1 / 1)
+  event_23: 100.0% (1 / 1)
+  event_24: 100.0% (1 / 1)

@@ -1,0 +1,22 @@
+# SVM ablation domain definitions.
+# These patterns filter the candidate feature set returned by utils/r/feature_selection.R
+# (which already applies project-wide inclusion/exclusion rules).
+#
+# Note: Leave "include" empty to mean "no additional filtering".
+
+domains:
+  all:
+    include: []
+    exclude: []
+
+  eeg:
+    include:
+      - "^eeg_"
+    exclude: []
+
+  peripheral:
+    # Matches saved artifacts: HR/HRV + pupil only (EDA excluded)
+    include:
+      - "^(hrv_|hr_|pupil_)"
+    exclude:
+      - "^eda_"

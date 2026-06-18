@@ -1,0 +1,36 @@
+{
+  "built_at": "2026-03-10T22:19:26.875248+00:00",
+  "test_pid": "P03",
+  "pretrained": "C:\\vr_tsst_2025\\output\\matb_pretrain\\loo\\P03\\eegnet_pretrained.pt",
+  "dataset": "C:\\vr_tsst_2025\\output\\matb_pretrain\\dataset.h5",
+  "seed": 42,
+  "test_frac": 0.2,
+  "n_train": 1896,
+  "n_test": 476,
+  "label_remap": {
+    "0": 0,
+    "2": 1
+  },
+  "results": [
+    {
+      "bal_acc": 0.542,
+      "auc": 0.5411,
+      "mode": "none"
+    },
+    {
+      "bal_acc": 0.5294,
+      "auc": 0.534,
+      "mode": "head_only"
+    },
+    {
+      "bal_acc": 0.5231,
+      "auc": 0.5536,
+      "mode": "late_layers"
+    },
+    {
+      "bal_acc": 0.5483,
+      "auc": 0.57,
+      "mode": "full"
+    }
+  ]
+}

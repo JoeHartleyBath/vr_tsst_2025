@@ -1,0 +1,35 @@
+{
+  "built_at": "2026-03-11T13:24:50.844789+00:00",
+  "dataset": "C:\\vr_tsst_2025\\output\\matb_pretrain\\dataset.h5",
+  "n_folds": 3,
+  "excluded": [
+    "P02",
+    "P08",
+    "P16",
+    "P21",
+    "P34",
+    "P37",
+    "P46"
+  ],
+  "total_elapsed_min": 0.0,
+  "folds": [
+    {
+      "pid": "P07",
+      "pretrain_status": "ok",
+      "finetune": null,
+      "elapsed_s": 0
+    },
+    {
+      "pid": "P20",
+      "pretrain_status": "ok",
+      "finetune": null,
+      "elapsed_s": 0
+    },
+    {
+      "pid": "P33",
+      "pretrain_status": "ok",
+      "finetune": null,
+      "elapsed_s": 0
+    }
+  ]
+}

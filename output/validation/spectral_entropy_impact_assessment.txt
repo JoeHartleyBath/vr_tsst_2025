@@ -1,0 +1,30 @@
+Spectral Entropy Impact Assessment
+=================================
+
+Analysis Date: 18-Feb-2026 16:54:30
+Dataset: output\final_data.csv
+Total observations: 188
+Total features: 118
+Spectral entropy features: 11 (9.3%)
+
+Features affected:
+- eeg_fl_specent_precond
+- eeg_fr_specent_precond
+- eeg_f_specent_precond
+- eeg_tleft_specent_precond
+- eeg_tright_specent_precond
+- eeg_t_specent_precond
+- eeg_c_specent_precond
+- eeg_pleft_specent_precond
+- eeg_pright_specent_precond
+- eeg_p_specent_precond
+- eeg_fm_specent_precond
+
+Impact Score: 4/9
+
+Factors:
+- Low proportion of affected features (9.3%)
+- Moderate expected change in entropy values
+- Spectral entropy features are relatively independent
+
+Recommendation: RE-RUNNING NOT NEEDED

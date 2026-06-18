@@ -1,0 +1,452 @@
+{
+  "built_at": "2026-03-12T12:01:48.221630+00:00",
+  "source": "vr_tsst_2025",
+  "preprocessing_config_hash": "fe827424",
+  "preprocessing_params": {
+    "bp_low_hz": 0.5,
+    "bp_high_hz": 40.0,
+    "bp_order": 4,
+    "notch_freq": 50.0,
+    "notch_quality": 30.0,
+    "apply_car": true,
+    "srate": 128.0
+  },
+  "window_s": 2.0,
+  "step_s": 0.5,
+  "srate": 128.0,
+  "n_channels": 128,
+  "n_classes": 2,
+  "label_map": {
+    "LOW": 0,
+    "HIGH": 2
+  },
+  "note": "MODERATE class absent; fine-tune head before use with 3-class MATB model",
+  "participants": {
+    "P01": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P02": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P03": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P04": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P05": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P06": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P07": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P08": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P09": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P10": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P11": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P12": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P13": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P15": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P16": {
+      "total_epochs": 891,
+      "class_counts": {
+        "LOW": 297,
+        "HIGH": 594
+      },
+      "forest_epochs": 891,
+      "fixation_epochs": 0
+    },
+    "P17": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P18": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P19": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P20": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P21": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P22": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P23": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P24": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P25": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P26": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P27": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P28": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P29": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P30": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P31": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P32": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P33": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P34": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P35": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P36": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P37": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P38": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P39": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P40": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P41": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P42": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P43": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P44": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P45": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P46": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P47": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    },
+    "P48": {
+      "total_epochs": 1188,
+      "class_counts": {
+        "LOW": 594,
+        "HIGH": 594
+      },
+      "forest_epochs": 1188,
+      "fixation_epochs": 114
+    }
+  },
+  "skipped": [
+    14
+  ]
+}

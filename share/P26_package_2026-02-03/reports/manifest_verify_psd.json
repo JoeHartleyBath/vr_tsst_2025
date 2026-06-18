@@ -1,0 +1,52 @@
+{
+  "files": {
+    "raw_xdf": {
+      "path": "C:\\vr_tsst_2025\\data\\RAW\\eeg\\P26.xdf",
+      "exists": true,
+      "size_bytes": 1051630138
+    },
+    "raw_meta": {
+      "path": "C:\\vr_tsst_2025\\data\\RAW\\metadata\\P26.csv",
+      "exists": true,
+      "size_bytes": 275491405
+    },
+    "raw_set_original": {
+      "path": "C:\\vr_tsst_2025\\output\\sets\\P26.set",
+      "exists": true,
+      "size_bytes": 1164111451
+    },
+    "raw_set_with_chanlocs": {
+      "path": "C:\\vr_tsst_2025\\share\\P26_package_2026-02-03\\raw\\P26_raw_chanlocs.set",
+      "exists": true,
+      "size_bytes": 15296488
+    },
+    "clean_set": {
+      "path": "C:\\vr_tsst_2025\\output\\cleaned_eeg\\P26_cleaned.set",
+      "exists": true,
+      "size_bytes": 2584224
+    }
+  },
+  "cleaned": {
+    "nchan": 128,
+    "sfreq": 125.0,
+    "ntimes": 471233,
+    "duration_s": 3769.864,
+    "n_annotations": 188
+  },
+  "raw_with_chanlocs": {
+    "available": true,
+    "nchan": 128,
+    "sfreq": 500.0,
+    "ntimes": 1884932,
+    "duration_s": 3769.864,
+    "n_annotations": 188
+  },
+  "reports": {
+    "psd_plot": "C:\\vr_tsst_2025\\share\\P26_package_2026-02-03\\reports\\P26_cleaned_condition_psd.png",
+    "psd_sanity_json": "C:\\vr_tsst_2025\\share\\P26_package_2026-02-03\\reports\\P26_psd_sanity.json",
+    "event_mapping_csv": "C:\\vr_tsst_2025\\share\\P26_package_2026-02-03\\reports\\event_mapping.csv",
+    "event_counts_cleaned_csv": "C:\\vr_tsst_2025\\share\\P26_package_2026-02-03\\reports\\event_counts_cleaned.csv",
+    "compare_plot_101_vs_104": "C:\\vr_tsst_2025\\share\\P26_package_2026-02-03\\reports\\P26_compare_psd_raw_vs_cleaned_101_vs_104.png",
+    "compare_json_101_vs_104": "C:\\vr_tsst_2025\\share\\P26_package_2026-02-03\\reports\\P26_compare_psd_raw_vs_cleaned_101_vs_104.json"
+  }
+}
